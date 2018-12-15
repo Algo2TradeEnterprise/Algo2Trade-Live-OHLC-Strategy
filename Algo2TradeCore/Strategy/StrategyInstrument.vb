@@ -12,6 +12,8 @@ Namespace Strategy
             TradableInstrument = associatedInstrument
             _cts = canceller
         End Sub
-        Public MustOverride Async Function ProcessTickAsync(ByVal tickData As Object) As Task
+        Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
+
+        End Function
     End Class
 End Namespace

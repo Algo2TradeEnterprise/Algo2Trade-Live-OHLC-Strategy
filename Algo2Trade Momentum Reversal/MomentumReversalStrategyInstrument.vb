@@ -22,9 +22,5 @@ Public Class MomentumReversalStrategyInstrument
         End If
         Return ret
     End Function
-    Public Overrides Async Function ProcessTickAsync(ByVal tickData As Object) As Task
-        Await Task.Delay(10).ConfigureAwait(False)
-        Throw New NotImplementedException
-    End Function
 
 End Class
