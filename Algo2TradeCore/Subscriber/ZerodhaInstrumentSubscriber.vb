@@ -31,7 +31,13 @@ Namespace Subscriber
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-                _subscribedStrategyInstruments(tickData.InstrumentToken).ProcessTickAsync(New ZerodhaTick() With {.WrappedTick = tickData})
+                Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
+                Parallel.ForEach(
+                        _subscribedStrategyInstruments(tickData.InstrumentToken),
+                        Sub(runningStrategyInstrument)
+                            runningStrategyInstrument.ProcessTickAsync(runningTick)
+                        End Sub
+                    )
             End If
         End Sub
         Public Async Sub OnOrderUpdateAsync(orderData As Order)

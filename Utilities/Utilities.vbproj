@@ -119,6 +119,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collection\LimitedStack.vb" />
     <Compile Include="DAL\CSVHelper.vb" />
     <Compile Include="DAL\DBHelper.vb" />
     <Compile Include="DAL\DBHelperSingleton.vb" />
