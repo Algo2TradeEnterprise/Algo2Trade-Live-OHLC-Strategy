@@ -176,17 +176,18 @@ Public Class frmMain
             OnHeartbeat("Attempting to get connection to Zerodha server")
             _connection = Await _adapter.LoginAsync().ConfigureAwait(False)
             OnHeartbeat("Getting all instruments for the day")
-            Dim temporaryInstruments As List(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
-            Dim temporaryStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
-                Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(temporaryInstruments,
+            Dim allInstruments As IEnumerable(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
+            OnHeartbeat("Getting tradable instruments as per strategy")
+            Dim mrStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
+                Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(allInstruments,
                                                                                     _adapter,
                                                                                     _cts).ConfigureAwait(False)
             OnHeartbeat("Opening subcriber and connecting to ticker")
             _subscriber = New ZerodhaInstrumentSubscriber(_adapter, _cts)
-            For Each runningTemporaryStrategyInstrument In temporaryStrategyInstruments
-                _subscriber.SubscribeStrategy(runningTemporaryStrategyInstrument)
-            Next
-            Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
+            'For Each runningTemporaryStrategyInstrument In temporaryStrategyInstruments
+            '    _subscriber.SubscribeStrategy(runningTemporaryStrategyInstrument)
+            'Next
+            'Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
 
         Catch cx As OperationCanceledException
             logger.Error(cx)

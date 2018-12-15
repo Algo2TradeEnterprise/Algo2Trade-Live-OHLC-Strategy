@@ -29,10 +29,9 @@ Namespace Subscriber
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
-                Parallel.ForEach(_subscribedStrategyInstruments(tickData.InstrumentToken),
-                                 Sub(runningStrategyInstrument)
-                                     runningStrategyInstrument.ProcessTickAsync(runningTick)
-                                 End Sub)
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                    runningStrategyInstrument.ProcessTickAsync(runningTick)
+                Next
             End If
         End Sub
         Public Async Sub OnOrderUpdateAsync(orderData As Order)

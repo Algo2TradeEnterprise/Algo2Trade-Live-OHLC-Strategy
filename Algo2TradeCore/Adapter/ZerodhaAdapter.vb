@@ -39,8 +39,37 @@ Namespace Adapter
             _API2FA = API2FA
         End Sub
 
-        Public Overrides Async Function GetAllInstrumentsAsync(Optional ByVal isRetryEnabled As Boolean = True) As Task(Of List(Of IInstrument))
+        Public Overrides Async Function GetAllInstrumentsAsync(Optional ByVal isRetryEnabled As Boolean = True) As Task(Of IEnumerable(Of IInstrument))
+            Dim ret As List(Of ZerodhaInstrument) = Nothing
+            Dim command As KiteCommands = KiteCommands.GetInstruments
+            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, Nothing, isRetryEnabled).ConfigureAwait(False)
 
+            Dim tempRet As Object = Nothing
+            If tempAllRet.ContainsKey(command.ToString) Then
+                tempRet = tempAllRet(command.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("No return fetched after executing command:{0}", command.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command fired was not detected in the response:{0}", command.ToString))
+            End If
+
+            If tempRet.GetType = GetType(List(Of Instrument)) Then
+                ret = New List(Of ZerodhaInstrument)
+                Parallel.ForEach(
+                    CType(tempRet, List(Of Instrument)),
+                    Sub(runningInstrument As Instrument)
+                        ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
+                    End Sub)
+            Else
+                Throw New ApplicationException(String.Format("List of instruments not returned from command:{0}", command.ToString))
+            End If
+            Return ret
         End Function
 
         Private Async Function ExecuteCommandAsync(ByVal command As KiteCommands, ByVal stockData As Dictionary(Of String, Object), Optional ByVal isRetryEnabled As Boolean = True) As Task(Of Dictionary(Of String, Object))
@@ -291,11 +320,14 @@ Namespace Adapter
         End Function
 
 #Region "Login"
-        Private Function GetErrorResponse(ByVal responseDict As Dictionary(Of String, Object)) As String
+        Private Function GetErrorResponse(ByVal responseDict As Object) As String
             Dim ret As String = Nothing
             If responseDict IsNot Nothing AndAlso
-            responseDict.ContainsKey("status") AndAlso responseDict("status") = "error" AndAlso responseDict.ContainsKey("message") Then
-                ret = String.Format("Zerodha reported error:{0}", responseDict("message"))
+               responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
+               CType(responseDict, Dictionary(Of String, Object)).ContainsKey("status") AndAlso
+               CType(responseDict, Dictionary(Of String, Object))("status") = "error" AndAlso
+               CType(responseDict, Dictionary(Of String, Object)).ContainsKey("message") Then
+                ret = String.Format("Zerodha reported error:{0}", CType(responseDict, Dictionary(Of String, Object))("message"))
             End If
             Return ret
         End Function
