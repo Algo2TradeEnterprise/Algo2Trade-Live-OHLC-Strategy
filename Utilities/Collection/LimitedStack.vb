@@ -1,16 +1,20 @@
 ﻿Namespace Collections
     Public Class LimitedStack(Of T)
-        Public ReadOnly Limit As Integer
-        Private ReadOnly _stack As List(Of T)
+        Private _limit As Integer
+        Private _stack As List(Of T)
 
         Public Sub New(ByVal Optional limit As Integer = 32)
-            limit = limit
-            _stack = New List(Of T)(limit)
+            _limit = limit
+            _stack = New List(Of T)(_limit)
         End Sub
 
         Public Sub Push(ByVal item As T)
-            If _stack.Count = Limit Then _stack.RemoveAt(0)
-            _stack.Add(item)
+            Try
+                If _stack.Count = _limit Then _stack.RemoveAt(0)
+                _stack.Add(item)
+            Catch ex As Exception
+                Throw ex
+            End Try
         End Sub
 
         Public Function Peek() As T

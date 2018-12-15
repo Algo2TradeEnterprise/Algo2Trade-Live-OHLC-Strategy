@@ -184,11 +184,10 @@ Public Class frmMain
                                                                                     _cts).ConfigureAwait(False)
             OnHeartbeat("Opening subcriber and connecting to ticker")
             _subscriber = New ZerodhaInstrumentSubscriber(_adapter, _cts)
-            'For Each runningTemporaryStrategyInstrument In temporaryStrategyInstruments
-            '    _subscriber.SubscribeStrategy(runningTemporaryStrategyInstrument)
-            'Next
-            'Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
-
+            For Each runningStrategyInstrument As MomentumReversalStrategyInstrument In mrStrategyInstruments
+                _subscriber.SubscribeStrategy(runningStrategyInstrument)
+            Next
+            Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)

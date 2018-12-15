@@ -92,14 +92,14 @@ Public Class OHLInstrumentWorker
         End If
     End Function
     Public Async Function ConsumedTickDataAsync(ByVal tickData As Tick) As Task
-        Await Task.Delay(1).ConfigureAwait(False)
+        Await Task.Delay(0).ConfigureAwait(False)
         _canceller.Token.ThrowIfCancellationRequested()
         If _tickDetails Is Nothing Then _tickDetails = New Concurrent.ConcurrentBag(Of Tick)
         _tickDetails.Add(tickData)
         _instrumentData.WrappedTick = tickData
     End Function
     Public Async Function ConsumedOrderUpdateAsync(ByVal orderData As Order) As Task
-        Await Task.Delay(1).ConfigureAwait(False)
+        Await Task.Delay(0).ConfigureAwait(False)
         _canceller.Token.ThrowIfCancellationRequested()
         Dim ret As Dictionary(Of String, Object) = Await _zerodhaKite.ExecuteCommandAsync(ZerodhaKiteHelper.KiteCommands.GetOrderTrades, Nothing).ConfigureAwait(False)
         If ret IsNot Nothing AndAlso ret.ContainsKey(ZerodhaKiteHelper.KiteCommands.GetOrderTrades.ToString) Then

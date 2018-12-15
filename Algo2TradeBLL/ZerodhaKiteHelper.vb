@@ -273,7 +273,7 @@ Public Class ZerodhaKiteHelper
         'Dont execute login process if _Kite is already connected
         _canceller.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
-        Await Task.Delay(1).ConfigureAwait(False)
+        Await Task.Delay(0).ConfigureAwait(False)
         If _Kite Is Nothing Then
             _Kite = New Kite(_myAPIKey, Debug:=False)
             ' For handling 403 errors
@@ -311,7 +311,7 @@ Public Class ZerodhaKiteHelper
 
     Public Async Function ExecuteCommandAsync(ByVal command As KiteCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
         Dim ret As Dictionary(Of String, Object) = Nothing
-        Await Task.Delay(1).ConfigureAwait(False)
+        Await Task.Delay(0).ConfigureAwait(False)
 
         Dim lastException As Exception = Nothing
         Dim allOKWithoutException As Boolean = False

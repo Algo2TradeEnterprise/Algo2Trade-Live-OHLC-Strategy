@@ -16,7 +16,7 @@ Namespace Subscriber
             'OnHeartbeat("Closed Ticker")
         End Sub
         Public Sub OnError(message As String)
-            'OnHeartbeat(String.Format("Error: {0}", message))
+            OnHeartbeat(String.Format("Error: {0}", message))
         End Sub
         Public Sub OnNoReconnect()
             'OnHeartbeat("Not Reconnecting")
@@ -26,6 +26,7 @@ Namespace Subscriber
         End Sub
         Public Async Sub OnTickAsync(ByVal tickData As Tick)
             _cts.Token.ThrowIfCancellationRequested()
+            Console.WriteLine(tickData.InstrumentToken)
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}

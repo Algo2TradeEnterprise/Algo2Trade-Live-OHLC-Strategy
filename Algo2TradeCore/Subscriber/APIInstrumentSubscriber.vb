@@ -50,7 +50,11 @@ Namespace Subscriber
             End If
             strategiesToBeSubscribedForThisInstrument.Add(strategy)
 
-            If SubcribedInstruments IsNot Nothing Then SubcribedInstruments = New List(Of String)
+            If SubcribedInstruments Is Nothing Then SubcribedInstruments = New List(Of String)
+            If SubcribedInstruments IsNot Nothing AndAlso SubcribedInstruments.Count > _apiAdapter.MaxInstrumentPerTicker Then
+                Throw New ApplicationException(String.Format("Max instruments per ticker exceeded, alllowed:{0}, existing:{1}", _apiAdapter.MaxInstrumentPerTicker, SubcribedInstruments.Count))
+            End If
+
             If Not SubcribedInstruments.Contains(strategy.TradableInstrument.InstrumentIdentifier) Then
                 SubcribedInstruments.Add(strategy.TradableInstrument.InstrumentIdentifier)
             End If

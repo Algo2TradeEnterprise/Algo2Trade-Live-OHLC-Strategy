@@ -77,7 +77,6 @@ Public Class OHLStrategyHelper
         Return ret
     End Function
     Public Async Function RunAsync(ByVal tradableIstruments As Dictionary(Of String, OHLStrategyTradableInstrument)) As Task
-        Await Task.Delay(1).ConfigureAwait(False)
         While True
             If tradableIstruments IsNot Nothing AndAlso tradableIstruments.Count > 0 Then
                 Dim currentTime As Date = Now

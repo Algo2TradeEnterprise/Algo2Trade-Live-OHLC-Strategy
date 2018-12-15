@@ -12,6 +12,12 @@ Namespace Adapter
         Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
         Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
         Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
+        Protected _MaxInstrumentPerTicker As Integer
+        Public ReadOnly Property MaxInstrumentPerTicker As Integer
+            Get
+                Return _MaxInstrumentPerTicker
+            End Get
+        End Property
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()

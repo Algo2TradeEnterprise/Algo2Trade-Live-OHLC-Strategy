@@ -557,7 +557,7 @@ Namespace DAL
         End Function
 
         Public Overrides Async Function GetIdentityFromLastInsertAsync(ByVal tableName As String) As Task(Of ULong)
-            Await Task.Delay(1).ConfigureAwait(False)
+            Await Task.Delay(0).ConfigureAwait(False)
             Throw New NotImplementedException
         End Function
         Public Overrides Function GetIdentityFromLastInsert(ByVal tableName As String) As ULong

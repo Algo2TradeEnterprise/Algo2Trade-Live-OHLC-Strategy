@@ -37,6 +37,7 @@ Namespace Adapter
             _APIKey = APIKey
             _APIVersion = APIVersion
             _API2FA = API2FA
+            _MaxInstrumentPerTicker = 900
         End Sub
 
         Public Overrides Async Function GetAllInstrumentsAsync(Optional ByVal isRetryEnabled As Boolean = True) As Task(Of IEnumerable(Of IInstrument))
@@ -60,12 +61,10 @@ Namespace Adapter
             End If
 
             If tempRet.GetType = GetType(List(Of Instrument)) Then
-                ret = New List(Of ZerodhaInstrument)
-                Parallel.ForEach(
-                    CType(tempRet, List(Of Instrument)),
-                    Sub(runningInstrument As Instrument)
-                        ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
-                    End Sub)
+                For Each runningInstrument As Instrument In CType(tempRet, List(Of Instrument))
+                    If ret Is Nothing Then ret = New List(Of ZerodhaInstrument)
+                    ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
+                Next
             Else
                 Throw New ApplicationException(String.Format("List of instruments not returned from command:{0}", command.ToString))
             End If
@@ -530,9 +529,9 @@ Namespace Adapter
             'Dont execute login process if _Kite is already connected
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As ZerodhaConnection = Nothing
-            Await Task.Delay(1).ConfigureAwait(False)
+            Await Task.Delay(0).ConfigureAwait(False)
             If _Kite Is Nothing Then
-                _Kite = New Kite(_APIKey, Debug:=False)
+                _Kite = New Kite(_APIKey, Debug:=True)
                 ' For handling 403 errors
                 _Kite.SetSessionExpiryHook(AddressOf OnTokenExpireAsync)
             End If
@@ -589,11 +588,10 @@ Namespace Adapter
             _Ticker.EnableReconnect(Interval:=5, Retries:=50)
             _Ticker.Connect()
             If zerodhaSubscriber.SubcribedInstruments IsNot Nothing AndAlso zerodhaSubscriber.SubcribedInstruments.Count > 0 Then
-                Parallel.ForEach(zerodhaSubscriber.SubcribedInstruments,
-                                 Sub(runningInstrumentIdentifier)
-                                     _Ticker.Subscribe(Tokens:=New UInt32() {runningInstrumentIdentifier})
-                                     _Ticker.SetMode(Tokens:=New UInt32() {runningInstrumentIdentifier}, Mode:=Constants.MODE_FULL)
-                                 End Sub)
+                For Each runningInstrumentIdentifier In zerodhaSubscriber.SubcribedInstruments
+                    _Ticker.Subscribe(Tokens:=New UInt32() {runningInstrumentIdentifier})
+                    _Ticker.SetMode(Tokens:=New UInt32() {runningInstrumentIdentifier}, Mode:=Constants.MODE_FULL)
+                Next
             End If
         End Function
 #End Region
