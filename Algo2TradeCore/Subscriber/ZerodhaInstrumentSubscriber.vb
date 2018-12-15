@@ -49,7 +49,7 @@ Namespace Subscriber
         End Sub
         Public Overrides Async Function RunAdditionalStrategyTriggersAsync() As Task
             While True
-                Await Task.Delay(5000).ConfigureAwait(False)
+                Await Task.Delay(10000).ConfigureAwait(False)
                 If _subscribedStrategyInstruments IsNot Nothing Then
                     For Each runningStrategyInstruments In _subscribedStrategyInstruments.Values
                         For Each runningStrategyInstrument In runningStrategyInstruments

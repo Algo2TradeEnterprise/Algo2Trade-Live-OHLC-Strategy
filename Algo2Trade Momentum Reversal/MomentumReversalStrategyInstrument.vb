@@ -28,7 +28,7 @@ Public Class MomentumReversalStrategyInstrument
                 'TO DO: Check if the instrument needs to be added or use custom code to extract instruments from DB or logic 
                 'and then add to the rerturnable collection
                 retCtr += 1
-                If retCtr > 500 Then Exit For
+                If retCtr > 20 Then Exit For
                 If ret Is Nothing Then ret = New List(Of MomentumReversalStrategyInstrument)
                 ret.Add(New MomentumReversalStrategyInstrument(apiAdapter, runningInstrument, canceller))
             Next
@@ -46,7 +46,7 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Public Overrides Async Function RunDirectAsync() As Task
         Try
-            Dim allTrades As IEnumerable(Of ITrade) = Await _apiAdapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False).ConfigureAwait(False)
+            Dim allTrades As IEnumerable(Of ITrade) = Await _apiAdapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", TradableInstrument.InstrumentIdentifier}}, retryEnabled:=True).ConfigureAwait(False)
         Catch ex As Exception
             logger.Warn("For instrument:{0}, error:{1}", TradableInstrument.InstrumentIdentifier, ex.Message)
             'Throw ex

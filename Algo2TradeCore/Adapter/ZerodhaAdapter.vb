@@ -96,10 +96,6 @@ Namespace Adapter
             Dim ret As List(Of ZerodhaTrade) = Nothing
             Dim command As KiteCommands = KiteCommands.GetOrderTrades
             OnHeartbeat(String.Format("Executing Zerodha command to fetch all trades, xxx:{0}", tradeData("xxx")))
-            'While True
-            '    Await Task.Delay(GetRandom(1000, 2000)).ConfigureAwait(False)
-            '    Exit While
-            'End While
             Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, Nothing, isRetryEnabled).ConfigureAwait(False)
             OnHeartbeat(String.Format("Executed Zerodha command to fetch all trades, xxx:{0}", tradeData("xxx")))
 
