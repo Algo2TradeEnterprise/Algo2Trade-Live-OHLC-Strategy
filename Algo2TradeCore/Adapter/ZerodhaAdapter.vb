@@ -1,23 +1,19 @@
 ﻿Imports System.Collections.Specialized
 Imports System.Net
+Imports System.Net.Http
 Imports System.Threading
 Imports System.Web
 Imports Algo2TradeCore.Entity
 Imports Algo2TradeCore.Subscriber
 Imports KiteConnect
 Imports NLog
+Imports Utilities
 Imports Utilities.ErrorHandlers
 Imports Utilities.Network
 
 Namespace Adapter
     Public Class ZerodhaAdapter
         Inherits APIAdapter
-
-
-
-#Region "Logging and Status Progress"
-        Public Shared logger As Logger = LogManager.GetCurrentClassLogger
-#End Region
 
         Protected _APISecret As String
         Protected _APIKey As String
@@ -42,6 +38,257 @@ Namespace Adapter
             _APIVersion = APIVersion
             _API2FA = API2FA
         End Sub
+
+        Public Overrides Async Function GetAllInstrumentsAsync(Optional ByVal isRetryEnabled As Boolean = True) As Task(Of List(Of IInstrument))
+
+        End Function
+
+        Private Async Function ExecuteCommandAsync(ByVal command As KiteCommands, ByVal stockData As Dictionary(Of String, Object), Optional ByVal isRetryEnabled As Boolean = True) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+
+            Dim lastException As Exception = Nothing
+            Dim allOKWithoutException As Boolean = False
+
+            Using Waiter As New Waiter(_cts)
+                AddHandler Waiter.Heartbeat, AddressOf OnHeartbeat
+                AddHandler Waiter.WaitingFor, AddressOf OnWaitingFor
+
+                For retryCtr = 1 To _MaxReTries
+                    _cts.Token.ThrowIfCancellationRequested()
+                    While _Kite Is Nothing
+                        OnHeartbeat(String.Format("Waiting for new access token before executing:{0}...", command))
+                        Await Task.Delay(1000).ConfigureAwait(False)
+                    End While
+                    lastException = Nothing
+                    OnDocumentRetryStatus(retryCtr, _MaxReTries)
+                    Try
+                        OnHeartbeat(String.Format("Executing Kite command:{0}...", command))
+                        _cts.Token.ThrowIfCancellationRequested()
+
+                        Select Case command
+                            Case KiteCommands.GetPositions
+                                Dim positions As PositionResponse = _Kite.GetPositions()
+                                ret = New Dictionary(Of String, Object) From {{command.ToString, positions}}
+                                _cts.Token.ThrowIfCancellationRequested()
+                            Case KiteCommands.PlaceOrder
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    Dim s As Stopwatch = New Stopwatch
+                                    s.Start()
+                                    Dim placedOrders = _Kite.PlaceOrder(Exchange:=CType(stockData("Exchange"), String),
+                                                                    TradingSymbol:=CType(stockData("TradingSymbol"), String),
+                                                                    TransactionType:=CType(stockData("TransactionType"), String),
+                                                                    Quantity:=CType(stockData("Quantity"), Integer),
+                                                                    Price:=CType(stockData("Price"), Decimal),
+                                                                    Product:=CType(stockData("Product"), String),
+                                                                    OrderType:=CType(stockData("OrderType"), String),
+                                                                    Validity:=CType(stockData("Validity"), String),
+                                                                    SquareOffValue:=CType(stockData("SquareOffValue"), Decimal),
+                                                                    StoplossValue:=CType(stockData("StoplossValue"), Decimal),
+                                                                    Variety:=CType(stockData("Variety"), String),
+                                                                    Tag:=CType(stockData("Tag"), String))
+                                    s.Stop()
+
+                                    Console.WriteLine(String.Format("Placed Order Time:{0}", s.ElapsedMilliseconds))
+                                    ret = New Dictionary(Of String, Object) From {{command.ToString, placedOrders}}
+                                End If
+                            Case KiteCommands.ModifyOrderQuantity
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    Dim modifiedOrdersQuantity = _Kite.ModifyOrder(OrderId:=CType(stockData("OrderId"), String),
+                                                                               Quantity:=CType(stockData("Quantity"), String))
+
+                                    ret = New Dictionary(Of String, Object) From {{command.ToString, modifiedOrdersQuantity}}
+                                End If
+                            Case KiteCommands.ModifyTargetOrderPrice, KiteCommands.ModifyOrderPrice
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    Dim modifiedOrdersPrice = _Kite.ModifyOrder(OrderId:=CType(stockData("OrderId"), String),
+                                                                            Price:=CType(stockData("Price"), Decimal))
+
+                                    ret = New Dictionary(Of String, Object) From {{command.ToString, modifiedOrdersPrice}}
+                                End If
+                            Case KiteCommands.ModifySLOrderPrice
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    Dim modifiedOrdersPrice = _Kite.ModifyOrder(OrderId:=CType(stockData("OrderId"), String),
+                                                                            TriggerPrice:=CType(stockData("TriggerPrice"), Decimal))
+
+                                    ret = New Dictionary(Of String, Object) From {{command.ToString, modifiedOrdersPrice}}
+                                End If
+                            Case KiteCommands.CancelOrder
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    Dim cancelledOrder = _Kite.CancelOrder(OrderId:=CType(stockData("OrderId"), String),
+                                                                   ParentOrderId:=CType(stockData("ParentOrderId"), String),
+                                                                   Variety:=CType(stockData("Variety"), String))
+
+                                    ret = New Dictionary(Of String, Object) From {{command.ToString, cancelledOrder}}
+                                End If
+                            Case KiteCommands.GetOrderHistory
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    Dim orderList As List(Of Order) = _Kite.GetOrderHistory(OrderId:=CType(stockData("OrderId"), String))
+                                    ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
+                                End If
+                            Case KiteCommands.GetOrders
+                                Dim orderList As List(Of Order) = _Kite.GetOrders()
+                                ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
+                            Case KiteCommands.GetOrderTrades
+                                Dim tradeList As List(Of Trade) = Nothing
+                                If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
+                                    tradeList = _Kite.GetOrderTrades(OrderId:=CType(stockData("OrderId"), String))
+                                Else
+                                    tradeList = _Kite.GetOrderTrades()
+                                End If
+                                ret = New Dictionary(Of String, Object) From {{command.ToString, tradeList}}
+                            Case KiteCommands.GetInstruments
+                                Dim instruments As List(Of Instrument) = _Kite.GetInstruments()
+                                Dim count As Integer = If(instruments Is Nothing, 0, instruments.Count)
+                                logger.Debug(String.Format("Fetched {0} instruments from Zerodha", count))
+                                If instruments IsNot Nothing AndAlso instruments.Count > 0 Then
+                                    instruments.RemoveAll(Function(x) x.Exchange = "BFO" Or x.Exchange = "BSE")
+                                    instruments.RemoveAll(Function(x) x.Segment.EndsWith("OPT"))
+                                    instruments.RemoveAll(Function(x) x.TradingSymbol.Length > 3 AndAlso x.TradingSymbol.Substring(x.TradingSymbol.Length - 3).StartsWith("-"))
+                                    count = If(instruments Is Nothing, 0, instruments.Count)
+                                    logger.Debug(String.Format("After cleanup, fetched {0} instruments from Zerodha", count))
+                                End If
+                                ret = New Dictionary(Of String, Object) From {{command.ToString, instruments}}
+                            Case KiteCommands.InvalidateAccessToken
+                                Dim invalidateToken = _Kite.InvalidateAccessToken(_ZerodhaConnection.APIUser.WrappedUser.AccessToken)
+                                lastException = Nothing
+                                allOKWithoutException = True
+                                Exit For
+                            Case Else
+                                Throw New ApplicationException("No Command Triggered")
+                        End Select
+                        If ret IsNot Nothing AndAlso ret.ContainsKey(command.ToString) Then
+                            lastException = Nothing
+                            allOKWithoutException = True
+                            Exit For
+                        Else
+                            Throw New ApplicationException(String.Format("{0} did not succeed", command.ToString))
+                        End If
+                        _cts.Token.ThrowIfCancellationRequested()
+                    Catch iatex As KiteConnect.TokenException
+                        logger.Error(iatex)
+                        lastException = iatex
+                        _cts.Token.ThrowIfCancellationRequested()
+                        logger.Debug("KITE->Token expired possibility:{0},{1}",
+                                             iatex.Message, command)
+                        retryCtr -= 1
+                        'We will allow it to continue normal flow as the expiry is handled asynchnously via a seperate channel 
+                        'and hence no actions necessary here
+                    Catch opx As OperationCanceledException
+                        logger.Error(opx)
+                        lastException = opx
+
+                        If Not _cts.Token.IsCancellationRequested Then
+                            _cts.Token.ThrowIfCancellationRequested()
+                            If Not Waiter.WaitOnInternetFailure(_WaitDurationOnConnectionFailure) Then
+                                'Provide required wait in case internet was already up
+                                logger.Debug("HTTP->Task was cancelled without internet problem:{0},{1}",
+                                             opx.Message, command)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Waiter.SleepRequiredDuration(_WaitDurationOnAnyFailure.TotalSeconds, "Non-explicit cancellation")
+                                _cts.Token.ThrowIfCancellationRequested()
+                            Else
+                                logger.Debug("HTTP->Task was cancelled due to internet problem:{0},{1}",
+                                             opx.Message, command)
+                                'Since internet was down, no need to consume retries
+                                retryCtr -= 1
+                            End If
+                        End If
+                    Catch hex As HttpRequestException
+                        logger.Error(hex)
+                        lastException = hex
+
+                        'Need to relogin, no point retrying
+                        If ExceptionExtensions.GetExceptionMessages(hex).Contains("trust relationship") Then
+                            Throw New ForbiddenException(hex.Message, hex, ForbiddenException.TypeOfException.PossibleReloginRequired)
+                        End If
+
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If Not Waiter.WaitOnInternetFailure(_WaitDurationOnConnectionFailure) Then
+                            If hex.Message.Contains("429") Or hex.Message.Contains("503") Then
+                                logger.Debug("HTTP->429/503 error without internet problem:{0},{1}",
+                                             hex.Message, command)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Waiter.SleepRequiredDuration(_WaitDurationOnServiceUnavailbleFailure.TotalSeconds, "Service unavailable(429/503)")
+                                _cts.Token.ThrowIfCancellationRequested()
+                                'Since site service is blocked, no need to consume retries
+                                retryCtr -= 1
+                            ElseIf hex.Message.Contains("404") Then
+                                logger.Debug("HTTP->404 error without internet problem:{0},{1}",
+                                             hex.Message, command)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                'No point retrying, exit for
+                                Exit For
+                            Else
+                                If ExceptionExtensions.IsExceptionConnectionRelated(hex) Then
+                                    logger.Debug("HTTP->HttpRequestException without internet problem but of type internet related detected:{0},{1}",
+                                                 hex.Message, command)
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Waiter.SleepRequiredDuration(_WaitDurationOnConnectionFailure.TotalSeconds, "Connection HttpRequestException")
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    'Since exception was internet related, no need to consume retries
+                                    retryCtr -= 1
+                                Else
+                                    'Provide required wait in case internet was already up
+                                    logger.Debug("HTTP->HttpRequestException without internet problem:{0},{1}",
+                                                 hex.Message, command)
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Waiter.SleepRequiredDuration(_WaitDurationOnAnyFailure.TotalSeconds, "Unknown HttpRequestException")
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                End If
+                            End If
+                        Else
+                            logger.Debug("HTTP->HttpRequestException with internet problem:{0},{1}",
+                                         hex.Message, command)
+                            'Since internet was down, no need to consume retries
+                            retryCtr -= 1
+                        End If
+                    Catch ex As Exception
+                        logger.Error(ex)
+                        lastException = ex
+                        'Exit if it is a network failure check and stop retry to avoid stack overflow
+                        'Need to relogin, no point retrying
+                        If ExceptionExtensions.GetExceptionMessages(ex).Contains("disposed") Then
+                            Throw New ForbiddenException(ex.Message, ex, ForbiddenException.TypeOfException.ExceptionInBetweenLoginProcess)
+                        End If
+
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If Not Waiter.WaitOnInternetFailure(_WaitDurationOnConnectionFailure) Then
+                            'Provide required wait in case internet was already up
+                            _cts.Token.ThrowIfCancellationRequested()
+                            If ExceptionExtensions.IsExceptionConnectionRelated(ex) Then
+                                logger.Debug("HTTP->Exception without internet problem but of type internet related detected:{0},{1}",
+                                             ex.Message, command)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Waiter.SleepRequiredDuration(_WaitDurationOnConnectionFailure.TotalSeconds, "Connection Exception")
+                                _cts.Token.ThrowIfCancellationRequested()
+                                'Since exception was internet related, no need to consume retries
+                                retryCtr -= 1
+                            Else
+                                logger.Debug("HTTP->Exception without internet problem of unknown type detected:{0},{1}",
+                                             ex.Message, command)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Waiter.SleepRequiredDuration(_WaitDurationOnAnyFailure.TotalSeconds, "Unknown Exception")
+                                _cts.Token.ThrowIfCancellationRequested()
+                            End If
+                        Else
+                            logger.Debug("HTTP->Exception with internet problem:{0},{1}",
+                                         ex.Message, command)
+                            'Since internet was down, no need to consume retries
+                            retryCtr -= 1
+                        End If
+                    Finally
+                        OnDocumentDownloadComplete()
+                    End Try
+                    _cts.Token.ThrowIfCancellationRequested()
+                    GC.Collect()
+                Next
+                RemoveHandler Waiter.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler Waiter.WaitingFor, AddressOf OnWaitingFor
+            End Using
+            _cts.Token.ThrowIfCancellationRequested()
+            If Not allOKWithoutException Then Throw lastException
+            Return ret
+        End Function
 
 #Region "Login"
         Private Function GetErrorResponse(ByVal responseDict As Dictionary(Of String, Object)) As String
@@ -310,12 +557,29 @@ Namespace Adapter
             _Ticker.EnableReconnect(Interval:=5, Retries:=50)
             _Ticker.Connect()
             If zerodhaSubscriber.SubcribedInstruments IsNot Nothing AndAlso zerodhaSubscriber.SubcribedInstruments.Count > 0 Then
-                For Each runningSubcribedInstrument In zerodhaSubscriber.SubcribedInstruments
-                    _Ticker.Subscribe(Tokens:=New UInt32() {runningSubcribedInstrument})
-                    _Ticker.SetMode(Tokens:=New UInt32() {runningSubcribedInstrument}, Mode:=Constants.MODE_FULL)
-                Next
+                Parallel.ForEach(zerodhaSubscriber.SubcribedInstruments,
+                                 Sub(runningInstrumentIdentifier)
+                                     _Ticker.Subscribe(Tokens:=New UInt32() {runningInstrumentIdentifier})
+                                     _Ticker.SetMode(Tokens:=New UInt32() {runningInstrumentIdentifier}, Mode:=Constants.MODE_FULL)
+                                 End Sub)
             End If
         End Function
 #End Region
+
+        Private Enum KiteCommands
+            GetPositions = 1
+            PlaceOrder
+            ModifyOrderQuantity
+            ModifyOrderPrice
+            ModifyTargetOrderPrice
+            ModifySLOrderPrice
+            CancelOrder
+            GetOrderHistory
+            GetOrders
+            GetOrderTrades
+            GetInstruments '
+            InvalidateAccessToken
+            None
+        End Enum
     End Class
 End Namespace

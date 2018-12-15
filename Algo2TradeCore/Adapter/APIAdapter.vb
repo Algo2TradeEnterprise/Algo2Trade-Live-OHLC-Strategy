@@ -1,12 +1,17 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Entity
 Imports Algo2TradeCore.Subscriber
+Imports NLog
 
 Namespace Adapter
     Public MustInherit Class APIAdapter
         Protected _userId As String
         Protected _password As String
         Protected _cts As CancellationTokenSource
+        Protected _MaxReTries As Integer = 20
+        Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
+        Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
+        Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
@@ -27,6 +32,11 @@ Namespace Adapter
             RaiseEvent WaitingFor(elapsedSecs, totalSecs, msg)
         End Sub
 #End Region
+
+#Region "Logging and Status Progress"
+        Public Shared logger As Logger = LogManager.GetCurrentClassLogger
+#End Region
+
         Public Sub New(ByVal userId As String,
                        ByVal password As String,
                        ByVal canceller As CancellationTokenSource)
@@ -36,5 +46,6 @@ Namespace Adapter
         End Sub
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function ConnectTickerAsync(ByVal subscriber As APIInstrumentSubscriber) As Task
+        Public MustOverride Async Function GetAllInstrumentsAsync(Optional ByVal retryEnabled As Boolean = True) As Task(Of List(Of IInstrument))
     End Class
 End Namespace

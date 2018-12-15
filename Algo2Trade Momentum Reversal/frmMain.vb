@@ -176,8 +176,7 @@ Public Class frmMain
             OnHeartbeat("Attempting to get connection to Zerodha server")
             _connection = Await _adapter.LoginAsync().ConfigureAwait(False)
             OnHeartbeat("Getting all instruments for the day")
-            Dim temporaryInstruments As List(Of IInstrument) = Nothing
-            'TO DO: Call getinstruments 
+            Dim temporaryInstruments As List(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
             Dim temporaryStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
                 Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(temporaryInstruments,
                                                                                     _adapter,

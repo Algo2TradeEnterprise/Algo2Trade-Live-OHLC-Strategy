@@ -9,9 +9,6 @@ Namespace Subscriber
     Public Class ZerodhaInstrumentSubscriber
         Inherits APIInstrumentSubscriber
 
-#Region "Logging and Status Progress"
-        Public Shared logger As Logger = LogManager.GetCurrentClassLogger
-#End Region
         Public Sub OnConnect()
             'OnHeartbeat("Connected Ticker")
         End Sub
@@ -32,12 +29,10 @@ Namespace Subscriber
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
-                Parallel.ForEach(
-                        _subscribedStrategyInstruments(tickData.InstrumentToken),
-                        Sub(runningStrategyInstrument)
-                            runningStrategyInstrument.ProcessTickAsync(runningTick)
-                        End Sub
-                    )
+                Parallel.ForEach(_subscribedStrategyInstruments(tickData.InstrumentToken),
+                                 Sub(runningStrategyInstrument)
+                                     runningStrategyInstrument.ProcessTickAsync(runningTick)
+                                 End Sub)
             End If
         End Sub
         Public Async Sub OnOrderUpdateAsync(orderData As Order)
