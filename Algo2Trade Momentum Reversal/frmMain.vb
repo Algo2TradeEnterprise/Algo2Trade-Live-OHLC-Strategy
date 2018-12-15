@@ -206,6 +206,13 @@ Public Class frmMain
                 _subscriber.SubscribeStrategy(runningStrategyInstrument)
             Next
             Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
+
+            'For Each mr In mrStrategyInstruments
+            '    '_adapter.TestAsync(mr.TradableInstrument.InstrumentIdentifier)
+            '    _adapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", mr.TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False)
+            'Next
+            'Await Task.Delay(4509934).ConfigureAwait(False)
+            Await _subscriber.RunAdditionalStrategyTriggersAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)

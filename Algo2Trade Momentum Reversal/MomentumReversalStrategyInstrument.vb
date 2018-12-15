@@ -44,4 +44,12 @@ Public Class MomentumReversalStrategyInstrument
     Public Overrides Function ToString() As String
         Return "Momentum Reversal"
     End Function
+    Public Overrides Async Function RunDirectAsync() As Task
+        Try
+            Dim allTrades As IEnumerable(Of ITrade) = Await _apiAdapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False).ConfigureAwait(False)
+        Catch ex As Exception
+            logger.Warn("For instrument:{0}, error:{1}", TradableInstrument.InstrumentIdentifier, ex.Message)
+            'Throw ex
+        End Try
+    End Function
 End Class

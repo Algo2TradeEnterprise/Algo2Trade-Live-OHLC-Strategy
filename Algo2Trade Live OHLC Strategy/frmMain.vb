@@ -224,6 +224,10 @@ Public Class frmMain
                 Next
                 SetDatagridBindClass_ThreadSafe(dgrvSelectedStocksMainView, _mergedListOfAllInstruments)
                 SetLabelText_ThreadSafe(lblSelectedStocksTotalPL, String.Format("Total PL: {0}", totalPL))
+
+                'TODO: Delete below line
+                Await _zerodhaKite.ExecuteCommandAsync(ZerodhaKiteHelper.KiteCommands.InvalidateAccessToken, Nothing).ConfigureAwait(False)
+
                 Await _ohlStrategy.RunAsync(_todaysInstrumentsForOHLStrategy).ConfigureAwait(False)
                 'Await TestCheck().ConfigureAwait(False)
             Else

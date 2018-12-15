@@ -66,5 +66,6 @@ Namespace Subscriber
                 logger.Debug("Neglected subscribing to instrument as it exists earlier from another strategy, instrument identifier:{0}, current startegy instrument:{1}", strategy.TradableInstrument.InstrumentIdentifier, strategy.ToString)
             End If
         End Sub
+        Public MustOverride Async Function RunAdditionalStrategyTriggersAsync() As Task
     End Class
 End Namespace

@@ -45,5 +45,6 @@ Namespace Strategy
             _ticks.Push(tickData)
         End Function
         Public MustOverride Overrides Function ToString() As String
+        Public MustOverride Async Function RunDirectAsync() As Task
     End Class
 End Namespace

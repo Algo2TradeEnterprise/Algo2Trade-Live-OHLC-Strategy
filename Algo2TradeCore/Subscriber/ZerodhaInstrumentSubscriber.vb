@@ -8,27 +8,26 @@ Namespace Subscriber
 
     Public Class ZerodhaInstrumentSubscriber
         Inherits APIInstrumentSubscriber
-
 #Region "Logging and Status Progress"
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Public Sub OnConnect()
-            OnHeartbeat("Connected Ticker")
+        Public Sub OnTickerConnect()
+            OnHeartbeat("Ticker, connected")
         End Sub
-        Public Sub OnClose()
-            OnHeartbeat("Closed Ticker")
+        Public Sub OnTickerClose()
+            OnHeartbeat("Ticker, closed")
         End Sub
-        Public Sub OnError(message As String)
-            OnHeartbeat(String.Format("Error: {0}", message))
+        Public Sub OnTickerError(message As String)
+            OnHeartbeat(String.Format("Ticker, Error:{0}", message))
         End Sub
-        Public Sub OnNoReconnect()
-            OnHeartbeat("Not Reconnecting")
+        Public Sub OnTickerNoReconnect()
+            OnHeartbeat("Ticker, not Reconnecting")
         End Sub
-        Public Sub OnReconnect()
-            OnHeartbeat("Reconnecting")
+        Public Sub OnTickerReconnect()
+            OnHeartbeat("Ticker, reconnecting")
         End Sub
-        Public Async Sub OnTickAsync(ByVal tickData As Tick)
+        Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
@@ -38,7 +37,7 @@ Namespace Subscriber
                 Next
             End If
         End Sub
-        Public Async Sub OnOrderUpdateAsync(orderData As Order)
+        Public Async Sub OnTickerOrderUpdateAsync(orderData As Order)
             Await Task.Delay(0).ConfigureAwait(False)
             'If _todaysInstrumentsForOHLStrategy IsNot Nothing AndAlso _todaysInstrumentsForOHLStrategy.Count > 0 Then
             '    _todaysInstrumentsForOHLStrategy(orderData.InstrumentToken).StrategyWorker.ConsumedOrderUpdateAsync(orderData)
@@ -48,5 +47,18 @@ Namespace Subscriber
         Public Sub New(ByVal apiAdapter As APIAdapter, ByVal canceller As CancellationTokenSource)
             MyBase.New(apiAdapter, canceller)
         End Sub
+        Public Overrides Async Function RunAdditionalStrategyTriggersAsync() As Task
+            While True
+                Await Task.Delay(5000).ConfigureAwait(False)
+                If _subscribedStrategyInstruments IsNot Nothing Then
+                    For Each runningStrategyInstruments In _subscribedStrategyInstruments.Values
+                        For Each runningStrategyInstrument In runningStrategyInstruments
+                            runningStrategyInstrument.RunDirectAsync()
+                        Next
+                    Next
+                End If
+            End While
+        End Function
+
     End Class
 End Namespace
