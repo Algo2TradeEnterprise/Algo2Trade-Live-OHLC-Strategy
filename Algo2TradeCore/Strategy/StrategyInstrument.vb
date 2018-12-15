@@ -44,5 +44,6 @@ Namespace Strategy
             Await Task.Delay(0).ConfigureAwait(False)
             _ticks.Push(tickData)
         End Function
+        Public MustOverride Overrides Function ToString() As String
     End Class
 End Namespace

@@ -9,24 +9,27 @@ Namespace Subscriber
     Public Class ZerodhaInstrumentSubscriber
         Inherits APIInstrumentSubscriber
 
+#Region "Logging and Status Progress"
+        Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
+#End Region
+
         Public Sub OnConnect()
-            'OnHeartbeat("Connected Ticker")
+            OnHeartbeat("Connected Ticker")
         End Sub
         Public Sub OnClose()
-            'OnHeartbeat("Closed Ticker")
+            OnHeartbeat("Closed Ticker")
         End Sub
         Public Sub OnError(message As String)
             OnHeartbeat(String.Format("Error: {0}", message))
         End Sub
         Public Sub OnNoReconnect()
-            'OnHeartbeat("Not Reconnecting")
+            OnHeartbeat("Not Reconnecting")
         End Sub
         Public Sub OnReconnect()
-            'OnHeartbeat("Reconnecting")
+            OnHeartbeat("Reconnecting")
         End Sub
         Public Async Sub OnTickAsync(ByVal tickData As Tick)
             _cts.Token.ThrowIfCancellationRequested()
-            Console.WriteLine(tickData.InstrumentToken)
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}

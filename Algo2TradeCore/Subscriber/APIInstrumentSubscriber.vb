@@ -39,6 +39,11 @@ Namespace Subscriber
             _cts = canceller
         End Sub
         Public Overridable Sub SubscribeStrategy(ByVal strategy As StrategyInstrument)
+            AddHandler strategy.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            AddHandler strategy.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler strategy.Heartbeat, AddressOf OnHeartbeat
+            AddHandler strategy.WaitingFor, AddressOf OnWaitingFor
+
             If _subscribedStrategyInstruments Is Nothing Then _subscribedStrategyInstruments = New Dictionary(Of String, List(Of StrategyInstrument))
             Dim instrumentKey As String = strategy.TradableInstrument.InstrumentIdentifier
             Dim strategiesToBeSubscribedForThisInstrument As List(Of StrategyInstrument) = Nothing
@@ -52,11 +57,13 @@ Namespace Subscriber
 
             If SubcribedInstruments Is Nothing Then SubcribedInstruments = New List(Of String)
             If SubcribedInstruments IsNot Nothing AndAlso SubcribedInstruments.Count > _apiAdapter.MaxInstrumentPerTicker Then
-                Throw New ApplicationException(String.Format("Max instruments per ticker exceeded, alllowed:{0}, existing:{1}", _apiAdapter.MaxInstrumentPerTicker, SubcribedInstruments.Count))
+                Throw New ApplicationException(String.Format("Max instruments per ticker exceeded, allowed:{0}, existing:{1}", _apiAdapter.MaxInstrumentPerTicker, SubcribedInstruments.Count))
             End If
 
             If Not SubcribedInstruments.Contains(strategy.TradableInstrument.InstrumentIdentifier) Then
                 SubcribedInstruments.Add(strategy.TradableInstrument.InstrumentIdentifier)
+            Else
+                logger.Debug("Neglected subscribing to instrument as it exists earlier from another strategy, instrument identifier:{0}, current startegy instrument:{1}", strategy.TradableInstrument.InstrumentIdentifier, strategy.ToString)
             End If
         End Sub
     End Class

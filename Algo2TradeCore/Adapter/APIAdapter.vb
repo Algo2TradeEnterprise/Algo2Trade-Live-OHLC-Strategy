@@ -53,5 +53,6 @@ Namespace Adapter
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function ConnectTickerAsync(ByVal subscriber As APIInstrumentSubscriber) As Task
         Public MustOverride Async Function GetAllInstrumentsAsync(Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of IInstrument))
+        Public MustOverride Async Function GetAllTradesAsync(Optional ByVal tradeData As Dictionary(Of String, Object) = Nothing, Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of ITrade))
     End Class
 End Namespace

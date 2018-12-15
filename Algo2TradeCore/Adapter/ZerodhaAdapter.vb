@@ -15,6 +15,10 @@ Namespace Adapter
     Public Class ZerodhaAdapter
         Inherits APIAdapter
 
+#Region "Logging and Status Progress"
+        Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
+#End Region
+
         Protected _APISecret As String
         Protected _APIKey As String
         Protected _APIVersion As String
@@ -43,6 +47,8 @@ Namespace Adapter
         Public Overrides Async Function GetAllInstrumentsAsync(Optional ByVal isRetryEnabled As Boolean = True) As Task(Of IEnumerable(Of IInstrument))
             Dim ret As List(Of ZerodhaInstrument) = Nothing
             Dim command As KiteCommands = KiteCommands.GetInstruments
+            OnHeartbeat("Executing Zerodha command to fetch all instruments")
+
             Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, Nothing, isRetryEnabled).ConfigureAwait(False)
 
             Dim tempRet As Object = Nothing
@@ -61,12 +67,46 @@ Namespace Adapter
             End If
 
             If tempRet.GetType = GetType(List(Of Instrument)) Then
+                OnHeartbeat(String.Format("Creating Zerodha instrument collection from API instrument, count:{0}", tempRet.count))
                 For Each runningInstrument As Instrument In CType(tempRet, List(Of Instrument))
                     If ret Is Nothing Then ret = New List(Of ZerodhaInstrument)
                     ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
                 Next
             Else
                 Throw New ApplicationException(String.Format("List of instruments not returned from command:{0}", command.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function GetAllTradesAsync(Optional ByVal tradeData As Dictionary(Of String, Object) = Nothing, Optional ByVal isRetryEnabled As Boolean = True) As Task(Of IEnumerable(Of ITrade))
+            Dim ret As List(Of ZerodhaTrade) = Nothing
+            Dim command As KiteCommands = KiteCommands.GetOrderTrades
+            OnHeartbeat("Executing Zerodha command to fetch all trades")
+
+            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, tradeData, isRetryEnabled).ConfigureAwait(False)
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet.ContainsKey(command.ToString) Then
+                tempRet = tempAllRet(command.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("No return fetched after executing command:{0}", command.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command fired was not detected in the response:{0}", command.ToString))
+            End If
+
+            If tempRet.GetType = GetType(List(Of Trade)) Then
+                OnHeartbeat(String.Format("Creating Zerodha trade collection from API trade, count:{0}", tempRet.count))
+                For Each runningTrade As Trade In CType(tempRet, List(Of Trade))
+                    If ret Is Nothing Then ret = New List(Of ZerodhaTrade)
+                    ret.Add(New ZerodhaTrade With {.WrappedTrade = runningTrade})
+                Next
+            Else
+                Throw New ApplicationException(String.Format("List of trades not returned from command:{0}", command.ToString))
             End If
             Return ret
         End Function
@@ -589,6 +629,7 @@ Namespace Adapter
             _Ticker.Connect()
             If zerodhaSubscriber.SubcribedInstruments IsNot Nothing AndAlso zerodhaSubscriber.SubcribedInstruments.Count > 0 Then
                 For Each runningInstrumentIdentifier In zerodhaSubscriber.SubcribedInstruments
+                    logger.Debug("Subscribing instrument identfier:{0}", runningInstrumentIdentifier)
                     _Ticker.Subscribe(Tokens:=New UInt32() {runningInstrumentIdentifier})
                     _Ticker.SetMode(Tokens:=New UInt32() {runningInstrumentIdentifier}, Mode:=Constants.MODE_FULL)
                 Next

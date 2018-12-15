@@ -3,9 +3,15 @@ Imports Algo2TradeCore
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entity
 Imports Algo2TradeCore.Strategy
+Imports NLog
 
 Public Class MomentumReversalStrategyInstrument
     Inherits StrategyInstrument
+
+#Region "Logging and Status Progress"
+    Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
+#End Region
+
     Public Sub New(ByVal apiAdapter As APIAdapter, ByVal associatedInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
         MyBase.New(apiAdapter, associatedInstrument, canceller)
     End Sub
@@ -17,6 +23,7 @@ Public Class MomentumReversalStrategyInstrument
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
 
             Dim retCtr As Integer = 0
+            logger.Debug("Generating strategy instrument list and mapping to broker instrument list")
             For Each runningInstrument In allInstruments
                 'TO DO: Check if the instrument needs to be added or use custom code to extract instruments from DB or logic 
                 'and then add to the rerturnable collection
@@ -26,10 +33,15 @@ Public Class MomentumReversalStrategyInstrument
                 ret.Add(New MomentumReversalStrategyInstrument(apiAdapter, runningInstrument, canceller))
             Next
         End If
-        If ret IsNot Nothing AndAlso ret.Count > apiAdapter.MaxInstrumentPerTicker Then
-            Throw New ApplicationException(String.Format("Max instruments per ticker exceeded, allowed:{0}, existing:{1}", apiAdapter.MaxInstrumentPerTicker, ret.Count))
+        If ret IsNot Nothing Then
+            logger.Debug("Generated strategy instrument list mapped to broker instrument list, count:{0}", ret.Count)
+            If ret.Count > apiAdapter.MaxInstrumentPerTicker Then
+                Throw New ApplicationException(String.Format("Max instruments per ticker exceeded, allowed:{0}, existing:{1}", apiAdapter.MaxInstrumentPerTicker, ret.Count))
+            End If
         End If
         Return ret
     End Function
-
+    Public Overrides Function ToString() As String
+        Return "Momentum Reversal"
+    End Function
 End Class

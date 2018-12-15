@@ -175,15 +175,33 @@ Public Class frmMain
             AddHandler _adapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
             OnHeartbeat("Attempting to get connection to Zerodha server")
             _connection = Await _adapter.LoginAsync().ConfigureAwait(False)
+            If _connection Is Nothing Then
+                Throw New ApplicationException("No connection Zerodha API could be established")
+            End If
+
             OnHeartbeat("Getting all instruments for the day")
             Dim allInstruments As IEnumerable(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
+            If allInstruments Is Nothing OrElse allInstruments.Count = 0 Then
+                Throw New ApplicationException("No instrument master list could be retrieved from Zerodha")
+            End If
+
             OnHeartbeat("Getting tradable instruments as per strategy")
             Dim mrStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
                 Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(allInstruments,
                                                                                     _adapter,
                                                                                     _cts).ConfigureAwait(False)
-            OnHeartbeat("Opening subcriber and connecting to ticker")
+            If mrStrategyInstruments Is Nothing OrElse mrStrategyInstruments.Count = 0 Then
+                Throw New ApplicationException("No tradable strategy instruments could be created")
+            End If
+
+            OnHeartbeat("Opening subcriber")
             _subscriber = New ZerodhaInstrumentSubscriber(_adapter, _cts)
+            AddHandler _subscriber.Heartbeat, AddressOf OnHeartbeat
+            AddHandler _subscriber.WaitingFor, AddressOf OnWaitingFor
+            AddHandler _subscriber.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler _subscriber.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+            OnHeartbeat(String.Format("Subscribing strategy instruments, count:{0}", mrStrategyInstruments.Count))
             For Each runningStrategyInstrument As MomentumReversalStrategyInstrument In mrStrategyInstruments
                 _subscriber.SubscribeStrategy(runningStrategyInstrument)
             Next
