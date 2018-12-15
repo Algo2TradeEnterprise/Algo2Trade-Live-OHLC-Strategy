@@ -77,11 +77,13 @@
     <Compile Include="Entity\IConnection.vb" />
     <Compile Include="Entity\IInstrument.vb" />
     <Compile Include="Entity\IOrder.vb" />
+    <Compile Include="Entity\ITick.vb" />
     <Compile Include="Entity\ITrade.vb" />
     <Compile Include="Entity\IUser.vb" />
     <Compile Include="Entity\ZerodhaConnection.vb" />
     <Compile Include="Entity\ZerodhaInstrument.vb" />
     <Compile Include="Entity\ZerodhaOrder.vb" />
+    <Compile Include="Entity\ZerodhaTick.vb" />
     <Compile Include="Entity\ZerodhaTrade.vb" />
     <Compile Include="Entity\ZerodhaUser.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
