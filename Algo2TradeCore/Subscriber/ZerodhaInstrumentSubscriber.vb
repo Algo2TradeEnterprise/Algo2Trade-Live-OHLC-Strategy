@@ -27,11 +27,11 @@ Namespace Subscriber
         Public Sub OnReconnect()
             'OnHeartbeat("Reconnecting")
         End Sub
-        Public Async Sub OnTickAsync(tickData As Tick)
+        Public Async Sub OnTickAsync(ByVal tickData As Tick)
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-                _subscribedStrategyInstruments(tickData.InstrumentToken).ProcessTickAsync(tickData)
+                _subscribedStrategyInstruments(tickData.InstrumentToken).ProcessTickAsync(New ZerodhaTick() With {.WrappedTick = tickData})
             End If
         End Sub
         Public Async Sub OnOrderUpdateAsync(orderData As Order)

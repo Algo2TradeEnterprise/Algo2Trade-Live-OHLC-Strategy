@@ -177,7 +177,7 @@ Public Class frmMain
             _connection = Await _adapter.LoginAsync().ConfigureAwait(False)
             OnHeartbeat("Getting all instruments for the day")
             Dim temporaryInstruments As List(Of IInstrument) = Nothing
-            'TO DO: Call getinstruments
+            'TO DO: Call getinstruments 
             Dim temporaryStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
                 Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(temporaryInstruments,
                                                                                     _adapter,
