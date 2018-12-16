@@ -217,9 +217,30 @@ Namespace Adapter
                             Case KiteCommands.GetOrderTrades
                                 Dim tradeList As List(Of Trade) = Nothing
                                 If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
-                                    tradeList = Await Task.Run(Function() _Kite.GetOrderTrades(OrderId:=CType(stockData("OrderId"), String))).ConfigureAwait(False)
+                                    tradeList = Await Task.Factory.StartNew(Function()
+                                                                                Try
+                                                                                    _Kite.GetOrderTrades()
+                                                                                Catch ex As Exception
+                                                                                    lastException = ex
+                                                                                End Try
+                                                                            End Function).ConfigureAwait(False)
+                                    ''tradeList = Await Task.Factory.StartNew(Function() _Kite.GetOrderTrades()).ContinueWith(Function(t)
+                                    ''                                                                                            If t.Exception IsNot Nothing Then
+                                    ''                                                                                                Throw t.Exception
+                                    ''                                                                                            Else
+                                    ''                                                                                                Return Nothing
+                                    ''                                                                                            End If
+                                    ''                                                                                        End Function, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Current).ConfigureAwait(False)
+                                    ''tradeList = Await Task.Run(Function() _Kite.GetOrderTrades(OrderId:=CType(stockData("OrderId"), String))).ConfigureAwait(False)
                                 Else
-                                    tradeList = Await Task.Run(Function() _Kite.GetOrderTrades()).ConfigureAwait(False)
+                                    tradeList = Await Task.Factory.StartNew(Function()
+                                                                                Try
+                                                                                    _Kite.GetOrderTrades()
+                                                                                Catch ex As Exception
+                                                                                    lastException = ex
+                                                                                End Try
+                                                                            End Function).ConfigureAwait(False)
+                                    'tradeList = Await Task.Run(Function() _Kite.GetOrderTrades()).ConfigureAwait(False)
                                 End If
                                 ret = New Dictionary(Of String, Object) From {{command.ToString, tradeList}}
                             Case KiteCommands.GetInstruments
@@ -242,6 +263,9 @@ Namespace Adapter
                             Case Else
                                 Throw New ApplicationException("No Command Triggered")
                         End Select
+                        If lastException IsNot Nothing Then
+                            Throw lastException
+                        End If
                         If ret IsNot Nothing AndAlso ret.ContainsKey(command.ToString) Then
                             lastException = Nothing
                             allOKWithoutException = True
