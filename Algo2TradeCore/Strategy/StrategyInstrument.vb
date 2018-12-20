@@ -34,6 +34,7 @@ Namespace Strategy
         Protected _apiAdapter As APIAdapter
         Public Property TradableInstrument As IInstrument
         Protected _ticks As Utilities.Collections.LimitedStack(Of ITick)
+
         Public Sub New(ByVal apiAdapter As APIAdapter, ByVal associatedInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
             _apiAdapter = apiAdapter
             TradableInstrument = associatedInstrument
@@ -42,6 +43,7 @@ Namespace Strategy
         End Sub
         Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
             Await Task.Delay(0).ConfigureAwait(False)
+            OnHeartbeat(String.Format("Tick:{0}", CType(tickData, ZerodhaTick).WrappedTick.InstrumentToken))
             _ticks.Push(tickData)
         End Function
         Public MustOverride Overrides Function ToString() As String

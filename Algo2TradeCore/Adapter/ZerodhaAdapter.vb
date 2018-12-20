@@ -235,7 +235,7 @@ Namespace Adapter
                                 Else
                                     tradeList = Await Task.Factory.StartNew(Function()
                                                                                 Try
-                                                                                    _Kite.GetOrderTrades()
+                                                                                    Return _Kite.GetOrderTrades()
                                                                                 Catch ex As Exception
                                                                                     lastException = ex
                                                                                 End Try

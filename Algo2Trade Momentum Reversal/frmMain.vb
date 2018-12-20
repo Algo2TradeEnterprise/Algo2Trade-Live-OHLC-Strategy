@@ -205,8 +205,11 @@ Public Class frmMain
             For Each runningStrategyInstrument As MomentumReversalStrategyInstrument In mrStrategyInstruments
                 _subscriber.SubscribeStrategy(runningStrategyInstrument)
             Next
-            Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
-
+            'Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
+            Dim t As Task
+            t = New Task(Async Sub() Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False))
+            t.Start()
+            'Await t.ConfigureAwait(False)
             'For Each mr In mrStrategyInstruments
             '    '_adapter.TestAsync(mr.TradableInstrument.InstrumentIdentifier)
             '    _adapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", mr.TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False)
