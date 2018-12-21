@@ -3,11 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2050
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Algo2Trade Live OHL Strategy", "Algo2Trade Live OHLC Strategy\Algo2Trade Live OHL Strategy.vbproj", "{755E2709-DA91-4BC0-991F-1E166583EDAD}"
-EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Utilities", "Utilities\Utilities.vbproj", "{0524D87F-B8BF-4CC2-B955-49950110FE9A}"
-EndProject
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Algo2TradeBLL", "Algo2TradeBLL\Algo2TradeBLL.vbproj", "{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}"
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Algo2TradeCore", "Algo2TradeCore\Algo2TradeCore.vbproj", "{854AF4DD-F649-4CBE-9F92-6FEA031892A9}"
 EndProject
@@ -21,14 +17,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Debug|x64.Build.0 = Debug|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Release|x64.ActiveCfg = Release|Any CPU
-		{755E2709-DA91-4BC0-991F-1E166583EDAD}.Release|x64.Build.0 = Release|Any CPU
 		{0524D87F-B8BF-4CC2-B955-49950110FE9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0524D87F-B8BF-4CC2-B955-49950110FE9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0524D87F-B8BF-4CC2-B955-49950110FE9A}.Debug|x64.ActiveCfg = Debug|x64
@@ -37,14 +25,6 @@ Global
 		{0524D87F-B8BF-4CC2-B955-49950110FE9A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0524D87F-B8BF-4CC2-B955-49950110FE9A}.Release|x64.ActiveCfg = Release|x64
 		{0524D87F-B8BF-4CC2-B955-49950110FE9A}.Release|x64.Build.0 = Release|x64
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Debug|x64.Build.0 = Debug|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Release|x64.ActiveCfg = Release|Any CPU
-		{6631E1C6-FBD8-445D-ACC3-FB48EA4BFE23}.Release|x64.Build.0 = Release|Any CPU
 		{854AF4DD-F649-4CBE-9F92-6FEA031892A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{854AF4DD-F649-4CBE-9F92-6FEA031892A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{854AF4DD-F649-4CBE-9F92-6FEA031892A9}.Debug|x64.ActiveCfg = Debug|Any CPU

@@ -1,6 +1,5 @@
 ﻿Namespace Entity
     Public Interface IConnection
-        Property UserId As String
-        Property Password As String
+        Property APIUser As IUser
     End Interface
 End Namespace

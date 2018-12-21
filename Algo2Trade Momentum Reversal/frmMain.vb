@@ -5,7 +5,7 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entity
 Imports Algo2TradeCore.Subscriber
 Imports Algo2TradeCore.Strategy
-
+Imports Algo2TradeCore.Controller
 Public Class frmMain
 #Region "Logging and Status Progress"
     Public Shared logger As Logger = LogManager.GetCurrentClassLogger
@@ -147,7 +147,7 @@ Public Class frmMain
 #Region "Private Attributes"
     Private _cts As CancellationTokenSource
     Private _lastLoggedMessage As String = Nothing
-    Private _adapter As APIAdapter = Nothing
+    Private _controller As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
     Private _subscriber As APIInstrumentSubscriber = Nothing
 #End Region
@@ -162,60 +162,61 @@ Public Class frmMain
         _cts = New CancellationTokenSource()
         _cts.Token.ThrowIfCancellationRequested()
         Try
-            _adapter = New ZerodhaAdapter("DK4056",
-                                            "Zerodha@123a",
-                                            "3",
-                                            "hcwmefsivttbchla",
-                                            "t9rd8wut44ija2vp15y87hln28h5oppb",
-                                            Nothing,
-                                            _cts)
-            AddHandler _adapter.Heartbeat, AddressOf OnHeartbeat
-            AddHandler _adapter.WaitingFor, AddressOf OnWaitingFor
-            AddHandler _adapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-            AddHandler _adapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            Dim currentUser As New ZerodhaUser With {.UserId = "DK4056",
+                .Password = "Zerodha@123a",
+                .APIVersion = "3",
+                .APIKey = "hcwmefsivttbchla",
+                .APISecret = "t9rd8wut44ija2vp15y87hln28h5oppb",
+                .API2FA = Nothing}
+            _controller = New ZerodhaStrategyController(currentUser, _cts)
+
+            AddHandler _controller.Heartbeat, AddressOf OnHeartbeat
+            AddHandler _controller.WaitingFor, AddressOf OnWaitingFor
+            AddHandler _controller.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler _controller.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
             OnHeartbeat("Attempting to get connection to Zerodha server")
-            _connection = Await _adapter.LoginAsync().ConfigureAwait(False)
+            _connection = Await _controller.LoginAsync().ConfigureAwait(False)
             If _connection Is Nothing Then
                 Throw New ApplicationException("No connection Zerodha API could be established")
             End If
+            'Await CType(_controller, ZerodhaStrategyController).TestAsync.ConfigureAwait(False)
+            'OnHeartbeat("Getting all instruments for the day")
+            'Dim allInstruments As IEnumerable(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
+            'If allInstruments Is Nothing OrElse allInstruments.Count = 0 Then
+            '    Throw New ApplicationException("No instrument master list could be retrieved from Zerodha")
+            'End If
 
-            OnHeartbeat("Getting all instruments for the day")
-            Dim allInstruments As IEnumerable(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
-            If allInstruments Is Nothing OrElse allInstruments.Count = 0 Then
-                Throw New ApplicationException("No instrument master list could be retrieved from Zerodha")
-            End If
+            'OnHeartbeat("Getting tradable instruments as per strategy")
+            'Dim mrStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
+            '    Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(allInstruments,
+            '                                                                        _adapter,
+            '                                                                        _cts).ConfigureAwait(False)
+            'If mrStrategyInstruments Is Nothing OrElse mrStrategyInstruments.Count = 0 Then
+            '    Throw New ApplicationException("No tradable strategy instruments could be created")
+            'End If
 
-            OnHeartbeat("Getting tradable instruments as per strategy")
-            Dim mrStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
-                Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(allInstruments,
-                                                                                    _adapter,
-                                                                                    _cts).ConfigureAwait(False)
-            If mrStrategyInstruments Is Nothing OrElse mrStrategyInstruments.Count = 0 Then
-                Throw New ApplicationException("No tradable strategy instruments could be created")
-            End If
+            'OnHeartbeat("Opening subcriber")
+            '_subscriber = New ZerodhaInstrumentSubscriber(_adapter, _cts)
+            'AddHandler _subscriber.Heartbeat, AddressOf OnHeartbeat
+            'AddHandler _subscriber.WaitingFor, AddressOf OnWaitingFor
+            'AddHandler _subscriber.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            'AddHandler _subscriber.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
 
-            OnHeartbeat("Opening subcriber")
-            _subscriber = New ZerodhaInstrumentSubscriber(_adapter, _cts)
-            AddHandler _subscriber.Heartbeat, AddressOf OnHeartbeat
-            AddHandler _subscriber.WaitingFor, AddressOf OnWaitingFor
-            AddHandler _subscriber.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-            AddHandler _subscriber.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-
-            OnHeartbeat(String.Format("Subscribing strategy instruments, count:{0}", mrStrategyInstruments.Count))
-            For Each runningStrategyInstrument As MomentumReversalStrategyInstrument In mrStrategyInstruments
-                _subscriber.SubscribeStrategy(runningStrategyInstrument)
-            Next
-            'Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
-            Dim t As Task
-            t = New Task(Async Sub() Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False))
-            t.Start()
-            'Await t.ConfigureAwait(False)
-            'For Each mr In mrStrategyInstruments
-            '    '_adapter.TestAsync(mr.TradableInstrument.InstrumentIdentifier)
-            '    _adapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", mr.TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False)
+            'OnHeartbeat(String.Format("Subscribing strategy instruments, count:{0}", mrStrategyInstruments.Count))
+            'For Each runningStrategyInstrument As MomentumReversalStrategyInstrument In mrStrategyInstruments
+            '    _subscriber.SubscribeStrategy(runningStrategyInstrument)
             'Next
-            'Await Task.Delay(4509934).ConfigureAwait(False)
-            Await _subscriber.RunAdditionalStrategyTriggersAsync().ConfigureAwait(False)
+            ''Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
+            'Dim t As Task
+            't = New Task(Async Sub() Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False))
+            't.Start()
+            ''Await t.ConfigureAwait(False)
+            ''For Each mr In mrStrategyInstruments
+            ''    '_adapter.TestAsync(mr.TradableInstrument.InstrumentIdentifier)
+            ''    _adapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", mr.TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False)
+            ''Next
+            ''Await Task.Delay(4509934).ConfigureAwait(False)
+            'Await _subscriber.RunAdditionalStrategyTriggersAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)

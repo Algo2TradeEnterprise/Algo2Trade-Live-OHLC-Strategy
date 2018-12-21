@@ -1,23 +1,11 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Entity
-Imports Algo2TradeCore.Subscriber
 Imports NLog
-Imports Algo2TradeCore.Controller
-Namespace Adapter
-    Public MustInherit Class APIAdapter
-        Protected _cts As CancellationTokenSource
-        Protected _MaxReTries As Integer = 20
-        Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
-        Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
-        Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
-        Protected _controller As APIStrategyController
-        Protected _MaxInstrumentPerTicker As Integer
 
-        Public ReadOnly Property MaxInstrumentPerTicker As Integer
-            Get
-                Return _MaxInstrumentPerTicker
-            End Get
-        End Property
+
+Namespace Controller
+    Public MustInherit Class APIStrategyController
+
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
         Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
@@ -42,13 +30,27 @@ Namespace Adapter
         Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Public Sub New(ByVal controller As APIStrategyController,
+        Protected _currentUser As IUser
+        Protected _cts As CancellationTokenSource
+        Protected _MaxReTries As Integer = 20
+        Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
+        Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
+        Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
+        Protected _LoginURL As String
+        Protected _LoginSemphore As New SemaphoreSlim(1, 1)
+        Public Property APIConnection As IConnection
+
+        Public Sub New(ByVal currentUser As IUser,
                        ByVal canceller As CancellationTokenSource)
-            _controller = controller
+            _currentUser = currentUser
             _cts = canceller
         End Sub
-        'Public MustOverride Async Function ConnectTickerAsync(ByVal subscriber As APIInstrumentSubscriber) As Task
-        'Public MustOverride Async Function GetAllInstrumentsAsync(Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of IInstrument))
-        'Public MustOverride Async Function GetAllTradesAsync(Optional ByVal tradeData As Dictionary(Of String, Object) = Nothing, Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of ITrade))
+        Public MustOverride Function GetErrorResponse(ByVal responseDict As Object) As String
+
+#Region "Login"
+        Protected MustOverride Function GetLoginURL() As String
+        Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
+#End Region
+
     End Class
 End Namespace
