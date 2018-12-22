@@ -1,15 +1,10 @@
 ﻿Imports System.Threading
-Imports Algo2TradeCore.Entity
-Imports Algo2TradeCore.Subscriber
+Imports Algo2TradeCore.Entities
 Imports NLog
 Imports Algo2TradeCore.Controller
 Namespace Adapter
     Public MustInherit Class APIAdapter
         Protected _cts As CancellationTokenSource
-        Protected _MaxReTries As Integer = 20
-        Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
-        Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
-        Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
         Protected _controller As APIStrategyController
         Protected _MaxInstrumentPerTicker As Integer
 
@@ -48,7 +43,7 @@ Namespace Adapter
             _cts = canceller
         End Sub
         'Public MustOverride Async Function ConnectTickerAsync(ByVal subscriber As APIInstrumentSubscriber) As Task
-        'Public MustOverride Async Function GetAllInstrumentsAsync(Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of IInstrument))
+        Public MustOverride Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
         'Public MustOverride Async Function GetAllTradesAsync(Optional ByVal tradeData As Dictionary(Of String, Object) = Nothing, Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of ITrade))
     End Class
 End Namespace

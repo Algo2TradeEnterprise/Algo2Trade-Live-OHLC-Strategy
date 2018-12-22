@@ -75,19 +75,19 @@
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
     <Compile Include="Controller\APIStrategyController.vb" />
     <Compile Include="Controller\ZerodhaStrategyController.vb" />
-    <Compile Include="Entity\Enums.vb" />
-    <Compile Include="Entity\IConnection.vb" />
-    <Compile Include="Entity\IInstrument.vb" />
-    <Compile Include="Entity\IOrder.vb" />
-    <Compile Include="Entity\ITick.vb" />
-    <Compile Include="Entity\ITrade.vb" />
-    <Compile Include="Entity\IUser.vb" />
-    <Compile Include="Entity\ZerodhaConnection.vb" />
-    <Compile Include="Entity\ZerodhaInstrument.vb" />
-    <Compile Include="Entity\ZerodhaOrder.vb" />
-    <Compile Include="Entity\ZerodhaTick.vb" />
-    <Compile Include="Entity\ZerodhaTrade.vb" />
-    <Compile Include="Entity\ZerodhaUser.vb" />
+    <Compile Include="Entities\Enums.vb" />
+    <Compile Include="Entities\IConnection.vb" />
+    <Compile Include="Entities\IInstrument.vb" />
+    <Compile Include="Entities\IOrder.vb" />
+    <Compile Include="Entities\ITick.vb" />
+    <Compile Include="Entities\ITrade.vb" />
+    <Compile Include="Entities\IUser.vb" />
+    <Compile Include="Entities\ZerodhaConnection.vb" />
+    <Compile Include="Entities\ZerodhaInstrument.vb" />
+    <Compile Include="Entities\ZerodhaOrder.vb" />
+    <Compile Include="Entities\ZerodhaTick.vb" />
+    <Compile Include="Entities\ZerodhaTrade.vb" />
+    <Compile Include="Entities\ZerodhaUser.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -103,9 +103,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Strategy\StrategyInstrument.vb" />
-    <Compile Include="Subscriber\APIInstrumentSubscriber.vb" />
-    <Compile Include="Subscriber\ZerodhaInstrumentSubscriber.vb" />
+    <Compile Include="Strategies\Strategy.vb" />
+    <Compile Include="Strategies\StrategyInstrument.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

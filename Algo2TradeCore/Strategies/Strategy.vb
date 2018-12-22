@@ -1,11 +1,10 @@
 ﻿Imports System.Threading
-Imports Algo2TradeCore.Adapter
-Imports Algo2TradeCore.Entity
+Imports Algo2TradeCore.Controller
+Imports Algo2TradeCore.Entities
 Imports NLog
 
-Namespace Strategy
-    Public MustInherit Class StrategyInstrument
-
+Namespace Strategies
+    Public MustInherit Class Strategy
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
         Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
@@ -27,26 +26,19 @@ Namespace Strategy
 #End Region
 
 #Region "Logging and Status Progress"
-        Public Shared logger As Logger = LogManager.GetCurrentClassLogger
+        Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+        Protected _tradableInstruments As IEnumerable(Of IInstrument)
+        Protected _tradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
+        Protected _parentContoller As APIStrategyController
         Protected _cts As CancellationTokenSource
-        Protected _apiAdapter As APIAdapter
-        Public Property TradableInstrument As IInstrument
-        Protected _ticks As Utilities.Collections.LimitedStack(Of ITick)
-
-        Public Sub New(ByVal apiAdapter As APIAdapter, ByVal associatedInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
-            _apiAdapter = apiAdapter
-            TradableInstrument = associatedInstrument
+        Public Sub New(ByVal parentContoller As APIStrategyController, ByVal canceller As CancellationTokenSource)
+            _parentContoller = parentContoller
             _cts = canceller
-            _ticks = New Utilities.Collections.LimitedStack(Of ITick)(5500) 'Assuming 6 ticks per second for 15 minuters
         End Sub
-        Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
-            Await Task.Delay(0).ConfigureAwait(False)
-            OnHeartbeat(String.Format("Tick:{0}", CType(tickData, ZerodhaTick).WrappedTick.InstrumentToken))
-            _ticks.Push(tickData)
-        End Function
+        Public MustOverride Async Function FillTradableInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         Public MustOverride Overrides Function ToString() As String
-        Public MustOverride Async Function RunDirectAsync() As Task
+        Public MustOverride Async Function ExecuteAsync() As Task
     End Class
 End Namespace

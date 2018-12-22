@@ -1,5 +1,5 @@
 ﻿Imports KiteConnect
-Namespace Entity
+Namespace Entities
     Public Class ZerodhaUser
         Implements IUser
         Public Property UserId As String Implements IUser.UserId

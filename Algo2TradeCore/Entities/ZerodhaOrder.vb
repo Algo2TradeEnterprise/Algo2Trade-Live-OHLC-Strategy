@@ -1,6 +1,6 @@
 ﻿Imports KiteConnect
 
-Namespace Entity
+Namespace Entities
     Public Class ZerodhaOrder
         Implements IOrder
         Public Property WrappedOrder As Order

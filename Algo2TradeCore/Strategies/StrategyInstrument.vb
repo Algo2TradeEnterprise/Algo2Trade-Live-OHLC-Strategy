@@ -1,12 +1,10 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
-Imports Algo2TradeCore.Strategies
 Imports NLog
 
-
-Namespace Controller
-    Public MustInherit Class APIStrategyController
+Namespace Strategies
+    Public MustInherit Class StrategyInstrument
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
@@ -32,31 +30,18 @@ Namespace Controller
         Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Protected _currentUser As IUser
         Protected _cts As CancellationTokenSource
-        Protected _MaxReTries As Integer = 20
-        Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
-        Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
-        Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
-        Protected _LoginURL As String
-        Protected _LoginSemphore As New SemaphoreSlim(1, 1)
-        Public Property APIConnection As IConnection
-        Protected _APIAdaper As APIAdapter
-        Protected _AllInstruments As IEnumerable(Of IInstrument)
+        Protected _apiConnection As IConnection
+        Protected _parentStrategy As Strategy
+        Public Property TradableInstrument As IInstrument
 
-        Public Sub New(ByVal currentUser As IUser,
-                       ByVal canceller As CancellationTokenSource)
-            _currentUser = currentUser
+        Public Sub New(ByVal apiConnection As IConnection, ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
+            _apiConnection = apiConnection
+            TradableInstrument = associatedInstrument
+            _parentStrategy = parentStrategy
             _cts = canceller
         End Sub
-        Public MustOverride Function GetErrorResponse(ByVal responseDict As Object) As String
-
-#Region "Login"
-        Protected MustOverride Function GetLoginURL() As String
-        Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
-        Public MustOverride Async Function ExecuteStrategyAsync(ByVal strategyToRun As Strategy) As Task
-        Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
-#End Region
-
+        Public MustOverride Overrides Function ToString() As String
+        Public MustOverride Async Function RunDirectAsync() As Task
     End Class
 End Namespace

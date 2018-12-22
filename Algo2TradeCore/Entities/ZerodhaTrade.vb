@@ -1,6 +1,6 @@
 ﻿Imports KiteConnect
 
-Namespace Entity
+Namespace Entities
     Public Class ZerodhaTrade
         Implements ITrade
         Public Property WrappedTrade As Trade

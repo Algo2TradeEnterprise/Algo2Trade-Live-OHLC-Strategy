@@ -1,4 +1,4 @@
-﻿Namespace Entity
+﻿Namespace Entities
     Public Interface IOrder
 
     End Interface

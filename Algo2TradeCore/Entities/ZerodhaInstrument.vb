@@ -1,6 +1,6 @@
 ﻿Imports KiteConnect
 
-Namespace Entity
+Namespace Entities
     Public Class ZerodhaInstrument
         Implements IInstrument
 

@@ -1,4 +1,4 @@
-﻿Namespace Entity
+﻿Namespace Entities
     Public Interface IUser
         Property UserId As String
         Property Password As String

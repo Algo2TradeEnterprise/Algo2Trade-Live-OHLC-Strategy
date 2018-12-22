@@ -1,4 +1,4 @@
-﻿Namespace Entity
+﻿Namespace Entities
     Public Class ZerodhaConnection
         Implements IConnection
         Public Property ZerodhaRequestToken As String

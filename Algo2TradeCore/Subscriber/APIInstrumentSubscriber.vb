@@ -1,6 +1,6 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Adapter
-Imports Algo2TradeCore.Strategy
+Imports Algo2TradeCore.Strategies
 Imports NLog
 
 Namespace Subscriber

@@ -1,10 +1,8 @@
 ﻿
 Imports System.Threading
 Imports NLog
-Imports Algo2TradeCore.Adapter
-Imports Algo2TradeCore.Entity
-Imports Algo2TradeCore.Subscriber
-Imports Algo2TradeCore.Strategy
+Imports Algo2TradeCore.Entities
+Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Controller
 Public Class frmMain
 #Region "Logging and Status Progress"
@@ -149,7 +147,8 @@ Public Class frmMain
     Private _lastLoggedMessage As String = Nothing
     Private _controller As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
-    Private _subscriber As APIInstrumentSubscriber = Nothing
+
+    'Private _subscriber As APIInstrumentSubscriber = Nothing
 #End Region
 
     Private Sub frmMain_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -179,6 +178,17 @@ Public Class frmMain
             If _connection Is Nothing Then
                 Throw New ApplicationException("No connection Zerodha API could be established")
             End If
+
+            OnHeartbeat("Completing all pre-processing requirements")
+            Dim isPreProcessingDone As Boolean = Await _controller.PrepareToRunStrategyAsync().ConfigureAwait(False)
+
+            If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+
+
+            Dim ohlStrategyToExecute As New OHLStrategy(_controller, _cts)
+            OnHeartbeat(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString))
+            Await _controller.ExecuteStrategyAsync(ohlStrategyToExecute)
+
             'Await CType(_controller, ZerodhaStrategyController).TestAsync.ConfigureAwait(False)
             'OnHeartbeat("Getting all instruments for the day")
             'Dim allInstruments As IEnumerable(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)

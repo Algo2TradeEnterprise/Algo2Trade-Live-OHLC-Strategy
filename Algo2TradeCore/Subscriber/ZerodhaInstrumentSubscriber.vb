@@ -1,6 +1,6 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Adapter
-Imports Algo2TradeCore.Entity
+Imports Algo2TradeCore.Entities
 Imports KiteConnect
 Imports NLog
 
