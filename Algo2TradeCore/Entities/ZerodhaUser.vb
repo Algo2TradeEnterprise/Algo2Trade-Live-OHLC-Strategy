@@ -10,5 +10,10 @@ Namespace Entities
         Public Property API2FA As Dictionary(Of String, String) Implements IUser.API2FA
 
         Public Property WrappedUser As User
+        Public ReadOnly Property Broker As APISource Implements IUser.Broker
+            Get
+                Return APISource.Zerodha
+            End Get
+        End Property
     End Class
 End Namespace

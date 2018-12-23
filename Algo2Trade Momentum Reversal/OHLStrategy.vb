@@ -1,4 +1,5 @@
-﻿Imports System.Threading
+﻿Imports System.Text.RegularExpressions
+Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
@@ -24,12 +25,29 @@ Public Class OHLStrategy
         Await Task.Delay(0).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            'TO DO: change to actual code here
-            For i As Integer = 0 To 10
-                ret = True
-                If retInstrument Is Nothing Then retInstrument = New List(Of IInstrument)
-                retInstrument.Add(allInstruments(i))
-            Next
+            'Get all the futures instruments
+            Dim futureAllInstruments = allInstruments.Where(Function(x)
+                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
+                                                            End Function)
+            If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
+                For Each runningFutureAllInstrument In futureAllInstruments
+                    Dim coreInstrumentName As String = Regex.Replace(runningFutureAllInstrument.TradingSymbol, "[0-9]+[A-Z]+FUT", "")
+                    If coreInstrumentName IsNot Nothing Then
+                        Dim cashInstrumentToAdd = allInstruments.Where(Function(x)
+                                                                           Return x.TradingSymbol = coreInstrumentName
+                                                                       End Function).FirstOrDefault
+                        If cashInstrumentToAdd IsNot Nothing AndAlso cashInstrumentToAdd.TradingSymbol IsNot Nothing AndAlso (retInstrument Is Nothing OrElse (retInstrument IsNot Nothing AndAlso retInstrument.Find(Function(x)
+
+                                                                                                                                                                                                                          Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentIdentifier
+                                                                                                                                                                                                                      End Function) Is Nothing)) Then
+
+                            ret = True
+                            If retInstrument Is Nothing Then retInstrument = New List(Of IInstrument)
+                            retInstrument.Add(cashInstrumentToAdd)
+                        End If
+                    End If
+                Next
+            End If
         End If
 
         If ret Then

@@ -290,9 +290,6 @@ Namespace Controller
 
                             ret = New ZerodhaConnection
                             With ret
-                                .ZerodhaAccessToken = user.AccessToken
-                                .ZerodhaPublicToken = user.PublicToken
-                                .ZerodhaRequestToken = requestToken
                                 .ZerodhaUser = New ZerodhaUser() With {.UserId = _currentUser.UserId,
                                                                         .Password = _currentUser.Password,
                                                                         .APIKey = _currentUser.APIKey,
@@ -300,6 +297,7 @@ Namespace Controller
                                                                         .APISecret = _currentUser.APISecret,
                                                                         .APIVersion = _currentUser.APIVersion,
                                                                         .WrappedUser = user}
+                                .RequestToken = requestToken
                             End With
                             lastException = Nothing
                             allOKWithoutException = True
@@ -628,7 +626,7 @@ Namespace Controller
         End Function
         Public Async Function TestAsync() As Task
             While True
-                Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).ZerodhaAccessToken
+                Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).AccessToken
                 Try
                     Dim adap As New ZerodhaAdapter(Me, _cts)
                     OnHeartbeat("***************** ##### Executing command againa")
@@ -640,7 +638,7 @@ Namespace Controller
                     Dim newAccessToken As String = prevAccessToken
                     While prevAccessToken = newAccessToken
                         If APIConnection IsNot Nothing Then
-                            newAccessToken = CType(APIConnection, ZerodhaConnection).ZerodhaAccessToken
+                            newAccessToken = CType(APIConnection, ZerodhaConnection).AccessToken
                         End If
                         Task.Delay(500).ConfigureAwait(False)
                     End While

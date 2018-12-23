@@ -19,8 +19,8 @@ Namespace Adapter
                ByVal canceller As CancellationTokenSource)
             MyBase.New(controller, canceller)
             _Kite = New Kite(APIKey:=CType(controller.APIConnection, ZerodhaConnection).ZerodhaUser.APIKey,
-                             AccessToken:=CType(controller.APIConnection, ZerodhaConnection).ZerodhaAccessToken,
-                             Debug:=True)
+                             AccessToken:=CType(controller.APIConnection, ZerodhaConnection).AccessToken,
+                             Debug:=False)
             _Kite.SetSessionExpiryHook(AddressOf controller.OnSessionExpireAsync)
         End Sub
         Public Overrides Sub SetAPIAccessToken(ByVal apiAccessToken As String)
@@ -53,19 +53,20 @@ Namespace Adapter
                 Dim zerodhaReturedInstruments As List(Of Instrument) = CType(tempRet, List(Of Instrument))
                 For Each runningInstrument As Instrument In zerodhaReturedInstruments
                     If ret Is Nothing Then ret = New List(Of ZerodhaInstrument)
-                    If runningInstrument.InstrumentType = "FUT" AndAlso runningInstrument.Exchange = "NFO" Then
-                        Dim coreInstrumentName As String = Regex.Replace(runningInstrument.TradingSymbol, "[0-9]+[A-Z]+FUT", "")
-                        If coreInstrumentName IsNot Nothing Then
-                            Dim cashInstrumentToAdd = zerodhaReturedInstruments.Where(Function(x)
-                                                                                          Return x.TradingSymbol = coreInstrumentName
-                                                                                      End Function).FirstOrDefault
-                            If cashInstrumentToAdd.TradingSymbol IsNot Nothing AndAlso ret.Find(Function(x)
-                                                                                                    Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentToken
-                                                                                                End Function) Is Nothing Then
-                                ret.Add(New ZerodhaInstrument(cashInstrumentToAdd.InstrumentToken) With {.WrappedInstrument = cashInstrumentToAdd})
-                            End If
-                        End If
-                    End If
+                    ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
+                    'If runningInstrument.InstrumentType = "FUT" AndAlso runningInstrument.Exchange = "NFO" Then
+                    '    Dim coreInstrumentName As String = Regex.Replace(runningInstrument.TradingSymbol, "[0-9]+[A-Z]+FUT", "")
+                    '    If coreInstrumentName IsNot Nothing Then
+                    '        Dim cashInstrumentToAdd = zerodhaReturedInstruments.Where(Function(x)
+                    '                                                                      Return x.TradingSymbol = coreInstrumentName
+                    '                                                                  End Function).FirstOrDefault
+                    '        If cashInstrumentToAdd.TradingSymbol IsNot Nothing AndAlso ret.Find(Function(x)
+                    '                                                                                Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentToken
+                    '                                                                            End Function) Is Nothing Then
+                    '            ret.Add(New ZerodhaInstrument(cashInstrumentToAdd.InstrumentToken) With {.WrappedInstrument = cashInstrumentToAdd})
+                    '        End If
+                    '    End If
+                    'End If
                 Next
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of instrument, command:{0}", command.ToString))
@@ -272,7 +273,7 @@ Namespace Adapter
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, instruments}}
                 Case KiteCommands.InvalidateAccessToken
-                    Dim invalidateToken = _Kite.InvalidateAccessToken(CType(_controller.APIConnection, ZerodhaConnection).ZerodhaAccessToken)
+                    Dim invalidateToken = _Kite.InvalidateAccessToken(CType(_controller.APIConnection, ZerodhaConnection).AccessToken)
                     lastException = Nothing
                 Case Else
                     Throw New ApplicationException("No Command Triggered")

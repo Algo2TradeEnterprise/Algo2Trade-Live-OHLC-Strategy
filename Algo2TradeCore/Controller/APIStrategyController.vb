@@ -43,7 +43,6 @@ Namespace Controller
         Public Property APIConnection As IConnection
         Protected _APIAdaper As APIAdapter
         Protected _AllInstruments As IEnumerable(Of IInstrument)
-
         Public Sub New(ByVal currentUser As IUser,
                        ByVal canceller As CancellationTokenSource)
             _currentUser = currentUser
