@@ -31,10 +31,10 @@ Namespace Strategies
 
         Protected _tradableInstruments As IEnumerable(Of IInstrument)
         Protected _tradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
-        Protected _parentContoller As APIStrategyController
+        Public Property ParentContoller As APIStrategyController
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal parentContoller As APIStrategyController, ByVal canceller As CancellationTokenSource)
-            _parentContoller = parentContoller
+            Me.ParentContoller = parentContoller
             _cts = canceller
         End Sub
         Public MustOverride Async Function FillTradableInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)

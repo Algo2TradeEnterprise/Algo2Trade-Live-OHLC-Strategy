@@ -39,7 +39,7 @@ Namespace Controller
         Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
         Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
         Protected _LoginURL As String
-        Protected _LoginSemphore As New SemaphoreSlim(1, 1)
+        Protected _LoginThreads As Integer
         Public Property APIConnection As IConnection
         Protected _APIAdaper As APIAdapter
         Protected _AllInstruments As IEnumerable(Of IInstrument)
@@ -48,6 +48,7 @@ Namespace Controller
                        ByVal canceller As CancellationTokenSource)
             _currentUser = currentUser
             _cts = canceller
+            _LoginThreads = 0
         End Sub
         Public MustOverride Function GetErrorResponse(ByVal responseDict As Object) As String
 

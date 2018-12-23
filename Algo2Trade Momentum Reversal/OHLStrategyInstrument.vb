@@ -12,18 +12,31 @@ Public Class OHLStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Sub New(ByVal apiConnection As IConnection, ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
-        MyBase.New(apiConnection, associatedInstrument, parentStrategy, canceller)
+    Public Sub New(ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
+        MyBase.New(associatedInstrument, parentStrategy, canceller)
+        _APIAdapter = New ZerodhaAdapter(parentStrategy.ParentContoller, _cts)
+        AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
+        AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
+        AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+        AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
     End Sub
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function
     Public Overrides Async Function RunDirectAsync() As Task
-        'Try
-        '    Dim allTrades As IEnumerable(Of ITrade) = Await _apiAdapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", TradableInstrument.InstrumentIdentifier}}, retryEnabled:=True).ConfigureAwait(False)
-        'Catch ex As Exception
-        '    logger.Warn("For instrument:{0}, error:{1}", TradableInstrument.InstrumentIdentifier, ex.Message)
-        '    'Throw ex
-        'End Try
+        While True
+            Try
+                While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+                    logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
+                    Await Task.Delay(500).ConfigureAwait(False)
+                End While
+                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+                Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
+            Catch ex As Exception
+                logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+                logger.Error(ex.ToString)
+            End Try
+            Await Task.Delay(10000).ConfigureAwait(False)
+        End While
     End Function
 End Class

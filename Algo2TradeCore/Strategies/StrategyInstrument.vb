@@ -31,14 +31,12 @@ Namespace Strategies
 #End Region
 
         Protected _cts As CancellationTokenSource
-        Protected _apiConnection As IConnection
-        Protected _parentStrategy As Strategy
+        Public Property ParentStrategy As Strategy
         Public Property TradableInstrument As IInstrument
-
-        Public Sub New(ByVal apiConnection As IConnection, ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
-            _apiConnection = apiConnection
+        Protected _APIAdapter As APIAdapter
+        Public Sub New(ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
             TradableInstrument = associatedInstrument
-            _parentStrategy = parentStrategy
+            Me.ParentStrategy = parentStrategy
             _cts = canceller
         End Sub
         Public MustOverride Overrides Function ToString() As String

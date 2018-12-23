@@ -48,7 +48,7 @@ Public Class OHLStrategy
             logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", _tradableInstruments.Count)
             For Each runningTradableInstrument In _tradableInstruments
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of OHLStrategyInstrument)
-                Dim runningTradableStrategyInstrument As New OHLStrategyInstrument(_parentContoller.APIConnection, runningTradableInstrument, Me, _cts)
+                Dim runningTradableStrategyInstrument As New OHLStrategyInstrument(runningTradableInstrument, Me, _cts)
                 AddHandler runningTradableStrategyInstrument.Heartbeat, AddressOf OnHeartbeat
                 AddHandler runningTradableStrategyInstrument.WaitingFor, AddressOf OnWaitingFor
                 AddHandler runningTradableStrategyInstrument.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
@@ -59,6 +59,12 @@ Public Class OHLStrategy
             _tradableStrategyInstruments = retTradableStrategyInstruments
         Else
             Throw New ApplicationException(String.Format("Cannot run this strategy as no strategy instruments could be created from the tradable instruments, stratgey:{0}", Me.ToString))
+        End If
+        'To fire any time based common calls to the strategy instruments
+        If _tradableStrategyInstruments IsNot Nothing AndAlso _tradableStrategyInstruments.Count > 0 Then
+            For Each runningTradableStrategyInstrument In _tradableStrategyInstruments
+                runningTradableStrategyInstrument.RunDirectAsync()
+            Next
         End If
     End Function
     Public Overrides Function ToString() As String

@@ -36,8 +36,12 @@ Namespace Controller
                 responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
                 CType(responseDict, Dictionary(Of String, Object)).Count < 50 Then
                 logger.Debug("GetErrorResponse, responseDict:{0}", Utils.JsonSerialize(responseDict))
-            Else
+            ElseIf responseDict IsNot Nothing AndAlso
+                responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
+                CType(responseDict, Dictionary(Of String, Object)).Count > 50 Then
                 logger.Debug("GetErrorResponse, responseDict:Too large")
+            Else
+                logger.Debug("GetErrorResponse, responseDict:Nothing or not Dictionary of String,Object")
             End If
             Dim ret As String = Nothing
             If responseDict IsNot Nothing AndAlso
@@ -427,18 +431,22 @@ Namespace Controller
         Public Async Sub OnSessionExpireAsync()
             logger.Debug("RequestAccessTokenAsync, OnSessionExpireAsync:Nothing")
             'Wait for the lock and if locked, then exit immediately
-            Await _LoginSemphore.WaitAsync(0).ConfigureAwait(False)
+            If _LoginThreads = 0 Then
+                Interlocked.Increment(_LoginThreads)
+                APIConnection = Nothing
+            Else
+                Exit Sub
+            End If
             OnHeartbeat("********** Need to login again **********")
             Try
                 _cts.Token.ThrowIfCancellationRequested()
-                APIConnection = Nothing
                 Await Task.Delay(2000).ConfigureAwait(False)
                 Dim tempRet As ZerodhaConnection = Await LoginAsync().ConfigureAwait(False)
                 If tempRet Is Nothing Then
                     Throw New ApplicationException("Login process failed after token expiry")
                 End If
             Finally
-                _LoginSemphore.Release()
+                Interlocked.Decrement(_LoginThreads)
             End Try
         End Sub
 #End Region

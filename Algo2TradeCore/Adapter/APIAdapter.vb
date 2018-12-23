@@ -44,6 +44,7 @@ Namespace Adapter
         End Sub
         'Public MustOverride Async Function ConnectTickerAsync(ByVal subscriber As APIInstrumentSubscriber) As Task
         Public MustOverride Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
-        'Public MustOverride Async Function GetAllTradesAsync(Optional ByVal tradeData As Dictionary(Of String, Object) = Nothing, Optional ByVal retryEnabled As Boolean = True) As Task(Of IEnumerable(Of ITrade))
+        Public MustOverride Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
+        Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
     End Class
 End Namespace
