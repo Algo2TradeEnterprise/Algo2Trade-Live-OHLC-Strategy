@@ -449,16 +449,17 @@ Namespace Controller
         End Sub
 #End Region
 
+#Region "Common tasks for all strategies"
         Public Overrides Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
             logger.Debug("PrepareToRunStrategyAsync, parameter:Nothing")
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim ret As Boolean = False
-            _APIAdaper = New ZerodhaAdapter(Me, _cts)
-            AddHandler _APIAdaper.Heartbeat, AddressOf OnHeartbeat
-            AddHandler _APIAdaper.WaitingFor, AddressOf OnWaitingFor
-            AddHandler _APIAdaper.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-            AddHandler _APIAdaper.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            _APIAdapter = New ZerodhaAdapter(Me, _cts)
+            AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
+            AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
+            AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
 
             Dim lastException As Exception = Nothing
             Dim allOKWithoutException As Boolean = False
@@ -474,7 +475,13 @@ Namespace Controller
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
-                        _AllInstruments = Await _APIAdaper.GetAllInstrumentsAsync().ConfigureAwait(False)
+                        While APIConnection Is Nothing
+                            logger.Debug("Waiting for fresh token in controller before calling GetAllInstrumentsAsync")
+                            Await Task.Delay(500).ConfigureAwait(False)
+                        End While
+                        _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
+
+                        _AllInstruments = Await _APIAdapter.GetAllInstrumentsAsync().ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Processing response")
 
@@ -606,6 +613,11 @@ Namespace Controller
             If Not allOKWithoutException Then Throw lastException
             Return ret
         End Function
+        ''' <summary>
+        ''' This will help find all tradable instruments as per the passed strategy and then create the strategy workers for each of these instruments
+        ''' </summary>
+        ''' <param name="strategyToRun"></param>
+        ''' <returns></returns>
         Public Overrides Async Function ExecuteStrategyAsync(ByVal strategyToRun As Strategy) As Task
             logger.Debug("ExecuteStrategyAsync, strategyToRun:{0}", strategyToRun.ToString)
             _cts.Token.ThrowIfCancellationRequested()
@@ -624,6 +636,7 @@ Namespace Controller
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         End Function
+#End Region
         Public Async Function TestAsync() As Task
             While True
                 Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).AccessToken

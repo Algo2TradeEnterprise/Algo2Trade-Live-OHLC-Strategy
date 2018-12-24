@@ -13,11 +13,6 @@ Namespace Adapter
                 Return _MaxInstrumentPerTicker
             End Get
         End Property
-        Public Enum Broker
-            Zerodha = 1
-            Upstox
-            None
-        End Enum
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
         Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)

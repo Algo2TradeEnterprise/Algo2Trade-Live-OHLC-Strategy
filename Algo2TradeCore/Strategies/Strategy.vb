@@ -40,5 +40,6 @@ Namespace Strategies
         Public MustOverride Async Function FillTradableInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function ExecuteAsync() As Task
+        Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
     End Class
 End Namespace

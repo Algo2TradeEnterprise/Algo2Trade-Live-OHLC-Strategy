@@ -33,6 +33,7 @@ Namespace Strategies
         Protected _cts As CancellationTokenSource
         Public Property ParentStrategy As Strategy
         Public Property TradableInstrument As IInstrument
+        Protected Property _LastTick As ITick
         Protected _APIAdapter As APIAdapter
         Public Sub New(ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
             TradableInstrument = associatedInstrument
@@ -41,5 +42,6 @@ Namespace Strategies
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function RunDirectAsync() As Task
+        Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
     End Class
 End Namespace

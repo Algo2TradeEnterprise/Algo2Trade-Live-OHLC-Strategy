@@ -106,6 +106,7 @@
     </Compile>
     <Compile Include="Strategies\Strategy.vb" />
     <Compile Include="Strategies\StrategyInstrument.vb" />
+    <Compile Include="Strategies\Trigger.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

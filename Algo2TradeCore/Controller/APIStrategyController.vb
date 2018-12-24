@@ -41,7 +41,7 @@ Namespace Controller
         Protected _LoginURL As String
         Protected _LoginThreads As Integer
         Public Property APIConnection As IConnection
-        Protected _APIAdaper As APIAdapter
+        Protected _APIAdapter As APIAdapter
         Protected _AllInstruments As IEnumerable(Of IInstrument)
         Public Sub New(ByVal currentUser As IUser,
                        ByVal canceller As CancellationTokenSource)

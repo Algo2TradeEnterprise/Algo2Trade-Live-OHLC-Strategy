@@ -24,19 +24,29 @@ Public Class OHLStrategyInstrument
         Return Me.GetType().Name
     End Function
     Public Overrides Async Function RunDirectAsync() As Task
-        While True
-            Try
-                While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-                    logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                    Await Task.Delay(500).ConfigureAwait(False)
-                End While
+        Try
+            While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+                logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
+                Await Task.Delay(500).ConfigureAwait(False)
+            End While
+            Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
+            If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
                 _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
                 Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-            Catch ex As Exception
-                logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-                logger.Error(ex.ToString)
-            End Try
-            Await Task.Delay(10000).ConfigureAwait(False)
-        End While
+            End If
+        Catch ex As Exception
+            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+            logger.Error(ex.ToString)
+        End Try
     End Function
+    Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
+        Dim ret As Tuple(Of Boolean, Trigger) = Nothing
+        If _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.Low Then
+            ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=L,({0})", _LastTick.Open)})
+        ElseIf _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.High Then
+            ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=H,({0})", _LastTick.Open)})
+        End If
+        Return ret
+    End Function
+
 End Class

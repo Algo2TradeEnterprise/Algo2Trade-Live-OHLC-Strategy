@@ -32,6 +32,22 @@ Namespace Time
             dateTime = dateTime.AddSeconds(unixTimeStamp)
             Return dateTime
         End Function
+        Public Function IsTimeEqualTillSeconds(ByVal timespan1 As TimeSpan, ByVal timespan2 As TimeSpan) As Boolean
+            logger.Debug("Checking if time is equal till seconds")
+            Return Math.Floor(timespan1.TotalSeconds) = Math.Floor(timespan2.TotalSeconds)
+        End Function
+        Public Function IsTimeEqualTillSeconds(ByVal datetime1 As DateTime, ByVal datetime2 As DateTime) As Boolean
+            logger.Debug("Checking if time is equal till seconds")
+            Return Math.Floor(datetime1.TimeOfDay.TotalSeconds) = Math.Floor(datetime2.TimeOfDay.TotalSeconds)
+        End Function
+        Public Function IsTimeEqualTillSeconds(ByVal datetime1 As DateTime, ByVal timespan2 As TimeSpan) As Boolean
+            logger.Debug("Checking if time is equal till seconds")
+            Return Math.Floor(datetime1.TimeOfDay.TotalSeconds) = Math.Floor(timespan2.TotalSeconds)
+        End Function
+        Public Function IsTimeEqualTillSeconds(ByVal timespan1 As TimeSpan, ByVal datetime2 As DateTime) As Boolean
+            logger.Debug("Checking if time is equal till seconds")
+            Return Math.Floor(timespan1.TotalSeconds) = Math.Floor(datetime2.TimeOfDay.TotalSeconds)
+        End Function
 #End Region
     End Module
 End Namespace
