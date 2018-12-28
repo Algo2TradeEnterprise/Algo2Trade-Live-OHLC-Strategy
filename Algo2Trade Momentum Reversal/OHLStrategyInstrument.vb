@@ -12,18 +12,19 @@ Public Class OHLStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Sub New(ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedInstrument, parentStrategy, canceller)
-        _APIAdapter = New ZerodhaAdapter(parentStrategy.ParentContoller, _cts)
+    Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
+        MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
+        _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentContoller, _cts)
         AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
     End Sub
     Public Overrides Function ToString() As String
-        Return Me.GetType().Name
+        Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
     End Function
     Public Overrides Async Function RunDirectAsync() As Task
+        logger.Debug("{0}->RunDirectAsync, parameters:None", Me.ToString)
         Try
             While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
                 logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
@@ -40,13 +41,24 @@ Public Class OHLStrategyInstrument
         End Try
     End Function
     Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
+        logger.Debug("{0}->IsTriggerReachedAsync, parameters:None", Me.ToString)
+        Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As Tuple(Of Boolean, Trigger) = Nothing
         If _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.Low Then
             ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=L,({0})", _LastTick.Open)})
         ElseIf _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.High Then
             ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=H,({0})", _LastTick.Open)})
         End If
+        'TO DO: Remove the below hard coding
+        ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
         Return ret
     End Function
-
+    Public Overrides Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
+        'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
+        Await Task.Delay(0).ConfigureAwait(False)
+        Select Case tickData.Broker
+            Case APISource.Zerodha
+                Console.WriteLine(CType(tickData, ZerodhaTick).LastPrice & "-" & CType(tickData, ZerodhaTick).Timestamp)
+        End Select
+    End Function
 End Class

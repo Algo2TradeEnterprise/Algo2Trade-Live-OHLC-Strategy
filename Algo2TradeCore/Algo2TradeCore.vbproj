@@ -73,7 +73,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapter\APIAdapter.vb" />
+    <Compile Include="Adapter\APITicker.vb" />
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
+    <Compile Include="Adapter\ZerodhaTicker.vb" />
     <Compile Include="Controller\APIStrategyController.vb" />
     <Compile Include="Controller\ZerodhaStrategyController.vb" />
     <Compile Include="Entities\Enums.vb" />

@@ -173,12 +173,40 @@ Public Class frmMain
             AddHandler _controller.WaitingFor, AddressOf OnWaitingFor
             AddHandler _controller.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             AddHandler _controller.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            OnHeartbeat("Attempting to get connection to Zerodha server")
-            _connection = Await _controller.LoginAsync().ConfigureAwait(False)
-            If _connection Is Nothing Then
-                Throw New ApplicationException("No connection Zerodha API could be established")
-            End If
 
+#Region "Login"
+            Dim loginMessage As String = Nothing
+            While True
+                _connection = Nothing
+                loginMessage = Nothing
+                Try
+                    OnHeartbeat("Attempting to get connection to Zerodha server")
+                    _connection = Await _controller.LoginAsync().ConfigureAwait(False)
+                Catch ex As Exception
+                    loginMessage = ex.Message
+                    logger.Error(ex)
+                End Try
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing AndAlso loginMessage.ToUpper.Contains("password".ToUpper) Then
+                        'No need to retry as its a password failure
+                        OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                        Exit While
+                    Else
+                        OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                        Await Task.Delay(10000)
+                    End If
+                Else
+                    Exit While
+                End If
+            End While
+            If _connection Is Nothing Then
+                If loginMessage IsNot Nothing Then
+                    Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                Else
+                    Throw New ApplicationException("No connection to Zerodha API could be established")
+                End If
+            End If
+#End Region
             OnHeartbeat("Completing all pre-processing requirements")
             Dim isPreProcessingDone As Boolean = Await _controller.PrepareToRunStrategyAsync().ConfigureAwait(False)
 
@@ -237,5 +265,4 @@ Public Class frmMain
             ProgressStatus("No pending actions")
         End Try
     End Sub
-
 End Class

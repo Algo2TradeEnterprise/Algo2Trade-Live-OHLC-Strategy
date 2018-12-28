@@ -19,10 +19,18 @@ Namespace Strategies
             RaiseEvent DocumentRetryStatus(currentTry, totalTries)
         End Sub
         Protected Overridable Sub OnHeartbeat(ByVal msg As String)
-            RaiseEvent Heartbeat(msg)
+            If TradableInstrument IsNot Nothing Then
+                RaiseEvent Heartbeat(String.Format("{0}:{1}", TradableInstrument.InstrumentIdentifier, msg))
+            Else
+                RaiseEvent Heartbeat(String.Format("{0}:{1}", "No instrument", msg))
+            End If
         End Sub
         Protected Overridable Sub OnWaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
-            RaiseEvent WaitingFor(elapsedSecs, totalSecs, msg)
+            If TradableInstrument IsNot Nothing Then
+                RaiseEvent WaitingFor(elapsedSecs, totalSecs, String.Format("{0}-{1}", TradableInstrument.InstrumentIdentifier, msg))
+            Else
+                RaiseEvent WaitingFor(elapsedSecs, totalSecs, String.Format("{0}-{1}", "No instrument", msg))
+            End If
         End Sub
 #End Region
 
@@ -33,15 +41,16 @@ Namespace Strategies
         Protected _cts As CancellationTokenSource
         Public Property ParentStrategy As Strategy
         Public Property TradableInstrument As IInstrument
-        Protected Property _LastTick As ITick
+        Protected _LastTick As ITick
         Protected _APIAdapter As APIAdapter
-        Public Sub New(ByVal associatedInstrument As IInstrument, ByVal parentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
+        Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
             TradableInstrument = associatedInstrument
-            Me.ParentStrategy = parentStrategy
+            Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function RunDirectAsync() As Task
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
+        Public MustOverride Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
     End Class
 End Namespace

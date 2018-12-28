@@ -13,7 +13,7 @@
         End Property
         Public ReadOnly Property PublicToken As String Implements IConnection.PublicToken
             Get
-                If ZerodhaUser IsNot Nothing AndAlso CType(ZerodhaUser, ZerodhaUser).WrappedUser.AccessToken IsNot Nothing Then
+                If ZerodhaUser IsNot Nothing AndAlso CType(ZerodhaUser, ZerodhaUser).WrappedUser.PublicToken IsNot Nothing Then
                     Return CType(ZerodhaUser, ZerodhaUser).WrappedUser.PublicToken
                 Else
                     Return Nothing

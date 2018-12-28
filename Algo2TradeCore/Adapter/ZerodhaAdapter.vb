@@ -15,19 +15,20 @@ Namespace Adapter
 
         Protected _Kite As Kite
         Protected _Ticker As Ticker
-        Public Sub New(ByVal controller As ZerodhaStrategyController,
+        Public Sub New(ByVal associatedParentController As ZerodhaStrategyController,
                ByVal canceller As CancellationTokenSource)
-            MyBase.New(controller, canceller)
-            _Kite = New Kite(APIKey:=CType(controller.APIConnection, ZerodhaConnection).ZerodhaUser.APIKey,
-                             AccessToken:=CType(controller.APIConnection, ZerodhaConnection).AccessToken,
+            MyBase.New(associatedParentController, canceller)
+            _Kite = New Kite(APIKey:=CType(associatedParentController.APIConnection, ZerodhaConnection).ZerodhaUser.APIKey,
+                             AccessToken:=CType(associatedParentController.APIConnection, ZerodhaConnection).AccessToken,
                              Debug:=False)
-            _Kite.SetSessionExpiryHook(AddressOf controller.OnSessionExpireAsync)
+            _Kite.SetSessionExpiryHook(AddressOf associatedParentController.OnSessionExpireAsync)
         End Sub
         Public Overrides Sub SetAPIAccessToken(ByVal apiAccessToken As String)
+            logger.Debug("SetAPIAccessToken, apiAccessToken:{0}", apiAccessToken)
             _Kite.SetAccessToken(apiAccessToken)
         End Sub
         Public Overrides Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
-            logger.Debug("GetAllInstrumentsAsync, Parameters:Nothing")
+            logger.Debug("GetAllInstrumentsAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaInstrument) = Nothing
             Dim command As KiteCommands = KiteCommands.GetInstruments
 
@@ -37,7 +38,7 @@ Namespace Adapter
             If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(command.ToString) Then
                 tempRet = tempAllRet(command.ToString)
                 If tempRet IsNot Nothing Then
-                    Dim errorMessage As String = _controller.GetErrorResponse(tempRet)
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
                     If errorMessage IsNot Nothing Then
                         Throw New ApplicationException(errorMessage)
                     End If
@@ -54,19 +55,6 @@ Namespace Adapter
                 For Each runningInstrument As Instrument In zerodhaReturedInstruments
                     If ret Is Nothing Then ret = New List(Of ZerodhaInstrument)
                     ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
-                    'If runningInstrument.InstrumentType = "FUT" AndAlso runningInstrument.Exchange = "NFO" Then
-                    '    Dim coreInstrumentName As String = Regex.Replace(runningInstrument.TradingSymbol, "[0-9]+[A-Z]+FUT", "")
-                    '    If coreInstrumentName IsNot Nothing Then
-                    '        Dim cashInstrumentToAdd = zerodhaReturedInstruments.Where(Function(x)
-                    '                                                                      Return x.TradingSymbol = coreInstrumentName
-                    '                                                                  End Function).FirstOrDefault
-                    '        If cashInstrumentToAdd.TradingSymbol IsNot Nothing AndAlso ret.Find(Function(x)
-                    '                                                                                Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentToken
-                    '                                                                            End Function) Is Nothing Then
-                    '            ret.Add(New ZerodhaInstrument(cashInstrumentToAdd.InstrumentToken) With {.WrappedInstrument = cashInstrumentToAdd})
-                    '        End If
-                    '    End If
-                    'End If
                 Next
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of instrument, command:{0}", command.ToString))
@@ -74,7 +62,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
-            logger.Debug("GetAllTradesAsync, Parameters:Nothing")
+            logger.Debug("GetAllTradesAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaTrade) = Nothing
             Dim command As KiteCommands = KiteCommands.GetOrderTrades
             Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, Nothing).ConfigureAwait(False)
@@ -83,7 +71,7 @@ Namespace Adapter
             If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(command.ToString) Then
                 tempRet = tempAllRet(command.ToString)
                 If tempRet IsNot Nothing Then
-                    Dim errorMessage As String = _controller.GetErrorResponse(tempRet)
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
                     If errorMessage IsNot Nothing Then
                         Throw New ApplicationException(errorMessage)
                     End If
@@ -122,6 +110,7 @@ Namespace Adapter
                                                                 Catch ex As Exception
                                                                     logger.Error(ex)
                                                                     lastException = ex
+                                                                    Return Nothing
                                                                 End Try
                                                             End Function).ConfigureAwait(False)
                     ret = New Dictionary(Of String, Object) From {{command.ToString, positions}}
@@ -145,6 +134,7 @@ Namespace Adapter
                                                                        Catch ex As Exception
                                                                            logger.Error(ex)
                                                                            lastException = ex
+                                                                           Return Nothing
                                                                        End Try
                                                                    End Function).ConfigureAwait(False)
                     End If
@@ -159,6 +149,7 @@ Namespace Adapter
                                                                                  Catch ex As Exception
                                                                                      logger.Error(ex)
                                                                                      lastException = ex
+                                                                                     Return Nothing
                                                                                  End Try
                                                                              End Function).ConfigureAwait(False)
                     End If
@@ -173,6 +164,7 @@ Namespace Adapter
                                                                               Catch ex As Exception
                                                                                   logger.Error(ex)
                                                                                   lastException = ex
+                                                                                  Return Nothing
                                                                               End Try
                                                                           End Function).ConfigureAwait(False)
                     End If
@@ -187,6 +179,7 @@ Namespace Adapter
                                                                               Catch ex As Exception
                                                                                   logger.Error(ex)
                                                                                   lastException = ex
+                                                                                  Return Nothing
                                                                               End Try
                                                                           End Function).ConfigureAwait(False)
                     End If
@@ -202,6 +195,7 @@ Namespace Adapter
                                                                          Catch ex As Exception
                                                                              logger.Error(ex)
                                                                              lastException = ex
+                                                                             Return Nothing
                                                                          End Try
                                                                      End Function).ConfigureAwait(False)
                     End If
@@ -215,6 +209,7 @@ Namespace Adapter
                                                                     Catch ex As Exception
                                                                         logger.Error(ex)
                                                                         lastException = ex
+                                                                        Return Nothing
                                                                     End Try
                                                                 End Function).ConfigureAwait(False)
                     End If
@@ -227,6 +222,7 @@ Namespace Adapter
                                                                 Catch ex As Exception
                                                                     logger.Error(ex)
                                                                     lastException = ex
+                                                                    Return Nothing
                                                                 End Try
                                                             End Function).ConfigureAwait(False)
                     ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
@@ -239,6 +235,7 @@ Namespace Adapter
                                                                     Catch ex As Exception
                                                                         logger.Error(ex)
                                                                         lastException = ex
+                                                                        Return Nothing
                                                                     End Try
                                                                 End Function).ConfigureAwait(False)
                     Else
@@ -248,6 +245,7 @@ Namespace Adapter
                                                                     Catch ex As Exception
                                                                         logger.Error(ex)
                                                                         lastException = ex
+                                                                        Return Nothing
                                                                     End Try
                                                                 End Function).ConfigureAwait(False)
                     End If
@@ -260,6 +258,7 @@ Namespace Adapter
                                                                   Catch ex As Exception
                                                                       logger.Error(ex)
                                                                       lastException = ex
+                                                                      Return Nothing
                                                                   End Try
                                                               End Function).ConfigureAwait(False)
                     Dim count As Integer = If(instruments Is Nothing, 0, instruments.Count)
@@ -273,7 +272,7 @@ Namespace Adapter
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, instruments}}
                 Case KiteCommands.InvalidateAccessToken
-                    Dim invalidateToken = _Kite.InvalidateAccessToken(CType(_controller.APIConnection, ZerodhaConnection).AccessToken)
+                    Dim invalidateToken = _Kite.InvalidateAccessToken(CType(ParentController.APIConnection, ZerodhaConnection).AccessToken)
                     lastException = Nothing
                 Case Else
                     Throw New ApplicationException("No Command Triggered")

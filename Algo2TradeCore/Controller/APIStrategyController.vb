@@ -42,14 +42,17 @@ Namespace Controller
         Protected _LoginThreads As Integer
         Public Property APIConnection As IConnection
         Protected _APIAdapter As APIAdapter
+        Protected _APITicker As APITicker
         Protected _AllInstruments As IEnumerable(Of IInstrument)
-        Public Sub New(ByVal currentUser As IUser,
+        Protected _AllStratgeies As List(Of Strategy)
+        Protected _subscribedStrategyInstruments As Dictionary(Of String, List(Of StrategyInstrument))
+        Public Sub New(ByVal validatedUser As IUser,
                        ByVal canceller As CancellationTokenSource)
-            _currentUser = currentUser
+            _currentUser = validatedUser
             _cts = canceller
             _LoginThreads = 0
         End Sub
-        Public MustOverride Function GetErrorResponse(ByVal responseDict As Object) As String
+        Public MustOverride Function GetErrorResponse(ByVal response As Object) As String
 
 #Region "Login"
         Protected MustOverride Function GetLoginURL() As String

@@ -1,11 +1,12 @@
 ﻿Imports KiteConnect
 
 Namespace Entities
+    <Serializable>
     Public Class ZerodhaInstrument
         Implements IInstrument
 
-        Public Sub New(ByVal identifier As String)
-            InstrumentIdentifier = identifier
+        Public Sub New(ByVal associatedIdentifer As String)
+            InstrumentIdentifier = associatedIdentifer
         End Sub
         Public Property InstrumentIdentifier As String Implements IInstrument.InstrumentIdentifier
         Public ReadOnly Property Exchange As String Implements IInstrument.Exchange
@@ -49,13 +50,14 @@ Namespace Entities
                 Return WrappedInstrument.TradingSymbol
             End Get
         End Property
-
         Public Property WrappedInstrument As Instrument
         Public ReadOnly Property Broker As APISource Implements IInstrument.Broker
             Get
                 Return APISource.Zerodha
             End Get
         End Property
-
+        Public Overrides Function ToString() As String
+            Return InstrumentIdentifier
+        End Function
     End Class
 End Namespace

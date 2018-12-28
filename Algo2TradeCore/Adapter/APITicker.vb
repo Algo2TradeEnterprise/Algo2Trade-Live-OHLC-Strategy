@@ -1,11 +1,9 @@
 ﻿Imports System.Threading
-Imports Algo2TradeCore.Entities
-Imports NLog
 Imports Algo2TradeCore.Controller
+Imports NLog
+
 Namespace Adapter
-    Public MustInherit Class APIAdapter
-        Protected _cts As CancellationTokenSource
-        Public Property ParentController As APIStrategyController
+    Public MustInherit Class APITicker
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
@@ -31,13 +29,16 @@ Namespace Adapter
         Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Public Sub New(ByVal associatedParentController As APIStrategyController,
+        Protected _cts As CancellationTokenSource
+        Public Property ParentContoller As APIStrategyController
+        Protected _subscribedInstruments As List(Of String) 'The tokens
+        Public Sub New(ByVal associatedParentcontroller As APIStrategyController,
                        ByVal canceller As CancellationTokenSource)
-            Me.ParentController = associatedParentController
+            Me.ParentContoller = associatedParentcontroller
             _cts = canceller
         End Sub
-        Public MustOverride Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
-        Public MustOverride Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
-        Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
+        Public MustOverride Async Function ConnectTickerAsync() As Task
+        Public MustOverride Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
+        Public MustOverride Overrides Function ToString() As String
     End Class
 End Namespace

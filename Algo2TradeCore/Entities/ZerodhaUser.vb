@@ -2,6 +2,8 @@
 Namespace Entities
     Public Class ZerodhaUser
         Implements IUser
+
+        'The below properties are input properties and hence not readyonly unlike other entities
         Public Property UserId As String Implements IUser.UserId
         Public Property Password As String Implements IUser.Password
         Public Property APISecret As String Implements IUser.APISecret

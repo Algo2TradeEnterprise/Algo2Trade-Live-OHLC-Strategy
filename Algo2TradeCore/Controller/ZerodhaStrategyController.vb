@@ -20,9 +20,9 @@ Namespace Controller
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Public Sub New(ByVal currentUser As ZerodhaUser,
+        Public Sub New(ByVal validatedUser As ZerodhaUser,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(currentUser, canceller)
+            MyBase.New(validatedUser, canceller)
             _LoginURL = "https://kite.trade/connect/login"
         End Sub
 
@@ -31,25 +31,26 @@ Namespace Controller
             logger.Debug("GetLoginURL, parameters:Nothing")
             Return String.Format("{0}?api_key={1}&v={2}", _LoginURL, _currentUser.APIKey, _currentUser.APIVersion)
         End Function
-        Public Overrides Function GetErrorResponse(ByVal responseDict As Object) As String
-            If responseDict IsNot Nothing AndAlso
-                responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
-                CType(responseDict, Dictionary(Of String, Object)).Count < 50 Then
-                logger.Debug("GetErrorResponse, responseDict:{0}", Utils.JsonSerialize(responseDict))
-            ElseIf responseDict IsNot Nothing AndAlso
-                responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
-                CType(responseDict, Dictionary(Of String, Object)).Count > 50 Then
-                logger.Debug("GetErrorResponse, responseDict:Too large")
-            Else
-                logger.Debug("GetErrorResponse, responseDict:Nothing or not Dictionary of String,Object")
-            End If
+        Public Overrides Function GetErrorResponse(ByVal response As Object) As String
+            logger.Debug("GetErrorResponse, response:{0}", Utils.JsonSerialize(response))
+            'If responseDict IsNot Nothing AndAlso
+            '    responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
+            '    CType(responseDict, Dictionary(Of String, Object)).Count < 50 Then
+            '    logger.Debug("GetErrorResponse, responseDict:{0}", Utils.JsonSerialize(responseDict))
+            'ElseIf responseDict IsNot Nothing AndAlso
+            '    responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
+            '    CType(responseDict, Dictionary(Of String, Object)).Count > 50 Then
+            '    logger.Debug("GetErrorResponse, responseDict:Too large")
+            'Else
+            '    logger.Debug("GetErrorResponse, responseDict:Nothing or not Dictionary of String,Object")
+            'End If
             Dim ret As String = Nothing
-            If responseDict IsNot Nothing AndAlso
-               responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
-               CType(responseDict, Dictionary(Of String, Object)).ContainsKey("status") AndAlso
-               CType(responseDict, Dictionary(Of String, Object))("status") = "error" AndAlso
-               CType(responseDict, Dictionary(Of String, Object)).ContainsKey("message") Then
-                ret = String.Format("Zerodha reported error, message:{0}", CType(responseDict, Dictionary(Of String, Object))("message"))
+            If response IsNot Nothing AndAlso
+               response.GetType = GetType(Dictionary(Of String, Object)) AndAlso
+               CType(response, Dictionary(Of String, Object)).ContainsKey("status") AndAlso
+               CType(response, Dictionary(Of String, Object))("status") = "error" AndAlso
+               CType(response, Dictionary(Of String, Object)).ContainsKey("message") Then
+                ret = String.Format("Zerodha reported error, message:{0}", CType(response, Dictionary(Of String, Object))("message"))
             End If
             Return ret
         End Function
@@ -427,7 +428,7 @@ Namespace Controller
             Return ret
         End Function
         Public Async Sub OnSessionExpireAsync()
-            logger.Debug("RequestAccessTokenAsync, OnSessionExpireAsync:Nothing")
+            logger.Debug("OnSessionExpireAsync, parameters:Nothing")
             'Wait for the lock and if locked, then exit immediately
             If _LoginThreads = 0 Then
                 Interlocked.Increment(_LoginThreads)
@@ -436,12 +437,40 @@ Namespace Controller
                 Exit Sub
             End If
             OnHeartbeat("********** Need to login again **********")
+            Dim tempConn As ZerodhaConnection = Nothing
             Try
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(2000).ConfigureAwait(False)
-                Dim tempRet As ZerodhaConnection = Await LoginAsync().ConfigureAwait(False)
-                If tempRet Is Nothing Then
-                    Throw New ApplicationException("Login process failed after token expiry")
+                Dim loginMessage As String = Nothing
+                While True
+                    loginMessage = Nothing
+                    tempConn = Nothing
+                    Try
+                        OnHeartbeat("Attempting to get connection to Zerodha server")
+                        tempConn = Await LoginAsync().ConfigureAwait(False)
+                    Catch ex As Exception
+                        loginMessage = ex.Message
+                        logger.Error(ex)
+                    End Try
+                    If tempConn Is Nothing Then
+                        If loginMessage IsNot Nothing AndAlso loginMessage.ToUpper.Contains("password".ToUpper) Then
+                            'No need to retry as its a password failure
+                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                            Exit While
+                        Else
+                            OnHeartbeat(String.Format("Login process failed after token expiry:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            Await Task.Delay(10000)
+                        End If
+                    Else
+                        Exit While
+                    End If
+                End While
+                If tempConn Is Nothing Then
+                    If loginMessage IsNot Nothing Then
+                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                    Else
+                        Throw New ApplicationException("No connection to Zerodha API could be established")
+                    End If
                 End If
             Finally
                 Interlocked.Decrement(_LoginThreads)
@@ -451,10 +480,12 @@ Namespace Controller
 
 #Region "Common tasks for all strategies"
         Public Overrides Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
-            logger.Debug("PrepareToRunStrategyAsync, parameter:Nothing")
+            logger.Debug("PrepareToRunStrategyAsync, parameters:Nothing")
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim ret As Boolean = False
+            _AllStratgeies = Nothing
+            _AllInstruments = Nothing
             _APIAdapter = New ZerodhaAdapter(Me, _cts)
             AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
             AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
@@ -482,6 +513,7 @@ Namespace Controller
                         _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
 
                         _AllInstruments = Await _APIAdapter.GetAllInstrumentsAsync().ConfigureAwait(False)
+
                         _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Processing response")
 
@@ -623,42 +655,107 @@ Namespace Controller
             _cts.Token.ThrowIfCancellationRequested()
 
             If strategyToRun IsNot Nothing Then
+                If _AllStratgeies Is Nothing Then _AllStratgeies = New List(Of Strategy)
+                _AllStratgeies.Add(strategyToRun)
                 AddHandler strategyToRun.Heartbeat, AddressOf OnHeartbeat
                 AddHandler strategyToRun.WaitingFor, AddressOf OnWaitingFor
                 AddHandler strategyToRun.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                 AddHandler strategyToRun.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                 OnHeartbeat(String.Format("As per the strategy logic, tradable instruments being fetched, strategy:{0}", strategyToRun.ToString))
-                Dim ret As Boolean = Await strategyToRun.FillTradableInstrumentsAsync(_AllInstruments).ConfigureAwait(False)
+                Dim ret As Boolean = Await strategyToRun.CreateTradableStrategyInstrumentsAsync(_AllInstruments).ConfigureAwait(False)
+                'Now we know what are the instruments as per the strategy and their corresponding workers
                 _cts.Token.ThrowIfCancellationRequested()
                 If Not ret Then Throw New ApplicationException(String.Format("No instruments fetched that can be traded, strategy:{0}", strategyToRun.ToString))
+
+                If _subscribedStrategyInstruments Is Nothing Then _subscribedStrategyInstruments = New Dictionary(Of String, List(Of StrategyInstrument))
+                For Each runningTradableStrategyInstrument In strategyToRun.TradableStrategyInstruments
+                    Dim instrumentKey As String = runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier
+                    Dim strategiesToBeSubscribedForThisInstrument As List(Of StrategyInstrument) = Nothing
+                    If _subscribedStrategyInstruments.ContainsKey(instrumentKey) Then
+                        strategiesToBeSubscribedForThisInstrument = _subscribedStrategyInstruments(instrumentKey)
+                    Else
+                        strategiesToBeSubscribedForThisInstrument = New List(Of StrategyInstrument)
+                        _subscribedStrategyInstruments.Add(instrumentKey, strategiesToBeSubscribedForThisInstrument)
+                    End If
+                    strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
+                Next
+
+
+                _APITicker = New ZerodhaTicker(Me, _cts)
+                AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
+                AddHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
+                AddHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
+                Await strategyToRun.SubscribeAsync(_APITicker).ConfigureAwait(False)
+
                 OnHeartbeat(String.Format("Executing the strategy by creating relevant instrument workers, strategy:{0}", strategyToRun.ToString))
                 Await strategyToRun.ExecuteAsync().ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         End Function
 #End Region
-        Public Async Function TestAsync() As Task
-            While True
-                Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).AccessToken
-                Try
-                    Dim adap As New ZerodhaAdapter(Me, _cts)
-                    OnHeartbeat("***************** ##### Executing command againa")
-                    'Dim ret = Await adap.ExecuteCommandAsync(ZerodhaAdapter.KiteCommands.GetOrderTrades, Nothing).ConfigureAwait(False)
-                    Dim ret = Await adap.GetAllInstrumentsAsync().ConfigureAwait(False)
-                    OnHeartbeat(Utils.JsonSerialize(ret))
-                    Await Task.Delay(5000).ConfigureAwait(False)
-                Catch tex As TokenException
-                    Dim newAccessToken As String = prevAccessToken
-                    While prevAccessToken = newAccessToken
-                        If APIConnection IsNot Nothing Then
-                            newAccessToken = CType(APIConnection, ZerodhaConnection).AccessToken
-                        End If
-                        Task.Delay(500).ConfigureAwait(False)
-                    End While
-                Catch ex As Exception
-                    Console.WriteLine("Exzception")
-                End Try
-            End While
-        End Function
+        'Public Async Function TestAsync() As Task
+        '    While True
+        '        Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).AccessToken
+        '        Try
+        '            Dim adap As New ZerodhaAdapter(Me, _cts)
+        '            OnHeartbeat("***************** ##### Executing command againa")
+        '            'Dim ret = Await adap.ExecuteCommandAsync(ZerodhaAdapter.KiteCommands.GetOrderTrades, Nothing).ConfigureAwait(False)
+        '            Dim ret = Await adap.GetAllInstrumentsAsync().ConfigureAwait(False)
+        '            OnHeartbeat(Utils.JsonSerialize(ret))
+        '            Await Task.Delay(5000).ConfigureAwait(False)
+        '        Catch tex As TokenException
+        '            Dim newAccessToken As String = prevAccessToken
+        '            While prevAccessToken = newAccessToken
+        '                If APIConnection IsNot Nothing Then
+        '                    newAccessToken = CType(APIConnection, ZerodhaConnection).AccessToken
+        '                End If
+        '                Task.Delay(500).ConfigureAwait(False)
+        '            End While
+        '        Catch ex As Exception
+        '            Console.WriteLine("Exzception")
+        '        End Try
+        '    End While
+        'End Function
+        Public Sub OnTickerConnect()
+            logger.Debug("OnTickerConnect, parameters:Nothing", Me.ToString)
+            OnHeartbeat("Ticker, connected")
+        End Sub
+        Public Sub OnTickerClose()
+            logger.Debug("OnTickerClose, parameters:Nothing", Me.ToString)
+            OnHeartbeat("Ticker, closed")
+        End Sub
+        Public Sub OnTickerError(ByVal errorMessage As String)
+            logger.Debug("OnTickerError, errorMessage:{0}", errorMessage)
+            OnHeartbeat(String.Format("Ticker, Error:{0}", errorMessage))
+        End Sub
+        Public Sub OnTickerNoReconnect()
+            logger.Debug("OnTickerNoReconnect, parameters:Nothing", Me.ToString)
+            OnHeartbeat("Ticker, not Reconnecting")
+        End Sub
+        Public Sub OnTickerReconnect()
+            logger.Debug("OnTickerReconnect, parameters:Nothing", Me.ToString)
+            OnHeartbeat("Ticker, reconnecting")
+        End Sub
+        Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
+            'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(0).ConfigureAwait(False)
+            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+                Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                    runningStrategyInstrument.ProcessTickAsync(runningTick)
+                Next
+            End If
+        End Sub
+        Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
+            logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
+            Await Task.Delay(0).ConfigureAwait(False)
+            'If _todaysInstrumentsForOHLStrategy IsNot Nothing AndAlso _todaysInstrumentsForOHLStrategy.Count > 0 Then
+            '    _todaysInstrumentsForOHLStrategy(orderData.InstrumentToken).StrategyWorker.ConsumedOrderUpdateAsync(orderData)
+            'End If
+            'OnHeartbeat(String.Format("OrderUpdate {0}", Utils.JsonSerialize(orderData)))
+        End Sub
     End Class
 End Namespace

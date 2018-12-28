@@ -28,12 +28,12 @@ Namespace Strings
 
 #Region "Public Methods"
         Public Function JsonSerialize(x As Object) As String
-            logger.Debug("Serializing to JSON")
+            'logger.Debug("Serializing to JSON")
             Dim jss = New JavaScriptSerializer()
             Return jss.Serialize(x)
         End Function
         Public Function JsonDeserialize(Json As String) As Dictionary(Of String, Object)
-            logger.Debug("Deserializing from JSON")
+            'logger.Debug("Deserializing from JSON")
             Dim jss = New JavaScriptSerializer()
             Dim dict As Dictionary(Of String, Object) = jss.Deserialize(Of Dictionary(Of String, Object))(Json)
             Return dict
