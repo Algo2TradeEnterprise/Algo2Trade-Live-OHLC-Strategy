@@ -13,6 +13,13 @@ Namespace Controller
         Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
         Public Event Heartbeat(ByVal msg As String)
         Public Event WaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
+        'Create the events for UI to handle the way it needs to show the ticker
+        Public Event TickerConnect()
+        Public Event TickerClose()
+        Public Event TickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMessage As String)
+        Public Event TickerError(ByVal errorMessage As String)
+        Public Event TickerNoReconnect()
+        Public Event TickerReconnect()
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
@@ -25,6 +32,24 @@ Namespace Controller
         End Sub
         Protected Overridable Sub OnWaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
             RaiseEvent WaitingFor(elapsedSecs, totalSecs, msg)
+        End Sub
+        Public Overridable Sub OnTickerConnect()
+            RaiseEvent TickerConnect()
+        End Sub
+        Public Overridable Sub OnTickerClose()
+            RaiseEvent TickerClose()
+        End Sub
+        Public Overridable Sub OnTickerError(ByVal errorMessage As String)
+            RaiseEvent TickerError(errorMessage)
+        End Sub
+        Public Overridable Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMessage As String)
+            RaiseEvent TickerErrorWithStatus(isConnected, errorMessage)
+        End Sub
+        Public Overridable Sub OnTickerNoReconnect()
+            RaiseEvent TickerNoReconnect()
+        End Sub
+        Public Overridable Sub OnTickerReconnect()
+            RaiseEvent TickerReconnect()
         End Sub
 #End Region
 

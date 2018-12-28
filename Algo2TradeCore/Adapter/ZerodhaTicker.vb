@@ -20,6 +20,18 @@ Namespace Adapter
             logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
             Await Task.Delay(0).ConfigureAwait(False)
             Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentContoller, ZerodhaStrategyController)
+
+            If _ticker IsNot Nothing Then
+                RemoveHandler _ticker.OnTick, AddressOf currentZerodhaStrategyController.OnTickerTickAsync
+                RemoveHandler _ticker.OnReconnect, AddressOf currentZerodhaStrategyController.OnTickerReconnect
+                RemoveHandler _ticker.OnNoReconnect, AddressOf currentZerodhaStrategyController.OnTickerNoReconnect
+                RemoveHandler _ticker.OnError, AddressOf currentZerodhaStrategyController.OnTickerError
+                RemoveHandler _ticker.OnClose, AddressOf currentZerodhaStrategyController.OnTickerClose
+                RemoveHandler _ticker.OnConnect, AddressOf currentZerodhaStrategyController.OnTickerConnect
+                RemoveHandler _ticker.OnOrderUpdate, AddressOf currentZerodhaStrategyController.OnTickerOrderUpdateAsync
+
+                If _ticker.IsConnected Then _ticker.Close()
+            End If
             _ticker = New Ticker(ParentContoller.APIConnection.APIUser.APIKey, ParentContoller.APIConnection.AccessToken)
             AddHandler _ticker.OnTick, AddressOf currentZerodhaStrategyController.OnTickerTickAsync
             AddHandler _ticker.OnReconnect, AddressOf currentZerodhaStrategyController.OnTickerReconnect
@@ -51,12 +63,32 @@ Namespace Adapter
                 subscriptionList(index) = runninInstrumentIdentifier
                 _subscribedInstruments.Add(runninInstrumentIdentifier)
             Next
-            _ticker.Subscribe(Tokens:=subscriptionList)
-            _ticker.SetMode(Tokens:=subscriptionList, Mode:=Constants.MODE_FULL)
-            OnHeartbeat("Subscribed")
+            If subscriptionList Is Nothing OrElse UBound(subscriptionList) = 0 Then
+                logger.Error("No tokens to subscribe")
+            Else
+                _ticker.Subscribe(Tokens:=subscriptionList)
+                _ticker.SetMode(Tokens:=subscriptionList, Mode:=Constants.MODE_FULL)
+                OnHeartbeat("Subscribed:" & subscriptionList.Count)
+            End If
         End Function
         Public Overrides Function ToString() As String
             Return Me.GetType.ToString
+        End Function
+        Public Overrides Sub ClearLocalUniqueSubscriptionList()
+            _subscribedInstruments = Nothing
+        End Sub
+        Public Overrides Function IsConnected() As Boolean
+            If _ticker IsNot Nothing Then
+                Return _ticker.IsConnected
+            Else
+                Return False
+            End If
+        End Function
+        Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
+            Await Task.Delay(0)
+            If _ticker IsNot Nothing AndAlso _ticker.IsConnected Then
+                _ticker.Close()
+            End If
         End Function
 
     End Class

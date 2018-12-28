@@ -4,12 +4,50 @@ Imports NLog
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Controller
+Imports System.ComponentModel
+
 Public Class frmMain
 #Region "Logging and Status Progress"
     Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
 #Region "Common Delegates"
+
+    Delegate Sub SetGridDisplayIndex_Delegate(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
+    Public Sub SetGridDisplayIndex_ThreadSafe(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [grd].InvokeRequired Then
+            Dim MyDelegate As New SetGridDisplayIndex_Delegate(AddressOf SetGridDisplayIndex_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[grd], [colName], [value]})
+        Else
+            [grd].Columns([colName]).DisplayIndex = [value]
+        End If
+    End Sub
+    Delegate Function GetGridColumnCount_Delegate(ByVal [grd] As DataGridView) As String
+    Public Function GetGridColumnCount_ThreadSafe(ByVal [grd] As DataGridView) As String
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [grd].InvokeRequired Then
+            Dim MyDelegate As New GetGridColumnCount_Delegate(AddressOf GetGridColumnCount_ThreadSafe)
+            Return Me.Invoke(MyDelegate, New Object() {[grd]})
+        Else
+            Return [grd].Columns.Count
+        End If
+    End Function
+
+    Delegate Sub SetGridDataBind_Delegate(ByVal [grd] As DataGridView, ByVal [value] As Object)
+    Public Sub SetGridDataBind_ThreadSafe(ByVal [grd] As DataGridView, ByVal [value] As Object)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [grd].InvokeRequired Then
+            Dim MyDelegate As New SetGridDataBind_Delegate(AddressOf SetGridDataBind_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[grd], [value]})
+        Else
+            [grd].DataSource = [value]
+        End If
+    End Sub
+
     Delegate Sub SetListAddItem_Delegate(ByVal [lst] As ListBox, ByVal [value] As Object)
     Public Sub SetListAddItem_ThreadSafe(ByVal [lst] As ListBox, ByVal [value] As Object)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
@@ -109,12 +147,8 @@ Public Class frmMain
     Public Sub ProgressStatus(ByVal msg As String)
         SyncLock Me
             If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
-
-            SetListAddItem_ThreadSafe(lstLog, msg)
-            ' If StringManipulation.GetStringSimilarityPercentage(msg, _lastLoggedMessage) < 90 Then
+            SetListAddItem_ThreadSafe(lstLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
             logger.Info(msg)
-            'End If
-            '_lastLoggedMessage = msg
         End SyncLock
     End Sub
     Private Sub OnHeartbeat(msg As String)
@@ -132,7 +166,7 @@ Public Class frmMain
         ProgressStatus(String.Format("{0}, waiting {1}/{2} secs", msg, elapsedSecs, totalSecs))
     End Sub
     Private Sub OnDocumentRetryStatus(currentTry As Integer, totalTries As Integer)
-        ProgressStatus(String.Format("Try #{0}/{1}: Connecting", currentTry, totalTries))
+        'ProgressStatus(String.Format("Try #{0}/{1}: Connecting", currentTry, totalTries))
     End Sub
     Private Sub OnDocumentDownloadComplete()
     End Sub
@@ -160,6 +194,7 @@ Public Class frmMain
     Private Async Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
         _cts = New CancellationTokenSource()
         _cts.Token.ThrowIfCancellationRequested()
+
         Try
             Dim currentUser As New ZerodhaUser With {.UserId = "DK4056",
                 .Password = "Zerodha@123a",
@@ -169,10 +204,26 @@ Public Class frmMain
                 .API2FA = Nothing}
             _controller = New ZerodhaStrategyController(currentUser, _cts)
 
+            RemoveHandler _controller.Heartbeat, AddressOf OnHeartbeat
+            RemoveHandler _controller.WaitingFor, AddressOf OnWaitingFor
+            RemoveHandler _controller.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            RemoveHandler _controller.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            RemoveHandler _controller.TickerClose, AddressOf OnTickerClose
+            RemoveHandler _controller.TickerConnect, AddressOf OnTickerConnect
+            RemoveHandler _controller.TickerError, AddressOf OnTickerError
+            RemoveHandler _controller.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+            RemoveHandler _controller.TickerNoReconnect, AddressOf OnTickerNoReconnect
+
             AddHandler _controller.Heartbeat, AddressOf OnHeartbeat
             AddHandler _controller.WaitingFor, AddressOf OnWaitingFor
             AddHandler _controller.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             AddHandler _controller.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            AddHandler _controller.TickerClose, AddressOf OnTickerClose
+            AddHandler _controller.TickerConnect, AddressOf OnTickerConnect
+            AddHandler _controller.TickerError, AddressOf OnTickerError
+            AddHandler _controller.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+            AddHandler _controller.TickerNoReconnect, AddressOf OnTickerNoReconnect
+            AddHandler _controller.TickerReconnect, AddressOf OnTickerReconnect
 
 #Region "Login"
             Dim loginMessage As String = Nothing
@@ -180,7 +231,7 @@ Public Class frmMain
                 _connection = Nothing
                 loginMessage = Nothing
                 Try
-                    OnHeartbeat("Attempting to get connection to Zerodha server")
+                    OnHeartbeat("Attempting to get connection to Zerodha API")
                     _connection = Await _controller.LoginAsync().ConfigureAwait(False)
                 Catch ex As Exception
                     loginMessage = ex.Message
@@ -207,7 +258,7 @@ Public Class frmMain
                 End If
             End If
 #End Region
-            OnHeartbeat("Completing all pre-processing requirements")
+            OnHeartbeat("Completing all pre-automation requirements")
             Dim isPreProcessingDone As Boolean = Await _controller.PrepareToRunStrategyAsync().ConfigureAwait(False)
 
             If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
@@ -215,7 +266,13 @@ Public Class frmMain
 
             Dim ohlStrategyToExecute As New OHLStrategy(_controller, _cts)
             OnHeartbeat(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString))
+
             Await _controller.ExecuteStrategyAsync(ohlStrategyToExecute)
+
+            Dim dashboadList As SortableBindingList(Of OHLStrategyInstrument) = New SortableBindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
+            SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
+            SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
+            Exit Sub
 
             'Await CType(_controller, ZerodhaStrategyController).TestAsync.ConfigureAwait(False)
             'OnHeartbeat("Getting all instruments for the day")
@@ -264,5 +321,53 @@ Public Class frmMain
         Finally
             ProgressStatus("No pending actions")
         End Try
+    End Sub
+
+    Private Sub OnTickerClose()
+        blbTickerStatus.Color = Color.Pink
+        OnHeartbeat("Ticker:Closed")
+    End Sub
+    Private Sub OnTickerConnect()
+        blbTickerStatus.Color = Color.Lime
+        OnHeartbeat("Ticker:Connected")
+    End Sub
+    Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
+        If Not isConnected Then blbTickerStatus.Color = Color.Pink
+    End Sub
+    Private Sub OnTickerError(ByVal errorMsg As String)
+        'Nothing to do
+        OnHeartbeat(String.Format("Ticker:Error:{0}", errorMsg))
+    End Sub
+    Private Sub OnTickerNoReconnect()
+        'Nothing to do
+    End Sub
+    Private Sub OnTickerReconnect()
+        blbTickerStatus.Color = Color.Yellow
+        OnHeartbeat("Ticker:Reconnected")
+    End Sub
+
+    Private Sub tmrTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrTickerStatus.Tick
+        tmrTickerStatus.Enabled = False
+        If tmrTickerStatus.Interval = 700 Then
+            tmrTickerStatus.Interval = 2000
+            blbTickerStatus.Visible = True
+        Else
+            tmrTickerStatus.Interval = 700
+            blbTickerStatus.Visible = False
+        End If
+        tmrTickerStatus.Enabled = True
+    End Sub
+
+
+    Private Sub dgMainDashboard_CellFormatting(sender As Object, e As DataGridViewCellFormattingEventArgs) Handles dgMainDashboard.CellFormatting
+        'If e.ColumnIndex = 5 Then
+        'dgMainDashboard.Rows(e.RowIndex).Cells(e.ColumnIndex).Style.BackColor = Color.LightGreen
+        'End If
+    End Sub
+
+    Private Sub dgMainDashboard_DataBindingComplete(sender As Object, e As DataGridViewBindingCompleteEventArgs) Handles dgMainDashboard.DataBindingComplete
+        'For Each column As DataGridViewColumn In CType(sender, DataGridView).Columns
+        '    column.SortMode = DataGridViewColumnSortMode.Automatic
+        'Next
     End Sub
 End Class

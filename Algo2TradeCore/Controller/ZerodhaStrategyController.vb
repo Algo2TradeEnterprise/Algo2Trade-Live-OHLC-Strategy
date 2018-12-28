@@ -33,17 +33,6 @@ Namespace Controller
         End Function
         Public Overrides Function GetErrorResponse(ByVal response As Object) As String
             logger.Debug("GetErrorResponse, response:{0}", Utils.JsonSerialize(response))
-            'If responseDict IsNot Nothing AndAlso
-            '    responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
-            '    CType(responseDict, Dictionary(Of String, Object)).Count < 50 Then
-            '    logger.Debug("GetErrorResponse, responseDict:{0}", Utils.JsonSerialize(responseDict))
-            'ElseIf responseDict IsNot Nothing AndAlso
-            '    responseDict.GetType = GetType(Dictionary(Of String, Object)) AndAlso
-            '    CType(responseDict, Dictionary(Of String, Object)).Count > 50 Then
-            '    logger.Debug("GetErrorResponse, responseDict:Too large")
-            'Else
-            '    logger.Debug("GetErrorResponse, responseDict:Nothing or not Dictionary of String,Object")
-            'End If
             Dim ret As String = Nothing
             If response IsNot Nothing AndAlso
                response.GetType = GetType(Dictionary(Of String, Object)) AndAlso
@@ -88,7 +77,8 @@ Namespace Controller
                         headers.Add("Host", "kite.trade")
                         headers.Add("X-Kite-version", _currentUser.APIVersion)
 
-                        OnHeartbeat("Getting login page")
+                        OnHeartbeat("Opening login page")
+                        logger.Debug("Opening login page, GetLoginURL:{0}, headers:{1}", GetLoginURL, Utils.JsonSerialize(headers))
 
                         Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(GetLoginURL,
                                                                                               Http.HttpMethod.Get,
@@ -100,7 +90,7 @@ Namespace Controller
                         'Should be getting back the redirected URL in Item1 and the htmldocument response in Item2
                         Dim finalURLToCall As Uri = Nothing
                         If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("sess_id") Then
-                            logger.Debug("Getting login page, sess_id:{0}", tempRet.Item1.ToString.Contains("sess_id"))
+                            logger.Debug("Login page returned, sess_id string:{0}", tempRet.Item1.ToString)
                             finalURLToCall = tempRet.Item1
                             redirectedURI = tempRet.Item1
 
@@ -121,6 +111,7 @@ Namespace Controller
 
                             tempRet = Nothing
                             OnHeartbeat("Submitting Id/pass")
+                            logger.Debug("Submitting Id/pass, redirectedURI:{0}, postContent:{1}, headers:{2}", redirectedURI.ToString, Utils.JsonSerialize(postContent), Utils.JsonSerialize(headers))
                             tempRet = Await browser.POSTRequestAsync("https://kite.zerodha.com/api/login",
                                                      redirectedURI.ToString,
                                                      postContent,
@@ -137,6 +128,7 @@ Namespace Controller
                                 q1 = tempRet.Item2("data")("question_ids")(0)
                                 q2 = tempRet.Item2("data")("question_ids")(1)
                                 If q1 IsNot Nothing AndAlso q2 IsNot Nothing Then
+                                    logger.Debug("Id/pass submission returned, q1:{0}, q2:{1}", q1, q2)
                                     'Now preprate the 2 step authentication
                                     Dim stringPostContent As New Http.StringContent(String.Format("user_id={0}&question_id={1}&question_id={2}&answer={3}&answer={4}",
                                                                                       Uri.EscapeDataString(_currentUser.UserId),
@@ -146,7 +138,6 @@ Namespace Controller
                                                                                       Uri.EscapeDataString("a")),
                                                                         Text.Encoding.UTF8, "application/x-www-form-urlencoded")
 
-                                    logger.Debug("Submitting 2FA, stringPostContent:{0}", Await stringPostContent.ReadAsStringAsync().ConfigureAwait(False))
                                     headers = New Dictionary(Of String, String)
                                     headers.Add("Accept", "application/json, text/plain, */*")
                                     headers.Add("Accept-Language", "en-US,en;q=0.5")
@@ -159,6 +150,7 @@ Namespace Controller
                                     _cts.Token.ThrowIfCancellationRequested()
                                     tempRet = Nothing
                                     OnHeartbeat("Submitting 2FA")
+                                    logger.Debug("Submitting 2FA, redirectedURI:{0}, stringPostContent:{1}, headers:{2}", redirectedURI.ToString, Await stringPostContent.ReadAsStringAsync().ConfigureAwait(False), Utils.JsonSerialize(headers))
                                     tempRet = Await browser.POSTRequestAsync("https://kite.zerodha.com/api/twofa",
                                                                  redirectedURI.ToString,
                                                                  stringPostContent,
@@ -171,9 +163,11 @@ Namespace Controller
                                         redirectedURI = tempRet.Item1
                                         Dim queryStrings As NameValueCollection = HttpUtility.ParseQueryString(redirectedURI.Query)
                                         requestToken = queryStrings("request_token")
+                                        logger.Debug("2FA submission returned, requestToken:{0}", requestToken)
                                         logger.Debug("Authentication complete, requestToken:{0}", requestToken)
                                     ElseIf tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) AndAlso
                                 tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" Then
+                                        logger.Debug("2FA submission returned, redirection:true")
 
                                         headers = New Dictionary(Of String, String)
                                         headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -184,6 +178,7 @@ Namespace Controller
                                         tempRet = Nothing
 
                                         OnHeartbeat("Addressing redirection")
+                                        logger.Debug("Redirecting, finalURLToCall:{0}, headers:{1}", finalURLToCall.ToString, Utils.JsonSerialize(headers))
                                         tempRet = Await browser.NonPOSTRequestAsync(String.Format("{0}&skip_session=true", finalURLToCall.ToString),
                                                                         Http.HttpMethod.Get,
                                                                         finalURLToCall.ToString,
@@ -194,6 +189,7 @@ Namespace Controller
                                             redirectedURI = tempRet.Item1
                                             Dim queryStrings As NameValueCollection = HttpUtility.ParseQueryString(redirectedURI.Query)
                                             requestToken = queryStrings("request_token")
+                                            logger.Debug("Redirection returned, requestToken:{0}", requestToken)
                                             logger.Debug("Authentication complete, requestToken:{0}", requestToken)
                                         Else
                                             If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
@@ -249,7 +245,7 @@ Namespace Controller
                     End If
                 Catch tex As KiteConnect.TokenException
                     logger.Error(tex)
-                    OnHeartbeat("Error possibiliy while generating session, token may be invalid, retrying the whole login process")
+                    OnHeartbeat("Possible error while generating session, token may be invalid, retrying the whole login process")
                     Continue While
                 End Try
                 Exit While
@@ -275,11 +271,11 @@ Namespace Controller
                     _cts.Token.ThrowIfCancellationRequested()
                     lastException = Nothing
                     OnHeartbeat("Generating session...")
+                    logger.Debug("Generating session, command:{0}, requestToken:{1}, _currentUser.APISecret:{2}",
+                                                    "GenerateSession", requestToken, _currentUser.APISecret)
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
-                        OnHeartbeat(String.Format("Firing Zerodha command to generate session, command:{0}, requestToken:{1}, _currentUser.APISecret:{2}",
-                                                    "GenerateSession", requestToken, _currentUser.APISecret))
                         Dim user As User = kiteConnector.GenerateSession(requestToken, _currentUser.APISecret)
                         Console.WriteLine(Utils.JsonSerialize(user))
                         _cts.Token.ThrowIfCancellationRequested()
@@ -287,7 +283,7 @@ Namespace Controller
 
                         If user.AccessToken IsNot Nothing Then
                             kiteConnector.SetAccessToken(user.AccessToken)
-                            logger.Debug("Acccess generation complete, user.AccessToken:{0}", user.AccessToken)
+                            logger.Debug("Session generated, user.AccessToken:{0}", user.AccessToken)
 
                             ret = New ZerodhaConnection
                             With ret
@@ -446,7 +442,7 @@ Namespace Controller
                     loginMessage = Nothing
                     tempConn = Nothing
                     Try
-                        OnHeartbeat("Attempting to get connection to Zerodha server")
+                        OnHeartbeat("Attempting to get connection to Zerodha API")
                         tempConn = Await LoginAsync().ConfigureAwait(False)
                     Catch ex As Exception
                         loginMessage = ex.Message
@@ -462,6 +458,33 @@ Namespace Controller
                             Await Task.Delay(10000)
                         End If
                     Else
+                        OnHeartbeat("Relogin completed, checking to see if strategy instruments need to be resubscribed")
+                        If _APITicker IsNot Nothing Then
+                            _APITicker.ClearLocalUniqueSubscriptionList()
+                            Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+                            RemoveHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
+                            RemoveHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
+                            RemoveHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                            RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                        Else
+                            _APITicker = New ZerodhaTicker(Me, _cts)
+                        End If
+
+
+                        AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
+                        AddHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
+                        AddHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                        AddHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+                        Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
+
+                        If _AllStratgeies IsNot Nothing AndAlso _AllStratgeies.Count > 0 Then
+                            For Each runningStratgey In _AllStratgeies
+                                OnHeartbeat(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStratgey.ToString))
+                                Await runningStratgey.SubscribeAsync(_APITicker).ConfigureAwait(False)
+                            Next
+                        End If
+                        OnHeartbeat("Relogin completed with resubscriptions")
                         Exit While
                     End If
                 End While
@@ -486,6 +509,12 @@ Namespace Controller
             Dim ret As Boolean = False
             _AllStratgeies = Nothing
             _AllInstruments = Nothing
+            If _APIAdapter IsNot Nothing Then
+                RemoveHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            End If
             _APIAdapter = New ZerodhaAdapter(Me, _cts)
             AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
             AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
@@ -502,15 +531,16 @@ Namespace Controller
                 For retryCtr = 1 To _MaxReTries
                     _cts.Token.ThrowIfCancellationRequested()
                     lastException = Nothing
+                    While Me.APIConnection Is Nothing
+                        logger.Debug("Waiting for fresh token before running GetAllInstrumentsAsync")
+                        Await Task.Delay(500).ConfigureAwait(False)
+                    End While
+                    _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
+
                     OnHeartbeat("Getting all instruments for the day...")
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
-                        While APIConnection Is Nothing
-                            logger.Debug("Waiting for fresh token in controller before calling GetAllInstrumentsAsync")
-                            Await Task.Delay(500).ConfigureAwait(False)
-                        End While
-                        _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
 
                         _AllInstruments = Await _APIAdapter.GetAllInstrumentsAsync().ConfigureAwait(False)
 
@@ -530,7 +560,7 @@ Namespace Controller
                     Catch tex As KiteConnect.TokenException
                         logger.Error(tex)
                         lastException = tex
-                        Exit For
+                        Continue For
                     Catch opx As OperationCanceledException
                         logger.Error(opx)
                         lastException = opx
@@ -656,7 +686,13 @@ Namespace Controller
 
             If strategyToRun IsNot Nothing Then
                 If _AllStratgeies Is Nothing Then _AllStratgeies = New List(Of Strategy)
+
                 _AllStratgeies.Add(strategyToRun)
+                RemoveHandler strategyToRun.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler strategyToRun.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler strategyToRun.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler strategyToRun.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                 AddHandler strategyToRun.Heartbeat, AddressOf OnHeartbeat
                 AddHandler strategyToRun.WaitingFor, AddressOf OnWaitingFor
                 AddHandler strategyToRun.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
@@ -680,6 +716,12 @@ Namespace Controller
                     strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
                 Next
 
+                If _APITicker IsNot Nothing Then
+                    RemoveHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
+                    RemoveHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
+                    RemoveHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                    RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                End If
 
                 _APITicker = New ZerodhaTicker(Me, _cts)
                 AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
@@ -689,12 +731,13 @@ Namespace Controller
                 Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
                 Await strategyToRun.SubscribeAsync(_APITicker).ConfigureAwait(False)
 
-                OnHeartbeat(String.Format("Executing the strategy by creating relevant instrument workers, strategy:{0}", strategyToRun.ToString))
-                Await strategyToRun.ExecuteAsync().ConfigureAwait(False)
+                'OnHeartbeat(String.Format("Executing the strategy by creating relevant instrument workers, strategy:{0}", strategyToRun.ToString))
+                'Await strategyToRun.ExecuteAsync().ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         End Function
 #End Region
+
         'Public Async Function TestAsync() As Task
         '    While True
         '        Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).AccessToken
@@ -718,25 +761,36 @@ Namespace Controller
         '        End Try
         '    End While
         'End Function
-        Public Sub OnTickerConnect()
+        Public Overrides Sub OnTickerConnect()
             logger.Debug("OnTickerConnect, parameters:Nothing", Me.ToString)
-            OnHeartbeat("Ticker, connected")
+            MyBase.OnTickerConnect()
         End Sub
-        Public Sub OnTickerClose()
+        Public Overrides Sub OnTickerClose()
             logger.Debug("OnTickerClose, parameters:Nothing", Me.ToString)
-            OnHeartbeat("Ticker, closed")
+            MyBase.OnTickerClose()
         End Sub
-        Public Sub OnTickerError(ByVal errorMessage As String)
+        Public Overrides Sub OnTickerError(ByVal errorMessage As String)
             logger.Debug("OnTickerError, errorMessage:{0}", errorMessage)
-            OnHeartbeat(String.Format("Ticker, Error:{0}", errorMessage))
+            If _APITicker IsNot Nothing Then
+                OnTickerErrorWithStatus(_APITicker.IsConnected, errorMessage)
+            Else
+                OnTickerErrorWithStatus(False, errorMessage)
+            End If
+            MyBase.OnTickerError(errorMessage)
+            If errorMessage.Contains("403") Then OnSessionExpireAsync()
         End Sub
-        Public Sub OnTickerNoReconnect()
+        Public Overrides Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMessage As String)
+            logger.Debug("OnTickerErrorWithStatus, isConnected:{0}, errorMessage:{1}", isConnected, errorMessage)
+            MyBase.OnTickerErrorWithStatus(isConnected, errorMessage)
+        End Sub
+        Public Overrides Sub OnTickerNoReconnect()
             logger.Debug("OnTickerNoReconnect, parameters:Nothing", Me.ToString)
-            OnHeartbeat("Ticker, not Reconnecting")
+            'OnHeartbeat("Ticker, not Reconnecting")
+            MyBase.OnTickerNoReconnect()
         End Sub
-        Public Sub OnTickerReconnect()
+        Public Overrides Sub OnTickerReconnect()
             logger.Debug("OnTickerReconnect, parameters:Nothing", Me.ToString)
-            OnHeartbeat("Ticker, reconnecting")
+            MyBase.OnTickerReconnect()
         End Sub
         Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
             'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))

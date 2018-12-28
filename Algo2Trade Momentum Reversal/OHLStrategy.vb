@@ -64,7 +64,7 @@ Public Class OHLStrategy
         End If
 
         If tradableInstrumentsAsPerStrategy IsNot Nothing AndAlso tradableInstrumentsAsPerStrategy.Count > 0 Then
-            tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
+            'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
             'Now create the strategy tradable instruments
             Dim retTradableStrategyInstruments As List(Of OHLStrategyInstrument) = Nothing
             logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", tradableInstrumentsAsPerStrategy.Count)
@@ -114,8 +114,7 @@ Public Class OHLStrategy
                 If runningInstrumentIdentifiers Is Nothing Then runningInstrumentIdentifiers = New List(Of String)
                 runningInstrumentIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier)
             Next
-            'Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
-            Await usableTicker.SubscribeAsync(Nothing).ConfigureAwait(False)
+            Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
         End If
     End Function
     Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))

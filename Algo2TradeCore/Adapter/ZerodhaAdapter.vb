@@ -3,7 +3,6 @@ Imports Algo2TradeCore.Entities
 Imports KiteConnect
 Imports NLog
 Imports Algo2TradeCore.Controller
-Imports System.Text.RegularExpressions
 
 Namespace Adapter
     Public Class ZerodhaAdapter
