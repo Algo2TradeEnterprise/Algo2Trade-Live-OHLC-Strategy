@@ -5,14 +5,12 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Controller
 Imports System.ComponentModel
-
 Public Class frmMain
 #Region "Logging and Status Progress"
     Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
 #Region "Common Delegates"
-
     Delegate Sub SetGridDisplayIndex_Delegate(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
     Public Sub SetGridDisplayIndex_ThreadSafe(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
