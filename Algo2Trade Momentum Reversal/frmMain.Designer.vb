@@ -33,17 +33,17 @@ Partial Class frmMain
         Me.pnlVerticalDivider = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlLeftPartHorizontalDivider = New System.Windows.Forms.TableLayoutPanel()
         Me.lstLog = New System.Windows.Forms.ListBox()
-        Me.FlowLayoutPanel1 = New System.Windows.Forms.FlowLayoutPanel()
         Me.MenuStrip1 = New System.Windows.Forms.MenuStrip()
         Me.CredentialsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.UserDetailsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.FlowLayoutPanel1 = New System.Windows.Forms.FlowLayoutPanel()
         CType(Me.dgMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.sfdgvMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.Panel1.SuspendLayout()
         Me.pnlVerticalDivider.SuspendLayout()
         Me.pnlLeftPartHorizontalDivider.SuspendLayout()
-        Me.FlowLayoutPanel1.SuspendLayout()
         Me.MenuStrip1.SuspendLayout()
+        Me.FlowLayoutPanel1.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnStart
@@ -161,16 +161,6 @@ Partial Class frmMain
         Me.lstLog.Size = New System.Drawing.Size(941, 150)
         Me.lstLog.TabIndex = 8
         '
-        'FlowLayoutPanel1
-        '
-        Me.FlowLayoutPanel1.Controls.Add(Me.lblTickerStatus)
-        Me.FlowLayoutPanel1.Controls.Add(Me.blbTickerStatus)
-        Me.FlowLayoutPanel1.Controls.Add(Me.btnStart)
-        Me.FlowLayoutPanel1.Location = New System.Drawing.Point(956, 3)
-        Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
-        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(200, 100)
-        Me.FlowLayoutPanel1.TabIndex = 1
-        '
         'MenuStrip1
         '
         Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.CredentialsToolStripMenuItem})
@@ -190,8 +180,18 @@ Partial Class frmMain
         'UserDetailsToolStripMenuItem
         '
         Me.UserDetailsToolStripMenuItem.Name = "UserDetailsToolStripMenuItem"
-        Me.UserDetailsToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
+        Me.UserDetailsToolStripMenuItem.Size = New System.Drawing.Size(135, 22)
         Me.UserDetailsToolStripMenuItem.Text = "User Details"
+        '
+        'FlowLayoutPanel1
+        '
+        Me.FlowLayoutPanel1.Controls.Add(Me.lblTickerStatus)
+        Me.FlowLayoutPanel1.Controls.Add(Me.blbTickerStatus)
+        Me.FlowLayoutPanel1.Controls.Add(Me.btnStart)
+        Me.FlowLayoutPanel1.Location = New System.Drawing.Point(956, 3)
+        Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
+        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(200, 100)
+        Me.FlowLayoutPanel1.TabIndex = 1
         '
         'frmMain
         '
@@ -209,10 +209,10 @@ Partial Class frmMain
         Me.pnlVerticalDivider.ResumeLayout(False)
         Me.pnlLeftPartHorizontalDivider.ResumeLayout(False)
         Me.pnlLeftPartHorizontalDivider.PerformLayout()
-        Me.FlowLayoutPanel1.ResumeLayout(False)
-        Me.FlowLayoutPanel1.PerformLayout()
         Me.MenuStrip1.ResumeLayout(False)
         Me.MenuStrip1.PerformLayout()
+        Me.FlowLayoutPanel1.ResumeLayout(False)
+        Me.FlowLayoutPanel1.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub

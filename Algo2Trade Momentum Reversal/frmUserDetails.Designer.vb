@@ -124,7 +124,7 @@ Partial Class frmZerodhaUserDetails
         Me.btnSaveZerodhaUserDetails.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSaveZerodhaUserDetails.ImageKey = "save-icon-36533.png"
         Me.btnSaveZerodhaUserDetails.ImageList = Me.ImageList1
-        Me.btnSaveZerodhaUserDetails.Location = New System.Drawing.Point(359, 13)
+        Me.btnSaveZerodhaUserDetails.Location = New System.Drawing.Point(360, 13)
         Me.btnSaveZerodhaUserDetails.Name = "btnSaveZerodhaUserDetails"
         Me.btnSaveZerodhaUserDetails.Size = New System.Drawing.Size(84, 47)
         Me.btnSaveZerodhaUserDetails.TabIndex = 1
@@ -145,7 +145,10 @@ Partial Class frmZerodhaUserDetails
         Me.ClientSize = New System.Drawing.Size(452, 164)
         Me.Controls.Add(Me.btnSaveZerodhaUserDetails)
         Me.Controls.Add(Me.GroupBox1)
+        Me.MaximizeBox = False
+        Me.MinimizeBox = False
         Me.Name = "frmZerodhaUserDetails"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
         Me.Text = "Zerodha User Details"
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()

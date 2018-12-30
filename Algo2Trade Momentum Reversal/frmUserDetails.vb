@@ -2,7 +2,7 @@
 Public Class frmZerodhaUserDetails
     Private Sub btnSaveZerodhaUserDetails_Click(sender As Object, e As EventArgs) Handles btnSaveZerodhaUserDetails.Click
         Try
-            ValidateAll()
+            'ValidateAll()
             SaveUserDetails()
         Catch ex As Exception
             MsgBox(ex.Message, MsgBoxStyle.Critical)
@@ -11,17 +11,18 @@ Public Class frmZerodhaUserDetails
 
     Private Sub frmZerodhaUserDetails_Load(sender As Object, e As EventArgs) Handles Me.Load
         txtZerodhaUserId.Text = My.Settings.ZerodhaUserId
-        txtZerodhaPassword.Text = Decrypt(My.Settings.ZerodhaPassword, "JOYMA")
-        txtZerodhaAPIKey.Text = Decrypt(My.Settings.ZerodhaAPIKey, "JOYMA")
-        txtZerodhaAPISecret.Text = Decrypt(My.Settings.ZerodhaAPISecret, "JOYMA")
+        txtZerodhaPassword.Text = Decrypt(My.Settings.ZerodhaPassword, Common.MASTER_KEY)
+        txtZerodhaAPIKey.Text = Decrypt(My.Settings.ZerodhaAPIKey, Common.MASTER_KEY)
+        txtZerodhaAPISecret.Text = Decrypt(My.Settings.ZerodhaAPISecret, Common.MASTER_KEY)
     End Sub
 
     Private Sub SaveUserDetails()
         My.Settings.ZerodhaUserId = txtZerodhaUserId.Text
-        My.Settings.ZerodhaPassword = Encrypt(txtZerodhaPassword.Text, "JOYMA")
-        My.Settings.ZerodhaAPIKey = Encrypt(txtZerodhaAPIKey.Text, "JOYMA")
-        My.Settings.ZerodhaAPISecret = Encrypt(txtZerodhaAPISecret.Text, "JOYMA")
+        My.Settings.ZerodhaPassword = Encrypt(txtZerodhaPassword.Text, Common.MASTER_KEY)
+        My.Settings.ZerodhaAPIKey = Encrypt(txtZerodhaAPIKey.Text, Common.MASTER_KEY)
+        My.Settings.ZerodhaAPISecret = Encrypt(txtZerodhaAPISecret.Text, Common.MASTER_KEY)
         My.Settings.Save()
+        Me.Close()
     End Sub
     Private Sub ValidateAll()
         ValidateTextLength(txtZerodhaUserId, 1, "User Id")

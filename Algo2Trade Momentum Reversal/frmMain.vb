@@ -213,6 +213,8 @@ Public Class frmMain
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
+            If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+
             Dim currentUser As New ZerodhaUser With {.UserId = "DK4056",
                 .Password = "Zerodha@123a",
                 .APIVersion = "3",
