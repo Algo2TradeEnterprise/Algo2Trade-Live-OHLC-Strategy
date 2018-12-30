@@ -1,4 +1,5 @@
 ﻿Imports System.ComponentModel
+Imports System.ComponentModel.DataAnnotations
 Imports System.Threading
 Imports Algo2TradeCore
 Imports Algo2TradeCore.Adapter
@@ -14,7 +15,7 @@ Public Class OHLStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    <DisplayName("OHL")>
+    <Display(Name:="OHL", Order:=10)>
     Public ReadOnly Property OHL As String
         Get
             If Me.OpenPrice = Me.LowPrice Then

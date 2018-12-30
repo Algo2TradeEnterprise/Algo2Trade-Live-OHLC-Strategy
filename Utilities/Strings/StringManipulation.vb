@@ -7,7 +7,6 @@ Imports System.Globalization
 Imports System.Security.Cryptography
 Imports System.Web.Script.Serialization
 Imports System.IO
-
 Namespace Strings
     Public Module StringManipulation
 #Region "Logging and Status Progress"
@@ -424,6 +423,31 @@ Namespace Strings
                 Return DirectCast(binaryFormatter.Deserialize(stream), T)
             End Using
         End Function
-#End Region
+        Public Function Encrypt(ByVal stringToEncrypt As String, ByVal key As String) As String
+            logger.Debug("Encrytping a string")
+            Dim DES As New TripleDESCryptoServiceProvider
+            Dim MD5 As New MD5CryptoServiceProvider
+            DES.Key = MD5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(key))
+            DES.Mode = CipherMode.ECB
+            Dim Buffer As Byte() = ASCIIEncoding.ASCII.GetBytes(stringToEncrypt)
+            Return Convert.ToBase64String(DES.CreateEncryptor().TransformFinalBlock(Buffer, 0, Buffer.Length))
+        End Function
+        Public Function Decrypt(ByVal encryptedString As String, ByVal key As String) As String
+            logger.Debug("Decrytping a string")
+            Dim ret As String = Nothing
+            Try
+                Dim DES As New TripleDESCryptoServiceProvider
+                Dim MD5 As New MD5CryptoServiceProvider
+                DES.Key = MD5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(key))
+                DES.Mode = CipherMode.ECB
+                Dim Buffer As Byte() = Convert.FromBase64String(encryptedString)
+                ret = ASCIIEncoding.ASCII.GetString(DES.CreateDecryptor().TransformFinalBlock(Buffer, 0, Buffer.Length))
+            Catch ex As Exception
+                logger.Error(ex)
+                'MsgBox("Invalid-Decryption Failed")
+            End Try
+            Return ret
+        End Function
     End Module
+#End Region
 End Namespace

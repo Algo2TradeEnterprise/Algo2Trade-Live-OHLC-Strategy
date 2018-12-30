@@ -5,12 +5,29 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Controller
 Imports System.ComponentModel
+Imports Syncfusion.WinForms.DataGrid
+Imports Syncfusion.WinForms.DataGrid.Events
+Imports Syncfusion.WinForms.Input.Enums
+
 Public Class frmMain
 #Region "Logging and Status Progress"
     Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
 #Region "Common Delegates"
+
+    Delegate Sub SetSFGridDataBind_Delegate(ByVal [grd] As SfDataGrid, ByVal [value] As Object)
+    Public Sub SetSFGridDataBind_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid, ByVal [value] As Object)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [grd].InvokeRequired Then
+            Dim MyDelegate As New SetSFGridDataBind_Delegate(AddressOf SetSFGridDataBind_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[grd], [value]})
+        Else
+            [grd].DataSource = [value]
+        End If
+    End Sub
+
     Delegate Sub SetGridDisplayIndex_Delegate(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
     Public Sub SetGridDisplayIndex_ThreadSafe(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
@@ -187,9 +204,11 @@ Public Class frmMain
         GlobalDiagnosticsContext.Set("appname", My.Application.Info.AssemblyName)
         GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
         logger.Trace("*************************** Logging started ***************************")
+        lstLog.ForeColor = Color.FromArgb(255, 29, 29, 29)
     End Sub
 
     Private Async Sub btnStart_Click(sender As Object, e As EventArgs) Handles btnStart.Click
+
         _cts = New CancellationTokenSource()
         _cts.Token.ThrowIfCancellationRequested()
 
@@ -267,49 +286,12 @@ Public Class frmMain
 
             Await _controller.ExecuteStrategyAsync(ohlStrategyToExecute)
 
-            Dim dashboadList As SortableBindingList(Of OHLStrategyInstrument) = New SortableBindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
-            SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
-            SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
+            Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
+            'SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
+            'SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
+            SetSFGridDataBind_ThreadSafe(sfdgvMainDashboard, dashboadList)
             Exit Sub
 
-            'Await CType(_controller, ZerodhaStrategyController).TestAsync.ConfigureAwait(False)
-            'OnHeartbeat("Getting all instruments for the day")
-            'Dim allInstruments As IEnumerable(Of IInstrument) = Await _adapter.GetAllInstrumentsAsync().ConfigureAwait(False)
-            'If allInstruments Is Nothing OrElse allInstruments.Count = 0 Then
-            '    Throw New ApplicationException("No instrument master list could be retrieved from Zerodha")
-            'End If
-
-            'OnHeartbeat("Getting tradable instruments as per strategy")
-            'Dim mrStrategyInstruments As List(Of MomentumReversalStrategyInstrument) =
-            '    Await MomentumReversalStrategyInstrument.GetAllTradableInstrumentsAsync(allInstruments,
-            '                                                                        _adapter,
-            '                                                                        _cts).ConfigureAwait(False)
-            'If mrStrategyInstruments Is Nothing OrElse mrStrategyInstruments.Count = 0 Then
-            '    Throw New ApplicationException("No tradable strategy instruments could be created")
-            'End If
-
-            'OnHeartbeat("Opening subcriber")
-            '_subscriber = New ZerodhaInstrumentSubscriber(_adapter, _cts)
-            'AddHandler _subscriber.Heartbeat, AddressOf OnHeartbeat
-            'AddHandler _subscriber.WaitingFor, AddressOf OnWaitingFor
-            'AddHandler _subscriber.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-            'AddHandler _subscriber.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-
-            'OnHeartbeat(String.Format("Subscribing strategy instruments, count:{0}", mrStrategyInstruments.Count))
-            'For Each runningStrategyInstrument As MomentumReversalStrategyInstrument In mrStrategyInstruments
-            '    _subscriber.SubscribeStrategy(runningStrategyInstrument)
-            'Next
-            ''Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False)
-            'Dim t As Task
-            't = New Task(Async Sub() Await _adapter.ConnectTickerAsync(_subscriber).ConfigureAwait(False))
-            't.Start()
-            ''Await t.ConfigureAwait(False)
-            ''For Each mr In mrStrategyInstruments
-            ''    '_adapter.TestAsync(mr.TradableInstrument.InstrumentIdentifier)
-            ''    _adapter.GetAllTradesAsync(New Dictionary(Of String, Object) From {{"xxx", mr.TradableInstrument.InstrumentIdentifier}}, retryEnabled:=False)
-            ''Next
-            ''Await Task.Delay(4509934).ConfigureAwait(False)
-            'Await _subscriber.RunAdditionalStrategyTriggersAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -341,7 +323,7 @@ Public Class frmMain
     End Sub
     Private Sub OnTickerReconnect()
         blbTickerStatus.Color = Color.Yellow
-        OnHeartbeat("Ticker:Reconnected")
+        OnHeartbeat("Ticker:Reconnecting")
     End Sub
 
     Private Sub tmrTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrTickerStatus.Tick
@@ -357,15 +339,33 @@ Public Class frmMain
     End Sub
 
 
-    Private Sub dgMainDashboard_CellFormatting(sender As Object, e As DataGridViewCellFormattingEventArgs) Handles dgMainDashboard.CellFormatting
-        'If e.ColumnIndex = 5 Then
-        'dgMainDashboard.Rows(e.RowIndex).Cells(e.ColumnIndex).Style.BackColor = Color.LightGreen
-        'End If
+    Private Sub sfdgvMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMainDashboard.AutoGeneratingColumn
+        sfdgvMainDashboard.Style.HeaderStyle.BackColor = Color.DeepSkyBlue
+        sfdgvMainDashboard.Style.HeaderStyle.TextColor = Color.White
+
+        sfdgvMainDashboard.Style.CheckBoxStyle.CheckedBackColor = Color.White
+        sfdgvMainDashboard.Style.CheckBoxStyle.CheckedTickColor = Color.LightSkyBlue
+        If e.Column.CellType = "DateTime" Then
+            CType(e.Column, GridDateTimeColumn).Pattern = DateTimePattern.SortableDateTime
+        End If
+        'Console.WriteLine(e.Column.CellType)
+        'e.Column.HeaderStyle.BackColor = Color.LightSkyBlue
     End Sub
 
-    Private Sub dgMainDashboard_DataBindingComplete(sender As Object, e As DataGridViewBindingCompleteEventArgs) Handles dgMainDashboard.DataBindingComplete
-        'For Each column As DataGridViewColumn In CType(sender, DataGridView).Columns
-        '    column.SortMode = DataGridViewColumnSortMode.Automatic
-        'Next
+    Private Sub sfdgvMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMainDashboard.FilterPopupShowing
+        e.Control.BackColor = ColorTranslator.FromHtml("#EDF3F3")
+
+        'Customize the appearance of the CheckedListBox
+
+        sfdgvMainDashboard.Style.CheckBoxStyle.CheckedBackColor = Color.White
+        sfdgvMainDashboard.Style.CheckBoxStyle.CheckedTickColor = Color.LightSkyBlue
+        e.Control.CheckListBox.Style.CheckBoxStyle.CheckedBackColor = Color.White
+        e.Control.CheckListBox.Style.CheckBoxStyle.CheckedTickColor = Color.LightSkyBlue
+
+        'Customize the appearance of the Ok and Cancel buttons
+        e.Control.CancelButton.BackColor = Color.DeepSkyBlue
+        e.Control.OkButton.BackColor = e.Control.CancelButton.BackColor
+        e.Control.CancelButton.ForeColor = Color.White
+        e.Control.OkButton.ForeColor = e.Control.CancelButton.ForeColor
     End Sub
 End Class

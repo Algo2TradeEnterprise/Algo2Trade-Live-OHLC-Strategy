@@ -1,4 +1,5 @@
 ﻿Imports System.ComponentModel
+Imports System.ComponentModel.DataAnnotations
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
@@ -55,7 +56,7 @@ Namespace Strategies
         Protected _APIAdapter As APIAdapter
 
         'UI Properties
-        <DisplayName("Symbol")>
+        <Display(Name:="Symbol", Order:=0)>
         Public Overridable ReadOnly Property TradingSymbol As String
             Get
                 If TradableInstrument IsNot Nothing Then
@@ -65,7 +66,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Tradable")>
+        <Display(Name:="Tradable", Order:=1)>
         Public Overridable ReadOnly Property Tradabale As Boolean
             Get
                 If _LastTick IsNot Nothing Then
@@ -75,7 +76,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Open")>
+        <Display(Name:="Open", Order:=2)>
         Public Overridable ReadOnly Property OpenPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
@@ -85,7 +86,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("High")>
+        <Display(Name:="High", Order:=3)>
         Public Overridable ReadOnly Property HighPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
@@ -95,7 +96,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Low")>
+        <Display(Name:="Low", Order:=4)>
         Public Overridable ReadOnly Property LowPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
@@ -105,7 +106,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Previous Close")>
+        <Display(Name:="Previous Close", Order:=5)>
         Public Overridable ReadOnly Property ClosePrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
@@ -115,7 +116,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Volume")>
+        <Display(Name:="Volume", Order:=6)>
         Public Overridable ReadOnly Property Volume As Long
             Get
                 If _LastTick IsNot Nothing Then
@@ -125,7 +126,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Average Price")>
+        <Display(Name:="Average Price", Order:=7)>
         Public Overridable ReadOnly Property AveragePrice As Long
             Get
                 If _LastTick IsNot Nothing Then
@@ -135,7 +136,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Last Price")>
+        <Display(Name:="Last Price", Order:=8)>
         Public Overridable ReadOnly Property LastPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
@@ -145,7 +146,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        <DisplayName("Timestamp")>
+        <Display(Name:="Timestamp", Order:=9)>
         Public Overridable ReadOnly Property Timestamp As Date?
             Get
                 If _LastTick IsNot Nothing Then
