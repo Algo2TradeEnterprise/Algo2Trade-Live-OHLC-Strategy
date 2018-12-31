@@ -14,29 +14,57 @@ Namespace Strategies
         End Sub
 
 #Region "Events/Event handlers"
-        Public Event DocumentDownloadComplete()
-        Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
-        Public Event Heartbeat(ByVal msg As String)
-        Public Event WaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
+        Public Event DocumentDownloadCompleteEx(ByVal source As List(Of Object))
+        Public Event DocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
+        Public Event HeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
+        Public Event WaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
         'The below functions are needed to allow the derived classes to raise the above two events
+        Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
+            If source IsNot Nothing Then source = New List(Of Object)
+            source.Add(Me)
+            RaiseEvent DocumentDownloadCompleteEx(source)
+        End Sub
+        Protected Overridable Sub OnDocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
+            If source IsNot Nothing Then source = New List(Of Object)
+            source.Add(Me)
+            RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, source)
+        End Sub
+        Protected Overridable Sub OnHeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
+            If source IsNot Nothing Then source = New List(Of Object)
+            source.Add(Me)
+            If TradableInstrument IsNot Nothing Then
+                RaiseEvent HeartbeatEx(String.Format("{0}:{1}", TradableInstrument.InstrumentIdentifier, msg), source)
+            Else
+                RaiseEvent HeartbeatEx(String.Format("{0}:{1}", "No instrument", msg), source)
+            End If
+        End Sub
+        Protected Overridable Sub OnWaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
+            If source IsNot Nothing Then source = New List(Of Object)
+            source.Add(Me)
+            If TradableInstrument IsNot Nothing Then
+                RaiseEvent WaitingForEx(elapsedSecs, totalSecs, String.Format("{0}-{1}", TradableInstrument.InstrumentIdentifier, msg), source)
+            Else
+                RaiseEvent WaitingForEx(elapsedSecs, totalSecs, String.Format("{0}-{1}", "No instrument", msg), source)
+            End If
+        End Sub
         Protected Overridable Sub OnDocumentDownloadComplete()
-            RaiseEvent DocumentDownloadComplete()
+            RaiseEvent DocumentDownloadCompleteEx(New List(Of Object) From {Me})
         End Sub
         Protected Overridable Sub OnDocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
-            RaiseEvent DocumentRetryStatus(currentTry, totalTries)
+            RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, New List(Of Object) From {Me})
         End Sub
         Protected Overridable Sub OnHeartbeat(ByVal msg As String)
             If TradableInstrument IsNot Nothing Then
-                RaiseEvent Heartbeat(String.Format("{0}:{1}", TradableInstrument.InstrumentIdentifier, msg))
+                RaiseEvent HeartbeatEx(String.Format("{0}:{1}", TradableInstrument.InstrumentIdentifier, msg), New List(Of Object) From {Me})
             Else
-                RaiseEvent Heartbeat(String.Format("{0}:{1}", "No instrument", msg))
+                RaiseEvent HeartbeatEx(String.Format("{0}:{1}", "No instrument", msg), New List(Of Object) From {Me})
             End If
         End Sub
         Protected Overridable Sub OnWaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
             If TradableInstrument IsNot Nothing Then
-                RaiseEvent WaitingFor(elapsedSecs, totalSecs, String.Format("{0}-{1}", TradableInstrument.InstrumentIdentifier, msg))
+                RaiseEvent WaitingForEx(elapsedSecs, totalSecs, String.Format("{0}-{1}", TradableInstrument.InstrumentIdentifier, msg), New List(Of Object) From {Me})
             Else
-                RaiseEvent WaitingFor(elapsedSecs, totalSecs, String.Format("{0}-{1}", "No instrument", msg))
+                RaiseEvent WaitingForEx(elapsedSecs, totalSecs, String.Format("{0}-{1}", "No instrument", msg), New List(Of Object) From {Me})
             End If
         End Sub
 #End Region

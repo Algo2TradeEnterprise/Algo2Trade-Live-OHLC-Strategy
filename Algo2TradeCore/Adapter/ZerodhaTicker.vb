@@ -18,6 +18,7 @@ Namespace Adapter
         End Sub
         Public Overrides Async Function ConnectTickerAsync() As Task
             logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
+            _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentContoller, ZerodhaStrategyController)
 
@@ -30,7 +31,9 @@ Namespace Adapter
                 RemoveHandler _ticker.OnConnect, AddressOf currentZerodhaStrategyController.OnTickerConnect
                 RemoveHandler _ticker.OnOrderUpdate, AddressOf currentZerodhaStrategyController.OnTickerOrderUpdateAsync
 
+                _cts.Token.ThrowIfCancellationRequested()
                 If _ticker.IsConnected Then _ticker.Close()
+                _cts.Token.ThrowIfCancellationRequested()
             End If
             _ticker = New Ticker(ParentContoller.APIConnection.APIUser.APIKey, ParentContoller.APIConnection.AccessToken)
             AddHandler _ticker.OnTick, AddressOf currentZerodhaStrategyController.OnTickerTickAsync
@@ -41,34 +44,41 @@ Namespace Adapter
             AddHandler _ticker.OnConnect, AddressOf currentZerodhaStrategyController.OnTickerConnect
             AddHandler _ticker.OnOrderUpdate, AddressOf currentZerodhaStrategyController.OnTickerOrderUpdateAsync
 
+            _cts.Token.ThrowIfCancellationRequested()
             _ticker.EnableReconnect(Interval:=5, Retries:=50)
             _ticker.Connect()
+            _cts.Token.ThrowIfCancellationRequested()
         End Function
 
         Public Overrides Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
             logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
+            _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedInstruments Is Nothing Then _subscribedInstruments = New List(Of String)
             Dim subscriptionList() As UInt32 = Nothing
 
             Dim index As Integer = -1
-            For Each runninInstrumentIdentifier In instrumentIdentifiers
-                If _subscribedInstruments.Contains(runninInstrumentIdentifier) Then Continue For
+            For Each runningInstrumentIdentifier In instrumentIdentifiers
+                _cts.Token.ThrowIfCancellationRequested()
+                If _subscribedInstruments.Contains(runningInstrumentIdentifier) Then Continue For
                 index += 1
                 If index = 0 Then
                     ReDim subscriptionList(0)
                 Else
                     ReDim Preserve subscriptionList(UBound(subscriptionList) + 1)
                 End If
-                subscriptionList(index) = runninInstrumentIdentifier
-                _subscribedInstruments.Add(runninInstrumentIdentifier)
+                subscriptionList(index) = runningInstrumentIdentifier
+                _subscribedInstruments.Add(runningInstrumentIdentifier)
             Next
             If subscriptionList Is Nothing OrElse UBound(subscriptionList) = 0 Then
+                OnHeartbeat("No instruments were subscribed as they may be already subscribed")
                 logger.Error("No tokens to subscribe")
             Else
+                _cts.Token.ThrowIfCancellationRequested()
                 _ticker.Subscribe(Tokens:=subscriptionList)
+                _cts.Token.ThrowIfCancellationRequested()
                 _ticker.SetMode(Tokens:=subscriptionList, Mode:=Constants.MODE_FULL)
-                OnHeartbeat("Subscribed:" & subscriptionList.Count)
+                OnHeartbeat(String.Format("Subscribed:{0} instruments", subscriptionList.Count))
             End If
         End Function
         Public Overrides Function ToString() As String
@@ -85,11 +95,11 @@ Namespace Adapter
             End If
         End Function
         Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
+            'Intentionally no _cts.Token.ThrowIfCancellationRequested() since we need to close the ticker when cancellation is done
             Await Task.Delay(0)
             If _ticker IsNot Nothing AndAlso _ticker.IsConnected Then
                 _ticker.Close()
             End If
         End Function
-
     End Class
 End Namespace

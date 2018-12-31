@@ -31,7 +31,9 @@ Namespace Adapter
             Dim ret As List(Of ZerodhaInstrument) = Nothing
             Dim command As KiteCommands = KiteCommands.GetInstruments
 
+            _cts.Token.ThrowIfCancellationRequested()
             Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, Nothing).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
             If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(command.ToString) Then
@@ -52,6 +54,7 @@ Namespace Adapter
                 OnHeartbeat(String.Format("Creating Zerodha instrument collection from API instruments, count:{0}", tempRet.count))
                 Dim zerodhaReturedInstruments As List(Of Instrument) = CType(tempRet, List(Of Instrument))
                 For Each runningInstrument As Instrument In zerodhaReturedInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
                     If ret Is Nothing Then ret = New List(Of ZerodhaInstrument)
                     ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
                 Next
@@ -64,7 +67,9 @@ Namespace Adapter
             logger.Debug("GetAllTradesAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaTrade) = Nothing
             Dim command As KiteCommands = KiteCommands.GetOrderTrades
+            _cts.Token.ThrowIfCancellationRequested()
             Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(command, Nothing).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
             If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(command.ToString) Then
@@ -85,6 +90,7 @@ Namespace Adapter
                 OnHeartbeat(String.Format("Creating Zerodha trade collection from API trades, count:{0}", tempRet.count))
                 Dim zerodhaReturedTrades As List(Of Trade) = CType(tempRet, List(Of Trade))
                 For Each runningTrade As Trade In zerodhaReturedTrades
+                    _cts.Token.ThrowIfCancellationRequested()
                     If ret Is Nothing Then ret = New List(Of ZerodhaTrade)
                     ret.Add(New ZerodhaTrade With {.WrappedTrade = runningTrade})
                 Next
@@ -96,6 +102,7 @@ Namespace Adapter
 
         Private Async Function ExecuteCommandAsync(ByVal command As KiteCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
             logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
+            _cts.Token.ThrowIfCancellationRequested()
             Dim ret As Dictionary(Of String, Object) = Nothing
 
             Dim lastException As Exception = Nothing
@@ -112,6 +119,7 @@ Namespace Adapter
                                                                     Return Nothing
                                                                 End Try
                                                             End Function).ConfigureAwait(False)
+                    _cts.Token.ThrowIfCancellationRequested()
                     ret = New Dictionary(Of String, Object) From {{command.ToString, positions}}
                 Case KiteCommands.PlaceOrder
                     Dim placedOrders As Dictionary(Of String, Object) = Nothing
@@ -136,6 +144,7 @@ Namespace Adapter
                                                                            Return Nothing
                                                                        End Try
                                                                    End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, placedOrders}}
                 Case KiteCommands.ModifyOrderQuantity
@@ -151,6 +160,7 @@ Namespace Adapter
                                                                                      Return Nothing
                                                                                  End Try
                                                                              End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, modifiedOrdersQuantity}}
                 Case KiteCommands.ModifyTargetOrderPrice, KiteCommands.ModifyOrderPrice
@@ -166,6 +176,7 @@ Namespace Adapter
                                                                                   Return Nothing
                                                                               End Try
                                                                           End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, modifiedOrdersPrice}}
                 Case KiteCommands.ModifySLOrderPrice
@@ -181,6 +192,7 @@ Namespace Adapter
                                                                                   Return Nothing
                                                                               End Try
                                                                           End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, modifiedOrdersPrice}}
                 Case KiteCommands.CancelOrder
@@ -197,6 +209,7 @@ Namespace Adapter
                                                                              Return Nothing
                                                                          End Try
                                                                      End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, cancelledOrder}}
                 Case KiteCommands.GetOrderHistory
@@ -211,6 +224,7 @@ Namespace Adapter
                                                                         Return Nothing
                                                                     End Try
                                                                 End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
                 Case KiteCommands.GetOrders
@@ -224,6 +238,7 @@ Namespace Adapter
                                                                     Return Nothing
                                                                 End Try
                                                             End Function).ConfigureAwait(False)
+                    _cts.Token.ThrowIfCancellationRequested()
                     ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
                 Case KiteCommands.GetOrderTrades
                     Dim tradeList As List(Of Trade) = Nothing
@@ -237,6 +252,7 @@ Namespace Adapter
                                                                         Return Nothing
                                                                     End Try
                                                                 End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     Else
                         tradeList = Await Task.Factory.StartNew(Function()
                                                                     Try
@@ -247,6 +263,7 @@ Namespace Adapter
                                                                         Return Nothing
                                                                     End Try
                                                                 End Function).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                     ret = New Dictionary(Of String, Object) From {{command.ToString, tradeList}}
                 Case KiteCommands.GetInstruments
@@ -260,6 +277,7 @@ Namespace Adapter
                                                                       Return Nothing
                                                                   End Try
                                                               End Function).ConfigureAwait(False)
+                    _cts.Token.ThrowIfCancellationRequested()
                     Dim count As Integer = If(instruments Is Nothing, 0, instruments.Count)
                     logger.Debug(String.Format("Fetched {0} instruments from Zerodha", count))
                     If instruments IsNot Nothing AndAlso instruments.Count > 0 Then
@@ -269,10 +287,12 @@ Namespace Adapter
                         count = If(instruments Is Nothing, 0, instruments.Count)
                         logger.Debug(String.Format("After cleanup, fetched {0} instruments from Zerodha", count))
                     End If
+                    _cts.Token.ThrowIfCancellationRequested()
                     ret = New Dictionary(Of String, Object) From {{command.ToString, instruments}}
                 Case KiteCommands.InvalidateAccessToken
                     Dim invalidateToken = _Kite.InvalidateAccessToken(CType(ParentController.APIConnection, ZerodhaConnection).AccessToken)
                     lastException = Nothing
+                    _cts.Token.ThrowIfCancellationRequested()
                 Case Else
                     Throw New ApplicationException("No Command Triggered")
             End Select
@@ -282,28 +302,6 @@ Namespace Adapter
             Return ret
         End Function
 
-        'Public Overrides Async Function ConnectTickerAsync(ByVal subscriber As APIInstrumentSubscriber) As Task
-        '    Await Task.Delay(0).ConfigureAwait(False)
-        '    _Ticker = New Ticker(_ZerodhaConnection.APIKey, _ZerodhaConnection.APIUser.WrappedUser.AccessToken)
-        '    Dim zerodhaSubscriber As ZerodhaInstrumentSubscriber = CType(subscriber, ZerodhaInstrumentSubscriber)
-        '    AddHandler _Ticker.OnTick, AddressOf zerodhaSubscriber.OnTickerTickAsync
-        '    AddHandler _Ticker.OnReconnect, AddressOf zerodhaSubscriber.OnTickerReconnect
-        '    AddHandler _Ticker.OnNoReconnect, AddressOf zerodhaSubscriber.OnTickerNoReconnect
-        '    AddHandler _Ticker.OnError, AddressOf zerodhaSubscriber.OnTickerError
-        '    AddHandler _Ticker.OnClose, AddressOf zerodhaSubscriber.OnTickerClose
-        '    AddHandler _Ticker.OnConnect, AddressOf zerodhaSubscriber.OnTickerConnect
-        '    AddHandler _Ticker.OnOrderUpdate, AddressOf zerodhaSubscriber.OnTickerOrderUpdateAsync
-
-        '    _Ticker.EnableReconnect(Interval:=5, Retries:=50)
-        '    _Ticker.Connect()
-        '    If zerodhaSubscriber.SubcribedInstruments IsNot Nothing AndAlso zerodhaSubscriber.SubcribedInstruments.Count > 0 Then
-        '        For Each runningInstrumentIdentifier In zerodhaSubscriber.SubcribedInstruments
-        '            logger.Debug("Subscribing instrument identfier:{0}", runningInstrumentIdentifier)
-        '            _Ticker.Subscribe(Tokens:=New UInt32() {runningInstrumentIdentifier})
-        '            _Ticker.SetMode(Tokens:=New UInt32() {runningInstrumentIdentifier}, Mode:=Constants.MODE_FULL)
-        '        Next
-        '    End If
-        'End Function
         Private Enum KiteCommands
             GetPositions = 1
             PlaceOrder

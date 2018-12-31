@@ -31,6 +31,7 @@ Partial Class frmMainTabbed
         Me.tabMomentumReversal = New System.Windows.Forms.TabPage()
         Me.pnlMomentumReversalMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlMomentumReversalTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnMomentumReversalStop = New System.Windows.Forms.Button()
         Me.btnMomentumReversalStart = New System.Windows.Forms.Button()
         Me.Panel1 = New System.Windows.Forms.Panel()
         Me.lblMomentumReversalTickerStatus = New System.Windows.Forms.Label()
@@ -40,7 +41,6 @@ Partial Class frmMainTabbed
         Me.lstMomentumReversalLog = New System.Windows.Forms.ListBox()
         Me.sfdgvMomentumReversalMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tabOHL = New System.Windows.Forms.TabPage()
-        Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.pnlOHLMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlOHLTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.btnOHLStart = New System.Windows.Forms.Button()
@@ -51,7 +51,9 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstOHLLog = New System.Windows.Forms.ListBox()
         Me.sfdgvOHLMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.btnOHLStop = New System.Windows.Forms.Button()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -154,6 +156,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalStop, 0, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalStart, 0, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
@@ -163,6 +166,16 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1240, 38)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnMomentumReversalStop
+        '
+        Me.btnMomentumReversalStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnMomentumReversalStop.Location = New System.Drawing.Point(85, 3)
+        Me.btnMomentumReversalStop.Name = "btnMomentumReversalStop"
+        Me.btnMomentumReversalStop.Size = New System.Drawing.Size(76, 32)
+        Me.btnMomentumReversalStop.TabIndex = 10
+        Me.btnMomentumReversalStop.Text = "Stop"
+        Me.btnMomentumReversalStop.UseVisualStyleBackColor = True
         '
         'btnMomentumReversalStart
         '
@@ -268,10 +281,6 @@ Partial Class frmMainTabbed
         Me.tabOHL.Text = "OHL"
         Me.tabOHL.UseVisualStyleBackColor = True
         '
-        'tmrMomentumReversalTickerStatus
-        '
-        Me.tmrMomentumReversalTickerStatus.Enabled = True
-        '
         'pnlOHLMainPanelHorizontalSplitter
         '
         Me.pnlOHLMainPanelHorizontalSplitter.ColumnCount = 1
@@ -305,6 +314,7 @@ Partial Class frmMainTabbed
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.btnOHLStop, 0, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.btnOHLStart, 0, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.Panel2, 14, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
@@ -408,9 +418,23 @@ Partial Class frmMainTabbed
         Me.sfdgvOHLMainDashboard.TabIndex = 6
         Me.sfdgvOHLMainDashboard.Text = "SfDataGrid1"
         '
+        'tmrMomentumReversalTickerStatus
+        '
+        Me.tmrMomentumReversalTickerStatus.Enabled = True
+        '
         'tmrOHLTickerStatus
         '
         Me.tmrOHLTickerStatus.Enabled = True
+        '
+        'btnOHLStop
+        '
+        Me.btnOHLStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnOHLStop.Location = New System.Drawing.Point(85, 3)
+        Me.btnOHLStop.Name = "btnOHLStop"
+        Me.btnOHLStop.Size = New System.Drawing.Size(76, 32)
+        Me.btnOHLStop.TabIndex = 11
+        Me.btnOHLStop.Text = "Stop"
+        Me.btnOHLStop.UseVisualStyleBackColor = True
         '
         'frmMainTabbed
         '
@@ -476,4 +500,6 @@ Partial Class frmMainTabbed
     Friend WithEvents lstOHLLog As ListBox
     Friend WithEvents sfdgvOHLMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrOHLTickerStatus As Timer
+    Friend WithEvents btnMomentumReversalStop As Button
+    Friend WithEvents btnOHLStop As Button
 End Class

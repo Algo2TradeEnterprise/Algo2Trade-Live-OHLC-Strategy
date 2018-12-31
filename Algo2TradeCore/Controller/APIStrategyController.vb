@@ -13,6 +13,10 @@ Namespace Controller
         Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
         Public Event Heartbeat(ByVal msg As String)
         Public Event WaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
+        Public Event DocumentDownloadCompleteEx(ByVal source As List(Of Object))
+        Public Event DocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
+        Public Event HeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
+        Public Event WaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
         'Create the events for UI to handle the way it needs to show the ticker
         Public Event TickerConnect()
         Public Event TickerClose()
@@ -20,7 +24,6 @@ Namespace Controller
         Public Event TickerError(ByVal errorMessage As String)
         Public Event TickerNoReconnect()
         Public Event TickerReconnect()
-        'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
         End Sub
@@ -32,6 +35,19 @@ Namespace Controller
         End Sub
         Protected Overridable Sub OnWaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
             RaiseEvent WaitingFor(elapsedSecs, totalSecs, msg)
+        End Sub
+        'The below functions are needed to allow the derived classes to raise the above two events
+        Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
+            RaiseEvent DocumentDownloadCompleteEx(source)
+        End Sub
+        Protected Overridable Sub OnDocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
+            RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, source)
+        End Sub
+        Protected Overridable Sub OnHeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
+            RaiseEvent HeartbeatEx(msg, source)
+        End Sub
+        Protected Overridable Sub OnWaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
+            RaiseEvent WaitingForEx(elapsedSecs, totalSecs, msg, source)
         End Sub
         Public Overridable Sub OnTickerConnect()
             RaiseEvent TickerConnect()
@@ -69,7 +85,7 @@ Namespace Controller
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
         Protected _AllInstruments As IEnumerable(Of IInstrument)
-        Protected _AllStratgeies As List(Of Strategy)
+        Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, List(Of StrategyInstrument))
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal canceller As CancellationTokenSource)
@@ -78,7 +94,7 @@ Namespace Controller
             _LoginThreads = 0
         End Sub
         Public MustOverride Function GetErrorResponse(ByVal response As Object) As String
-
+        Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
 #Region "Login"
         Protected MustOverride Function GetLoginURL() As String
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)

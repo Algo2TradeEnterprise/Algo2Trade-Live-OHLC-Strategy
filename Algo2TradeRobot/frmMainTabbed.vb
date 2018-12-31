@@ -158,14 +158,41 @@ Public Class frmMainTabbed
     End Function
 #End Region
 
-#Region "Event Handlers"
-    Public Sub ProgressStatus(ByVal msg As String)
-        SyncLock Me
-            If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
-            SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
-            logger.Info(msg)
-        End SyncLock
+#Region "Common Event Handlers"
+
+#Region "Ticker events"
+
+    Private Sub OnTickerClose()
+        blbMomentumReversalTickerStatus.Color = Color.Pink
+        blbOHLTickerStatus.Color = Color.Pink
+        OnHeartbeat("Ticker:Closed")
     End Sub
+    Private Sub OnTickerConnect()
+        blbMomentumReversalTickerStatus.Color = Color.Lime
+        blbOHLTickerStatus.Color = Color.Lime
+        OnHeartbeat("Ticker:Connected")
+    End Sub
+    Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
+        If Not isConnected Then
+            blbMomentumReversalTickerStatus.Color = Color.Pink
+            blbOHLTickerStatus.Color = Color.Pink
+        End If
+    End Sub
+    Private Sub OnTickerError(ByVal errorMsg As String)
+        'Nothing to do
+        OnHeartbeat(String.Format("Ticker:Error:{0}", errorMsg))
+    End Sub
+    Private Sub OnTickerNoReconnect()
+        'Nothing to do
+    End Sub
+    Private Sub OnTickerReconnect()
+        blbMomentumReversalTickerStatus.Color = Color.Yellow
+        blbOHLTickerStatus.Color = Color.Yellow
+        OnHeartbeat("Ticker:Reconnecting")
+    End Sub
+#End Region
+
+#Region "Standard Events"
     Private Sub OnHeartbeat(msg As String)
         'Update detailed status on the first part, dont append if the text starts with <
         If msg.Contains("<<<") Then
@@ -190,6 +217,52 @@ Public Class frmMainTabbed
         End
     End Sub
 #End Region
+    Public Sub ProgressStatus(ByVal msg As String)
+        SyncLock Me
+            If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
+            SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+            SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+            logger.Info(msg)
+        End SyncLock
+    End Sub
+    Public Sub ProgressStatusEx(ByVal msg As String, ByVal source As List(Of Object))
+        SyncLock Me
+            If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
+            If source Is Nothing Then
+                SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+                SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+            ElseIf source IsNot Nothing AndAlso source.Count > 0 Then
+                For Each runningSource In source
+                    If runningSource.GetType Is GetType(OHLStrategy) Then
+                        SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+                    ElseIf runningSource.GetType Is GetType(MomentumReversalStrategy) Then
+                        SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+                    End If
+                Next
+            End If
+            logger.Info(msg)
+        End SyncLock
+    End Sub
+    Private Sub OnHeartbeatEx(msg As String, ByVal source As List(Of Object))
+        'Update detailed status on the first part, dont append if the text starts with <
+        If msg.Contains("<<<") Then
+            msg = Replace(msg, "<<<", Nothing)
+            ProgressStatusEx(msg, source)
+        Else
+            ProgressStatusEx(msg, source)
+        End If
+        msg = Nothing
+    End Sub
+    Private Sub OnWaitingForEx(elapsedSecs As Integer, totalSecs As Integer, msg As String, ByVal source As List(Of Object))
+        If msg.Contains("...") Then msg = msg.Replace("...", "")
+        ProgressStatusEx(String.Format("{0}, waiting {1}/{2} secs", msg, elapsedSecs, totalSecs), source)
+    End Sub
+    Private Sub OnDocumentRetryStatusEx(currentTry As Integer, totalTries As Integer, ByVal source As List(Of Object))
+        'ProgressStatusEx(String.Format("Try #{0}/{1}: Connecting", currentTry, totalTries), source)
+    End Sub
+    Private Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
+    End Sub
+#End Region
 
 #Region "Private Attributes"
     Private _cts As CancellationTokenSource
@@ -200,25 +273,6 @@ Public Class frmMainTabbed
 
 #Region "Momentum Reversal"
 
-#End Region
-
-#Region "OHL"
-
-#End Region
-
-#Region "UI Adjustments"
-    Private Sub sfdgvMomentumReversalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMomentumReversalMainDashboard.AutoGeneratingColumn
-        sfdgvMomentumReversalMainDashboard.Style.HeaderStyle.BackColor = Color.DeepSkyBlue
-        sfdgvMomentumReversalMainDashboard.Style.HeaderStyle.TextColor = Color.White
-
-        sfdgvMomentumReversalMainDashboard.Style.CheckBoxStyle.CheckedBackColor = Color.White
-        sfdgvMomentumReversalMainDashboard.Style.CheckBoxStyle.CheckedTickColor = Color.LightSkyBlue
-        If e.Column.CellType = "DateTime" Then
-            CType(e.Column, GridDateTimeColumn).Pattern = DateTimePattern.SortableDateTime
-        End If
-        'Console.WriteLine(e.Column.CellType)
-        'e.Column.HeaderStyle.BackColor = Color.LightSkyBlue
-    End Sub
     Private Sub sfdgvMomentumReversalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMomentumReversalMainDashboard.FilterPopupShowing
         e.Control.BackColor = ColorTranslator.FromHtml("#EDF3F3")
 
@@ -235,22 +289,6 @@ Public Class frmMainTabbed
         e.Control.CancelButton.ForeColor = Color.White
         e.Control.OkButton.ForeColor = e.Control.CancelButton.ForeColor
     End Sub
-#End Region
-    Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
-        Dim newForm As New frmZerodhaUserDetails
-        newForm.ShowDialog()
-    End Sub
-    Private Sub frmMainTabbed_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        GlobalDiagnosticsContext.Set("appname", My.Application.Info.AssemblyName)
-        GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
-        logger.Trace("*************************** Logging started ***************************")
-
-        If Not Common.IsZerodhaUserDetailsPopulated() Then
-            miUserDetails_Click(sender, e)
-        End If
-
-        lstMomentumReversalLog.ForeColor = Color.FromArgb(255, 29, 29, 29)
-    End Sub
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
 
         _cts = New CancellationTokenSource()
@@ -266,6 +304,10 @@ Public Class frmMainTabbed
             RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
             RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+            RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+            RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+            RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
             RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
             RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
             RemoveHandler _commonController.TickerError, AddressOf OnTickerError
@@ -276,6 +318,10 @@ Public Class frmMainTabbed
             AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
             AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+            AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+            AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+            AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
             AddHandler _commonController.TickerClose, AddressOf OnTickerClose
             AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
             AddHandler _commonController.TickerError, AddressOf OnTickerError
@@ -285,11 +331,18 @@ Public Class frmMainTabbed
 #Region "Login"
             Dim loginMessage As String = Nothing
             While True
+                _cts.Token.ThrowIfCancellationRequested()
                 _connection = Nothing
                 loginMessage = Nothing
                 Try
                     OnHeartbeat("Attempting to get connection to Zerodha API")
+                    _cts.Token.ThrowIfCancellationRequested()
                     _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                    _cts.Token.ThrowIfCancellationRequested()
+                Catch cx As OperationCanceledException
+                    loginMessage = cx.Message
+                    logger.Error(cx)
+                    Exit While
                 Catch ex As Exception
                     loginMessage = ex.Message
                     logger.Error(ex)
@@ -301,7 +354,9 @@ Public Class frmMainTabbed
                         Exit While
                     Else
                         OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                        _cts.Token.ThrowIfCancellationRequested()
                         Await Task.Delay(10000)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                 Else
                     Exit While
@@ -316,21 +371,27 @@ Public Class frmMainTabbed
             End If
 #End Region
             OnHeartbeat("Completing all pre-automation requirements")
+            _cts.Token.ThrowIfCancellationRequested()
             Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
 
             If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
 
-            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, _cts)
-            OnHeartbeat(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString))
+            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
-            Await _commonController.ExecuteStrategyAsync(ohlStrategyToExecute)
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.ExecuteStrategyAsync(momentumReversalStrategyToExecute)
+            _cts.Token.ThrowIfCancellationRequested()
 
-            Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
+            Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
             'SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
             'SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
-            Exit Sub
-
+            While True
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -340,31 +401,9 @@ Public Class frmMainTabbed
         Finally
             ProgressStatus("No pending actions")
         End Try
+        If _cts.IsCancellationRequested Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
     End Sub
-
-    Private Sub OnTickerClose()
-        blbMomentumReversalTickerStatus.Color = Color.Pink
-        OnHeartbeat("Ticker:Closed")
-    End Sub
-    Private Sub OnTickerConnect()
-        blbMomentumReversalTickerStatus.Color = Color.Lime
-        OnHeartbeat("Ticker:Connected")
-    End Sub
-    Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
-        If Not isConnected Then blbMomentumReversalTickerStatus.Color = Color.Pink
-    End Sub
-    Private Sub OnTickerError(ByVal errorMsg As String)
-        'Nothing to do
-        OnHeartbeat(String.Format("Ticker:Error:{0}", errorMsg))
-    End Sub
-    Private Sub OnTickerNoReconnect()
-        'Nothing to do
-    End Sub
-    Private Sub OnTickerReconnect()
-        blbMomentumReversalTickerStatus.Color = Color.Yellow
-        OnHeartbeat("Ticker:Reconnecting")
-    End Sub
-    Private Sub tmrTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
+    Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
         tmrMomentumReversalTickerStatus.Enabled = False
         If tmrMomentumReversalTickerStatus.Interval = 700 Then
             tmrMomentumReversalTickerStatus.Interval = 2000
@@ -376,7 +415,171 @@ Public Class frmMainTabbed
         tmrMomentumReversalTickerStatus.Enabled = True
     End Sub
 
-    Private Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
+#End Region
 
+#Region "OHL"
+    Private Sub sfdgvMomentumReversalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMomentumReversalMainDashboard.AutoGeneratingColumn
+        sfdgvMomentumReversalMainDashboard.Style.HeaderStyle.BackColor = Color.DeepSkyBlue
+        sfdgvMomentumReversalMainDashboard.Style.HeaderStyle.TextColor = Color.White
+
+        sfdgvMomentumReversalMainDashboard.Style.CheckBoxStyle.CheckedBackColor = Color.White
+        sfdgvMomentumReversalMainDashboard.Style.CheckBoxStyle.CheckedTickColor = Color.LightSkyBlue
+        If e.Column.CellType = "DateTime" Then
+            CType(e.Column, GridDateTimeColumn).Pattern = DateTimePattern.SortableDateTime
+        End If
+    End Sub
+    Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
+
+        _cts = New CancellationTokenSource()
+        _cts.Token.ThrowIfCancellationRequested()
+
+        Try
+            If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
+            _commonController = New ZerodhaStrategyController(currentUser, _cts)
+
+            RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+            RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+            RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+            RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+            RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+            RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+            RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
+            RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+            RemoveHandler _commonController.TickerError, AddressOf OnTickerError
+            RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+            RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+
+            AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+            AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+            AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+            AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+            AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+            AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+            AddHandler _commonController.TickerClose, AddressOf OnTickerClose
+            AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+            AddHandler _commonController.TickerError, AddressOf OnTickerError
+            AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+            AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+            AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+#Region "Login"
+            Dim loginMessage As String = Nothing
+            While True
+                _cts.Token.ThrowIfCancellationRequested()
+                _connection = Nothing
+                loginMessage = Nothing
+                Try
+                    OnHeartbeat("Attempting to get connection to Zerodha API")
+                    _cts.Token.ThrowIfCancellationRequested()
+                    _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                    _cts.Token.ThrowIfCancellationRequested()
+                Catch cx As OperationCanceledException
+                    loginMessage = cx.Message
+                    logger.Error(cx)
+                    Exit While
+                Catch ex As Exception
+                    loginMessage = ex.Message
+                    logger.Error(ex)
+                End Try
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper)) Then
+                        'No need to retry as its a password failure
+                        OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                        Exit While
+                    Else
+                        OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Await Task.Delay(10000)
+                        _cts.Token.ThrowIfCancellationRequested()
+                    End If
+                Else
+                    Exit While
+                End If
+            End While
+            If _connection Is Nothing Then
+                If loginMessage IsNot Nothing Then
+                    Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                Else
+                    Throw New ApplicationException("No connection to Zerodha API could be established")
+                End If
+            End If
+#End Region
+            OnHeartbeat("Completing all pre-automation requirements")
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+
+            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.ExecuteStrategyAsync(ohlStrategyToExecute)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
+            'SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
+            'SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
+            SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, dashboadList)
+            While True
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
+        Catch cx As OperationCanceledException
+            logger.Error(cx)
+            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
+        Catch ex As Exception
+            logger.Error(ex)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        Finally
+            ProgressStatus("No pending actions")
+        End Try
+        If _cts.IsCancellationRequested Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+    End Sub
+    Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
+        tmrOHLTickerStatus.Enabled = False
+        If tmrOHLTickerStatus.Interval = 700 Then
+            tmrOHLTickerStatus.Interval = 2000
+            blbOHLTickerStatus.Visible = True
+        Else
+            tmrOHLTickerStatus.Interval = 700
+            blbOHLTickerStatus.Visible = False
+        End If
+        tmrOHLTickerStatus.Enabled = True
+    End Sub
+
+#End Region
+
+    Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
+        Dim newForm As New frmZerodhaUserDetails
+        newForm.ShowDialog()
+    End Sub
+    Private Sub frmMainTabbed_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        GlobalDiagnosticsContext.Set("appname", My.Application.Info.AssemblyName)
+        GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
+        logger.Trace("*************************** Logging started ***************************")
+
+        If Not Common.IsZerodhaUserDetailsPopulated() Then
+            miUserDetails_Click(sender, e)
+        End If
+
+        lstMomentumReversalLog.ForeColor = Color.FromArgb(255, 29, 29, 29)
+        lstOHLLog.ForeColor = Color.FromArgb(255, 29, 29, 29)
+    End Sub
+
+    Private Async Sub btnMomentumReversalStop_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStop.Click
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        _cts.Cancel()
+    End Sub
+
+    Private Async Sub btnOHLStop_Click(sender As Object, e As EventArgs) Handles btnOHLStop.Click
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        _cts.Cancel()
     End Sub
 End Class

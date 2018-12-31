@@ -1,32 +1,17 @@
-﻿Imports System.ComponentModel
-Imports System.ComponentModel.DataAnnotations
-Imports System.Threading
+﻿Imports System.Threading
 Imports Algo2TradeCore
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports NLog
 
-Public Class OHLStrategyInstrument
+Public Class MomentumReversalStrategyInstrument
     Inherits StrategyInstrument
     Implements IDisposable
 
 #Region "Logging and Status Progress"
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
-
-    <Display(Name:="OHL", Order:=10)>
-    Public ReadOnly Property OHL As String
-        Get
-            If Me.OpenPrice = Me.LowPrice Then
-                Return "O=L"
-            ElseIf Me.OpenPrice = Me.HighPrice Then
-                Return "O=H"
-            Else
-                Return Nothing
-            End If
-        End Get
-    End Property
 
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
@@ -41,15 +26,19 @@ Public Class OHLStrategyInstrument
     End Function
     Public Overrides Async Function RunDirectAsync() As Task
         logger.Debug("{0}->RunDirectAsync, parameters:None", Me.ToString)
+        _cts.Token.ThrowIfCancellationRequested()
         Try
             While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+                _cts.Token.ThrowIfCancellationRequested()
                 logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
                 Await Task.Delay(500).ConfigureAwait(False)
             End While
             Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
             If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
                 _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+                _cts.Token.ThrowIfCancellationRequested()
                 Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
             End If
         Catch ex As Exception
             logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
@@ -60,24 +49,22 @@ Public Class OHLStrategyInstrument
         logger.Debug("{0}->IsTriggerReachedAsync, parameters:None", Me.ToString)
         Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        If _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.Low Then
-            ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=L,({0})", _LastTick.Open)})
-        ElseIf _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.High Then
-            ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=H,({0})", _LastTick.Open)})
-        End If
+        'Code for momentum reversal trigger
         'TO DO: Remove the below hard coding
-        ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
+        'ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
         Return ret
     End Function
     Public Overrides Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
+        _cts.Token.ThrowIfCancellationRequested()
         _LastTick = tickData
         Select Case tickData.Broker
             Case APISource.Zerodha
                 Console.WriteLine(CType(tickData, ZerodhaTick).LastPrice & "-" & CType(tickData, ZerodhaTick).InstrumentToken)
         End Select
-        NotifyPropertyChanged("OHL")
+        _cts.Token.ThrowIfCancellationRequested()
         Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
+        _cts.Token.ThrowIfCancellationRequested()
     End Function
 
 #Region "IDisposable Support"

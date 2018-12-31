@@ -33,7 +33,9 @@ Namespace Controller
         End Function
         Public Overrides Function GetErrorResponse(ByVal response As Object) As String
             logger.Debug("GetErrorResponse, response:{0}", Utils.JsonSerialize(response))
+            _cts.Token.ThrowIfCancellationRequested()
             Dim ret As String = Nothing
+
             If response IsNot Nothing AndAlso
                response.GetType = GetType(Dictionary(Of String, Object)) AndAlso
                CType(response, Dictionary(Of String, Object)).ContainsKey("status") AndAlso
@@ -46,6 +48,7 @@ Namespace Controller
         Public Overrides Async Function LoginAsync() As Task(Of IConnection)
             logger.Debug("LoginAsync, parameters:Nothing")
             While True
+                _cts.Token.ThrowIfCancellationRequested()
                 Try
                     Dim requestToken As String = Nothing
 
@@ -55,6 +58,7 @@ Namespace Controller
                     postContent.Add("login", "")
 
                     HttpBrowser.KillCookies()
+                    _cts.Token.ThrowIfCancellationRequested()
 
                     Using browser As New HttpBrowser(Nothing, DecompressionMethods.GZip, TimeSpan.FromMinutes(1), _cts)
                         AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
@@ -80,6 +84,7 @@ Namespace Controller
                         OnHeartbeat("Opening login page")
                         logger.Debug("Opening login page, GetLoginURL:{0}, headers:{1}", GetLoginURL, Utils.JsonSerialize(headers))
 
+                        _cts.Token.ThrowIfCancellationRequested()
                         Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(GetLoginURL,
                                                                                               Http.HttpMethod.Get,
                                                                                               Nothing,
@@ -87,6 +92,7 @@ Namespace Controller
                                                                                               headers,
                                                                                               False).ConfigureAwait(False)
 
+                        _cts.Token.ThrowIfCancellationRequested()
                         'Should be getting back the redirected URL in Item1 and the htmldocument response in Item2
                         Dim finalURLToCall As Uri = Nothing
                         If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("sess_id") Then
@@ -112,12 +118,14 @@ Namespace Controller
                             tempRet = Nothing
                             OnHeartbeat("Submitting Id/pass")
                             logger.Debug("Submitting Id/pass, redirectedURI:{0}, postContent:{1}, headers:{2}", redirectedURI.ToString, Utils.JsonSerialize(postContent), Utils.JsonSerialize(headers))
+                            _cts.Token.ThrowIfCancellationRequested()
                             tempRet = Await browser.POSTRequestAsync("https://kite.zerodha.com/api/login",
                                                      redirectedURI.ToString,
                                                      postContent,
                                                      False,
                                                      headers,
                                                      False).ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
                             'Should come back as redirected url in Item1 and htmldocument in Item2
                             Dim q1 As String = Nothing
                             Dim q2 As String = Nothing
@@ -147,16 +155,17 @@ Namespace Controller
                                     headers.Add("Origin", "https://kite.zerodha.com")
                                     headers.Add("X-Kite-version", _currentUser.APIVersion)
 
-                                    _cts.Token.ThrowIfCancellationRequested()
                                     tempRet = Nothing
                                     OnHeartbeat("Submitting 2FA")
                                     logger.Debug("Submitting 2FA, redirectedURI:{0}, stringPostContent:{1}, headers:{2}", redirectedURI.ToString, Await stringPostContent.ReadAsStringAsync().ConfigureAwait(False), Utils.JsonSerialize(headers))
+                                    _cts.Token.ThrowIfCancellationRequested()
                                     tempRet = Await browser.POSTRequestAsync("https://kite.zerodha.com/api/twofa",
                                                                  redirectedURI.ToString,
                                                                  stringPostContent,
                                                                  False,
                                                                  headers,
                                                                  False).ConfigureAwait(False)
+                                    _cts.Token.ThrowIfCancellationRequested()
 
                                     'Should come back as redirect url in Item1 and htmldocument response in Item2
                                     If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("request_token") Then
@@ -179,12 +188,14 @@ Namespace Controller
 
                                         OnHeartbeat("Addressing redirection")
                                         logger.Debug("Redirecting, finalURLToCall:{0}, headers:{1}", finalURLToCall.ToString, Utils.JsonSerialize(headers))
+                                        _cts.Token.ThrowIfCancellationRequested()
                                         tempRet = Await browser.NonPOSTRequestAsync(String.Format("{0}&skip_session=true", finalURLToCall.ToString),
                                                                         Http.HttpMethod.Get,
                                                                         finalURLToCall.ToString,
                                                                         False,
                                                                         headers,
                                                                         True).ConfigureAwait(False)
+                                        _cts.Token.ThrowIfCancellationRequested()
                                         If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("request_token") Then
                                             redirectedURI = tempRet.Item1
                                             Dim queryStrings As NameValueCollection = HttpUtility.ParseQueryString(redirectedURI.Query)
@@ -241,13 +252,39 @@ Namespace Controller
                         RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
                     End Using
                     If requestToken IsNot Nothing Then
+                        _cts.Token.ThrowIfCancellationRequested()
                         APIConnection = Await RequestAccessTokenAsync(requestToken).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
+
+                        'Now open the ticker
+                        If _APITicker IsNot Nothing Then
+                            _APITicker.ClearLocalUniqueSubscriptionList()
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            RemoveHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
+                            RemoveHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
+                            RemoveHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                            RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                        Else
+                            _APITicker = New ZerodhaTicker(Me, _cts)
+                        End If
+
+                        AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
+                        AddHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
+                        AddHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                        AddHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                 Catch tex As KiteConnect.TokenException
                     logger.Error(tex)
                     OnHeartbeat("Possible error while generating session, token may be invalid, retrying the whole login process")
                     Continue While
                 End Try
+                _cts.Token.ThrowIfCancellationRequested()
                 Exit While
             End While
             Return APIConnection
@@ -277,8 +314,8 @@ Namespace Controller
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
                         Dim user As User = kiteConnector.GenerateSession(requestToken, _currentUser.APISecret)
-                        Console.WriteLine(Utils.JsonSerialize(user))
                         _cts.Token.ThrowIfCancellationRequested()
+                        Console.WriteLine(Utils.JsonSerialize(user))
                         logger.Debug("Processing response")
 
                         If user.AccessToken IsNot Nothing Then
@@ -425,6 +462,7 @@ Namespace Controller
         End Function
         Public Async Sub OnSessionExpireAsync()
             logger.Debug("OnSessionExpireAsync, parameters:Nothing")
+            _cts.Token.ThrowIfCancellationRequested()
             'Wait for the lock and if locked, then exit immediately
             If _LoginThreads = 0 Then
                 Interlocked.Increment(_LoginThreads)
@@ -439,11 +477,14 @@ Namespace Controller
                 Await Task.Delay(2000).ConfigureAwait(False)
                 Dim loginMessage As String = Nothing
                 While True
+                    _cts.Token.ThrowIfCancellationRequested()
                     loginMessage = Nothing
                     tempConn = Nothing
                     Try
                         OnHeartbeat("Attempting to get connection to Zerodha API")
+                        _cts.Token.ThrowIfCancellationRequested()
                         tempConn = Await LoginAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     Catch ex As Exception
                         loginMessage = ex.Message
                         logger.Error(ex)
@@ -455,33 +496,20 @@ Namespace Controller
                             Exit While
                         Else
                             OnHeartbeat(String.Format("Login process failed after token expiry:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            _cts.Token.ThrowIfCancellationRequested()
                             Await Task.Delay(10000)
+                            _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
                         OnHeartbeat("Relogin completed, checking to see if strategy instruments need to be resubscribed")
-                        If _APITicker IsNot Nothing Then
-                            _APITicker.ClearLocalUniqueSubscriptionList()
-                            Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-                            RemoveHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
-                            RemoveHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
-                            RemoveHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                            RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                        Else
-                            _APITicker = New ZerodhaTicker(Me, _cts)
-                        End If
 
-
-                        AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
-                        AddHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
-                        AddHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                        AddHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-
-                        Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
-
-                        If _AllStratgeies IsNot Nothing AndAlso _AllStratgeies.Count > 0 Then
-                            For Each runningStratgey In _AllStratgeies
-                                OnHeartbeat(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStratgey.ToString))
+                        If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+                            For Each runningStratgey In _AllStrategies
+                                _cts.Token.ThrowIfCancellationRequested()
+                                OnHeartbeatEx(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStratgey.ToString), New List(Of Object) From {runningStratgey})
+                                _cts.Token.ThrowIfCancellationRequested()
                                 Await runningStratgey.SubscribeAsync(_APITicker).ConfigureAwait(False)
+                                _cts.Token.ThrowIfCancellationRequested()
                             Next
                         End If
                         OnHeartbeat("Relogin completed with resubscriptions")
@@ -498,6 +526,7 @@ Namespace Controller
             Finally
                 Interlocked.Decrement(_LoginThreads)
             End Try
+            _cts.Token.ThrowIfCancellationRequested()
         End Sub
 #End Region
 
@@ -507,7 +536,7 @@ Namespace Controller
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim ret As Boolean = False
-            _AllStratgeies = Nothing
+            _AllStrategies = Nothing
             _AllInstruments = Nothing
             If _APIAdapter IsNot Nothing Then
                 RemoveHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
@@ -532,8 +561,10 @@ Namespace Controller
                     _cts.Token.ThrowIfCancellationRequested()
                     lastException = Nothing
                     While Me.APIConnection Is Nothing
+                        _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Waiting for fresh token before running GetAllInstrumentsAsync")
                         Await Task.Delay(500).ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End While
                     _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
 
@@ -541,10 +572,9 @@ Namespace Controller
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
-
                         _AllInstruments = Await _APIAdapter.GetAllInstrumentsAsync().ConfigureAwait(False)
-
                         _cts.Token.ThrowIfCancellationRequested()
+
                         logger.Debug("Processing response")
 
                         If _AllInstruments IsNot Nothing Then
@@ -685,26 +715,35 @@ Namespace Controller
             _cts.Token.ThrowIfCancellationRequested()
 
             If strategyToRun IsNot Nothing Then
-                If _AllStratgeies Is Nothing Then _AllStratgeies = New List(Of Strategy)
+                If _AllStrategies Is Nothing Then _AllStrategies = New List(Of Strategy)
+                'Find if this strategy already exists
+                Dim found = _AllStrategies.Where(Function(x)
+                                                     Return x.GetType Is strategyToRun.GetType
+                                                 End Function)
+                If found Is Nothing OrElse found.Count = 0 Then
+                    _AllStrategies.Add(strategyToRun)
+                End If
+                'Remove and add fresh handlers to be cautious
+                RemoveHandler strategyToRun.HeartbeatEx, AddressOf OnHeartbeatEx
+                RemoveHandler strategyToRun.WaitingForEx, AddressOf OnWaitingForEx
+                RemoveHandler strategyToRun.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                RemoveHandler strategyToRun.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
 
-                _AllStratgeies.Add(strategyToRun)
-                RemoveHandler strategyToRun.Heartbeat, AddressOf OnHeartbeat
-                RemoveHandler strategyToRun.WaitingFor, AddressOf OnWaitingFor
-                RemoveHandler strategyToRun.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                RemoveHandler strategyToRun.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-
-                AddHandler strategyToRun.Heartbeat, AddressOf OnHeartbeat
-                AddHandler strategyToRun.WaitingFor, AddressOf OnWaitingFor
-                AddHandler strategyToRun.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                AddHandler strategyToRun.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                OnHeartbeat(String.Format("As per the strategy logic, tradable instruments being fetched, strategy:{0}", strategyToRun.ToString))
-                Dim ret As Boolean = Await strategyToRun.CreateTradableStrategyInstrumentsAsync(_AllInstruments).ConfigureAwait(False)
-                'Now we know what are the instruments as per the strategy and their corresponding workers
+                AddHandler strategyToRun.HeartbeatEx, AddressOf OnHeartbeatEx
+                AddHandler strategyToRun.WaitingForEx, AddressOf OnWaitingForEx
+                AddHandler strategyToRun.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                AddHandler strategyToRun.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                OnHeartbeatEx(String.Format("As per the strategy logic, tradable instruments being fetched, strategy:{0}", strategyToRun.ToString), New List(Of Object) From {strategyToRun})
                 _cts.Token.ThrowIfCancellationRequested()
+                Dim ret As Boolean = Await strategyToRun.CreateTradableStrategyInstrumentsAsync(_AllInstruments).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+                'Now we know what are the instruments as per the strategy and their corresponding workers
                 If Not ret Then Throw New ApplicationException(String.Format("No instruments fetched that can be traded, strategy:{0}", strategyToRun.ToString))
 
+                'Now create a local collection inside the controller for the strategy instruments that need to be subscribed as a dictionary for easy picking during tick receive
                 If _subscribedStrategyInstruments Is Nothing Then _subscribedStrategyInstruments = New Dictionary(Of String, List(Of StrategyInstrument))
                 For Each runningTradableStrategyInstrument In strategyToRun.TradableStrategyInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
                     Dim instrumentKey As String = runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier
                     Dim strategiesToBeSubscribedForThisInstrument As List(Of StrategyInstrument) = Nothing
                     If _subscribedStrategyInstruments.ContainsKey(instrumentKey) Then
@@ -713,23 +752,16 @@ Namespace Controller
                         strategiesToBeSubscribedForThisInstrument = New List(Of StrategyInstrument)
                         _subscribedStrategyInstruments.Add(instrumentKey, strategiesToBeSubscribedForThisInstrument)
                     End If
+                    'Remove the current strategy if present already
+                    strategiesToBeSubscribedForThisInstrument.RemoveAll(Function(X)
+                                                                            Return X.GetType Is runningTradableStrategyInstrument.GetType
+                                                                        End Function)
                     strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
                 Next
 
-                If _APITicker IsNot Nothing Then
-                    RemoveHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
-                    RemoveHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
-                    RemoveHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                    RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                End If
-
-                _APITicker = New ZerodhaTicker(Me, _cts)
-                AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
-                AddHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
-                AddHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                AddHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
                 Await strategyToRun.SubscribeAsync(_APITicker).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
 
                 'OnHeartbeat(String.Format("Executing the strategy by creating relevant instrument workers, strategy:{0}", strategyToRun.ToString))
                 'Await strategyToRun.ExecuteAsync().ConfigureAwait(False)
@@ -737,30 +769,10 @@ Namespace Controller
             End If
         End Function
 #End Region
+        Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
+            If _APITicker IsNot Nothing Then Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        End Function
 
-        'Public Async Function TestAsync() As Task
-        '    While True
-        '        Dim prevAccessToken As String = CType(APIConnection, ZerodhaConnection).AccessToken
-        '        Try
-        '            Dim adap As New ZerodhaAdapter(Me, _cts)
-        '            OnHeartbeat("***************** ##### Executing command againa")
-        '            'Dim ret = Await adap.ExecuteCommandAsync(ZerodhaAdapter.KiteCommands.GetOrderTrades, Nothing).ConfigureAwait(False)
-        '            Dim ret = Await adap.GetAllInstrumentsAsync().ConfigureAwait(False)
-        '            OnHeartbeat(Utils.JsonSerialize(ret))
-        '            Await Task.Delay(5000).ConfigureAwait(False)
-        '        Catch tex As TokenException
-        '            Dim newAccessToken As String = prevAccessToken
-        '            While prevAccessToken = newAccessToken
-        '                If APIConnection IsNot Nothing Then
-        '                    newAccessToken = CType(APIConnection, ZerodhaConnection).AccessToken
-        '                End If
-        '                Task.Delay(500).ConfigureAwait(False)
-        '            End While
-        '        Catch ex As Exception
-        '            Console.WriteLine("Exzception")
-        '        End Try
-        '    End While
-        'End Function
         Public Overrides Sub OnTickerConnect()
             logger.Debug("OnTickerConnect, parameters:Nothing", Me.ToString)
             MyBase.OnTickerConnect()
@@ -794,7 +806,6 @@ Namespace Controller
         End Sub
         Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
             'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
-            _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
