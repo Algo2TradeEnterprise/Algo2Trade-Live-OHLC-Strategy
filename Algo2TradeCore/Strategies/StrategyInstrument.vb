@@ -94,91 +94,109 @@ Namespace Strategies
                 End If
             End Get
         End Property
+        Private _Tradabale As Boolean
         <Display(Name:="Tradable", Order:=1)>
         Public Overridable ReadOnly Property Tradabale As Boolean
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.Tradable
+                    _Tradabale = _LastTick.Tradable
+                    Return _Tradabale
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _OpenPrice As Decimal
         <Display(Name:="Open", Order:=2)>
         Public Overridable ReadOnly Property OpenPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.Open
+                    _OpenPrice = _LastTick.Open
+                    Return _OpenPrice
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _HighPrice As Decimal
         <Display(Name:="High", Order:=3)>
         Public Overridable ReadOnly Property HighPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.High
+                    _HighPrice = _LastTick.High
+                    Return _HighPrice
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _LowPrice As Decimal
         <Display(Name:="Low", Order:=4)>
         Public Overridable ReadOnly Property LowPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.Low
+                    _LowPrice = _LastTick.Low
+                    Return _LowPrice
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _ClosePrice As Decimal
         <Display(Name:="Previous Close", Order:=5)>
         Public Overridable ReadOnly Property ClosePrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.Close
+                    _ClosePrice = _LastTick.Close
+                    Return _ClosePrice
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _Volume As Long
         <Display(Name:="Volume", Order:=6)>
         Public Overridable ReadOnly Property Volume As Long
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.Volume
+                    _Volume = _LastTick.Volume
+                    Return _Volume
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _AveragePrice As Decimal
         <Display(Name:="Average Price", Order:=7)>
-        Public Overridable ReadOnly Property AveragePrice As Long
+        Public Overridable ReadOnly Property AveragePrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.AveragePrice
+                    _AveragePrice = _LastTick.AveragePrice
+                    Return _AveragePrice
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _LastPrice As Decimal
         <Display(Name:="Last Price", Order:=8)>
         Public Overridable ReadOnly Property LastPrice As Decimal
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.LastPrice
+                    _LastPrice = _LastTick.LastPrice
+                    Return _LastPrice
                 Else
                     Return Nothing
                 End If
             End Get
         End Property
+        Private _Timestamp As Date?
         <Display(Name:="Timestamp", Order:=9)>
         Public Overridable ReadOnly Property Timestamp As Date?
             Get
                 If _LastTick IsNot Nothing Then
-                    Return _LastTick.Timestamp
+                    _Timestamp = _LastTick.Timestamp
+                    Return _Timestamp
                 Else
                     Return Nothing
                 End If
@@ -196,15 +214,15 @@ Namespace Strategies
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
             Await Task.Delay(0).ConfigureAwait(False)
-            NotifyPropertyChanged("Tradable")
-            NotifyPropertyChanged("OpenPrice")
-            NotifyPropertyChanged("HighPrice")
-            NotifyPropertyChanged("LowPrice")
-            NotifyPropertyChanged("ClosePrice")
-            NotifyPropertyChanged("Volume")
-            NotifyPropertyChanged("AveragePrice")
-            NotifyPropertyChanged("LastPrice")
-            NotifyPropertyChanged("Timestamp")
+            If tickData IsNot Nothing AndAlso tickData.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
+            If tickData IsNot Nothing AndAlso tickData.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
+            If tickData IsNot Nothing AndAlso tickData.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
+            If tickData IsNot Nothing AndAlso tickData.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
+            If tickData IsNot Nothing AndAlso tickData.Low <> _LowPrice Then NotifyPropertyChanged("LowPrice")
+            If tickData IsNot Nothing AndAlso tickData.Close <> _ClosePrice Then NotifyPropertyChanged("ClosePrice")
+            If tickData IsNot Nothing AndAlso tickData.Volume <> _Volume Then NotifyPropertyChanged("Volume")
+            If tickData IsNot Nothing AndAlso tickData.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
+            If tickData IsNot Nothing AndAlso tickData.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
         End Function
     End Class
 End Namespace

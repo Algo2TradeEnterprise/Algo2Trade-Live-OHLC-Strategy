@@ -3,6 +3,7 @@ Imports Utilities.Strings.StringManipulation
 
 Module Common
     Public Const MASTER_KEY = "JOYMA"
+    Public Const LOGIN_PENDING = "Login pending"
     Public Function IsZerodhaUserDetailsPopulated() As Boolean
         Return My.Settings.ZerodhaUserId IsNot Nothing AndAlso My.Settings.ZerodhaUserId.Trim.Count > 0 AndAlso
         My.Settings.ZerodhaPassword IsNot Nothing AndAlso My.Settings.ZerodhaPassword.Trim.Count > 0 AndAlso

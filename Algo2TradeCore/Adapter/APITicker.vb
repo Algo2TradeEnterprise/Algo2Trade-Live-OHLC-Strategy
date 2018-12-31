@@ -43,5 +43,8 @@ Namespace Adapter
         Public MustOverride Sub ClearLocalUniqueSubscriptionList()
         Public MustOverride Function IsConnected() As Boolean
         Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
+        Public Sub RefreshCancellationToken(ByVal canceller As CancellationTokenSource)
+            _cts = canceller
+        End Sub
     End Class
 End Namespace

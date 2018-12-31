@@ -716,13 +716,12 @@ Namespace Controller
 
             If strategyToRun IsNot Nothing Then
                 If _AllStrategies Is Nothing Then _AllStrategies = New List(Of Strategy)
-                'Find if this strategy already exists
-                Dim found = _AllStrategies.Where(Function(x)
-                                                     Return x.GetType Is strategyToRun.GetType
-                                                 End Function)
-                If found Is Nothing OrElse found.Count = 0 Then
-                    _AllStrategies.Add(strategyToRun)
-                End If
+                'Remove this strategy if already exists
+                _AllStrategies.RemoveAll(Function(x)
+                                             Return x.GetType Is strategyToRun.GetType
+                                         End Function)
+
+                _AllStrategies.Add(strategyToRun)
                 'Remove and add fresh handlers to be cautious
                 RemoveHandler strategyToRun.HeartbeatEx, AddressOf OnHeartbeatEx
                 RemoveHandler strategyToRun.WaitingForEx, AddressOf OnWaitingForEx

@@ -43,6 +43,7 @@ Partial Class frmMainTabbed
         Me.tabOHL = New System.Windows.Forms.TabPage()
         Me.pnlOHLMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlOHLTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnOHLStop = New System.Windows.Forms.Button()
         Me.btnOHLStart = New System.Windows.Forms.Button()
         Me.Panel2 = New System.Windows.Forms.Panel()
         Me.lblOHLTickerStatus = New System.Windows.Forms.Label()
@@ -53,7 +54,6 @@ Partial Class frmMainTabbed
         Me.sfdgvOHLMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.btnOHLStop = New System.Windows.Forms.Button()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -248,6 +248,7 @@ Partial Class frmMainTabbed
         'lstMomentumReversalLog
         '
         Me.lstMomentumReversalLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstMomentumReversalLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstMomentumReversalLog.FormattingEnabled = True
         Me.lstMomentumReversalLog.Location = New System.Drawing.Point(3, 404)
         Me.lstMomentumReversalLog.Name = "lstMomentumReversalLog"
@@ -261,6 +262,7 @@ Partial Class frmMainTabbed
         Me.sfdgvMomentumReversalMainDashboard.AllowEditing = False
         Me.sfdgvMomentumReversalMainDashboard.AllowFiltering = True
         Me.sfdgvMomentumReversalMainDashboard.AllowResizingColumns = True
+        Me.sfdgvMomentumReversalMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
         Me.sfdgvMomentumReversalMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvMomentumReversalMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
         Me.sfdgvMomentumReversalMainDashboard.Location = New System.Drawing.Point(3, 3)
@@ -324,6 +326,16 @@ Partial Class frmMainTabbed
         Me.pnlOHLTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.pnlOHLTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1240, 38)
         Me.pnlOHLTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnOHLStop
+        '
+        Me.btnOHLStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnOHLStop.Location = New System.Drawing.Point(85, 3)
+        Me.btnOHLStop.Name = "btnOHLStop"
+        Me.btnOHLStop.Size = New System.Drawing.Size(76, 32)
+        Me.btnOHLStop.TabIndex = 11
+        Me.btnOHLStop.Text = "Stop"
+        Me.btnOHLStop.UseVisualStyleBackColor = True
         '
         'btnOHLStart
         '
@@ -396,6 +408,7 @@ Partial Class frmMainTabbed
         'lstOHLLog
         '
         Me.lstOHLLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstOHLLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstOHLLog.FormattingEnabled = True
         Me.lstOHLLog.Location = New System.Drawing.Point(3, 404)
         Me.lstOHLLog.Name = "lstOHLLog"
@@ -409,6 +422,7 @@ Partial Class frmMainTabbed
         Me.sfdgvOHLMainDashboard.AllowEditing = False
         Me.sfdgvOHLMainDashboard.AllowFiltering = True
         Me.sfdgvOHLMainDashboard.AllowResizingColumns = True
+        Me.sfdgvOHLMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
         Me.sfdgvOHLMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvOHLMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
         Me.sfdgvOHLMainDashboard.Location = New System.Drawing.Point(3, 3)
@@ -425,16 +439,6 @@ Partial Class frmMainTabbed
         'tmrOHLTickerStatus
         '
         Me.tmrOHLTickerStatus.Enabled = True
-        '
-        'btnOHLStop
-        '
-        Me.btnOHLStop.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnOHLStop.Location = New System.Drawing.Point(85, 3)
-        Me.btnOHLStop.Name = "btnOHLStop"
-        Me.btnOHLStop.Size = New System.Drawing.Size(76, 32)
-        Me.btnOHLStop.TabIndex = 11
-        Me.btnOHLStop.Text = "Stop"
-        Me.btnOHLStop.UseVisualStyleBackColor = True
         '
         'frmMainTabbed
         '
