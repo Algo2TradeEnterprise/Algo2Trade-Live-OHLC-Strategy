@@ -1,10 +1,10 @@
-﻿Imports System.Text.RegularExpressions
-Imports System.Threading
+﻿Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports NLog
+Imports Utilities.Time
 
 Public Class OHLStrategy
     Inherits Strategy
@@ -34,7 +34,7 @@ Public Class OHLStrategy
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             'Get all the futures instruments
             Dim futureAllInstruments = allInstruments.Where(Function(x)
-                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX"
+                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
                                                             End Function)
             _cts.Token.ThrowIfCancellationRequested()
             If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
@@ -126,10 +126,10 @@ Public Class OHLStrategy
         _cts.Token.ThrowIfCancellationRequested()
         Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        Dim currentTime As Date = Now
+        Dim currentTime As Date = ISTNow
         Dim compareTime As TimeSpan = Nothing
         TimeSpan.TryParse("15:32:30", compareTime)
-        If Utilities.Time.IsTimeEqualTillSeconds(currentTime, compareTime) Then
+        If IsTimeEqualTillSeconds(currentTime, compareTime) Then
             ret = New Tuple(Of Boolean, Trigger)(True,
                                                  New Trigger() With
                                                  {.Category = Trigger.TriggerType.Timebased,

@@ -77,6 +77,7 @@
     <Compile Include="Adapter\APITicker.vb" />
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
+    <Compile Include="Chart\Candlestick.vb" />
     <Compile Include="Controller\APIStrategyController.vb" />
     <Compile Include="Controller\ZerodhaStrategyController.vb" />
     <Compile Include="Entities\Enums.vb" />
@@ -86,6 +87,7 @@
     <Compile Include="Entities\ITick.vb" />
     <Compile Include="Entities\ITrade.vb" />
     <Compile Include="Entities\IUser.vb" />
+    <Compile Include="Entities\Payload.vb" />
     <Compile Include="Entities\ZerodhaConnection.vb" />
     <Compile Include="Entities\ZerodhaInstrument.vb" />
     <Compile Include="Entities\ZerodhaOrder.vb" />

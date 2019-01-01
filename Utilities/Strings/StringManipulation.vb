@@ -7,6 +7,8 @@ Imports System.Globalization
 Imports System.Security.Cryptography
 Imports System.Web.Script.Serialization
 Imports System.IO
+Imports System.Runtime.Serialization.Formatters.Binary
+
 Namespace Strings
     Public Module StringManipulation
 #Region "Logging and Status Progress"
@@ -447,6 +449,19 @@ Namespace Strings
                 'MsgBox("Invalid-Decryption Failed")
             End Try
             Return ret
+        End Function
+        Public Function DeepClone(Of T)(ByRef orig As T) As T
+
+            ' Don't serialize a null object, simply return the default for that object
+            If (Object.ReferenceEquals(orig, Nothing)) Then Return Nothing
+
+            Dim formatter As New BinaryFormatter()
+            Dim stream As New MemoryStream()
+
+            formatter.Serialize(stream, orig)
+            stream.Seek(0, SeekOrigin.Begin)
+
+            Return CType(formatter.Deserialize(stream), T)
         End Function
     End Module
 #End Region

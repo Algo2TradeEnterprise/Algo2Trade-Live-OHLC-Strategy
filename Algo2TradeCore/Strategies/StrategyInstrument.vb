@@ -2,6 +2,7 @@
 Imports System.ComponentModel.DataAnnotations
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
+Imports Algo2TradeCore.Chart
 Imports Algo2TradeCore.Entities
 Imports NLog
 
@@ -78,11 +79,12 @@ Namespace Strategies
         Public Property ParentStrategy As Strategy
         <System.ComponentModel.Browsable(False)>
         Public Property TradableInstrument As IInstrument
+        Public Property RawPayloads As Dictionary(Of DateTime, Payload)
 
         Protected _cts As CancellationTokenSource
         Protected _LastTick As ITick
         Protected _APIAdapter As APIAdapter
-
+        Protected _candlestickHelper As Candlestick
         'UI Properties
         <Display(Name:="Symbol", Order:=0)>
         Public Overridable ReadOnly Property TradingSymbol As String
@@ -208,6 +210,8 @@ Namespace Strategies
             TradableInstrument = associatedInstrument
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
+            _candlestickHelper = New Candlestick(Me, _cts)
+            RawPayloads = New Dictionary(Of Date, Payload)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function RunDirectAsync() As Task
@@ -223,6 +227,7 @@ Namespace Strategies
             If tickData IsNot Nothing AndAlso tickData.Volume <> _Volume Then NotifyPropertyChanged("Volume")
             If tickData IsNot Nothing AndAlso tickData.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
             If tickData IsNot Nothing AndAlso tickData.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
+            '_candlestickHelper.CalculateCandleFromTick(RawPayloads, tickData)
         End Function
     End Class
 End Namespace

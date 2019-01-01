@@ -490,7 +490,7 @@ Namespace Controller
                         logger.Error(ex)
                     End Try
                     If tempConn Is Nothing Then
-                        If loginMessage IsNot Nothing AndAlso loginMessage.ToUpper.Contains("password".ToUpper) Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
                             'No need to retry as its a password failure
                             OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
                             Exit While
@@ -809,7 +809,7 @@ Namespace Controller
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    runningStrategyInstrument.ProcessTickAsync(runningTick)
+                    runningStrategyInstrument.ProcessTickAsync(runningTick).ConfigureAwait(False)
                 Next
             End If
         End Sub

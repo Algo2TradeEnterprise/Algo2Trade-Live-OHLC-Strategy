@@ -6,6 +6,7 @@ Imports System.ComponentModel
 Imports Syncfusion.WinForms.DataGrid
 Imports Syncfusion.WinForms.DataGrid.Events
 Imports Syncfusion.WinForms.Input.Enums
+Imports Utilities.Time
 Public Class frmMainTabbed
 
 #Region "Logging and Status Progress"
@@ -226,10 +227,10 @@ Public Class frmMainTabbed
     Private Sub sfdgvMomentumReversalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMomentumReversalMainDashboard.AutoGeneratingColumn
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New MomentumReversalStrategy(Nothing, Nothing))
     End Sub
-    Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
+    Private Async Function MomentumReversalWorker() As Task
         If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
             MsgBox("Cannot start as another strategy is loggin in")
-            Exit Sub
+            Exit Function
         End If
 
         _cts = New CancellationTokenSource()
@@ -295,7 +296,7 @@ Public Class frmMainTabbed
                         logger.Error(ex)
                     End Try
                     If _connection Is Nothing Then
-                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper)) Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
                             'No need to retry as its a password failure
                             OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
                             Exit While
@@ -356,6 +357,9 @@ Public Class frmMainTabbed
             _commonController = Nothing
             _connection = Nothing
         End If
+    End Function
+    Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
+        Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
         FlashTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing))
@@ -373,10 +377,10 @@ Public Class frmMainTabbed
     Private Sub sfdgvOHLMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvOHLMainDashboard.AutoGeneratingColumn
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New OHLStrategy(Nothing, Nothing))
     End Sub
-    Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
+    Private Async Function OHLStartWorker() As Task
         If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
             MsgBox("Cannot start as another strategy is loggin in")
-            Exit Sub
+            Exit Function
         End If
 
         _cts = New CancellationTokenSource()
@@ -442,7 +446,7 @@ Public Class frmMainTabbed
                         logger.Error(ex)
                     End Try
                     If _connection Is Nothing Then
-                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper)) Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
                             'No need to retry as its a password failure
                             OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
                             Exit While
@@ -504,6 +508,9 @@ Public Class frmMainTabbed
             _commonController = Nothing
             _connection = Nothing
         End If
+    End Function
+    Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
+        Await Task.Run(AddressOf OHLStartWorker).ConfigureAwait(False)
     End Sub
     Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
         FlashTickerBulbEx(New OHLStrategy(Nothing, Nothing))
@@ -657,18 +664,18 @@ Public Class frmMainTabbed
         If source IsNot Nothing AndAlso source.GetType Is GetType(OHLStrategy) Then
             Select Case mode
                 Case LogMode.One
-                    SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(MomentumReversalStrategy) Then
             Select Case mode
                 Case LogMode.One
-                    SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
-                    SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
-                    SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -717,7 +724,7 @@ Public Class frmMainTabbed
     Public Sub ProgressStatus(ByVal msg As String)
         SyncLock Me
             If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
-            WriteLogEx(LogMode.All, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg), Nothing)
+            WriteLogEx(LogMode.All, msg, Nothing)
             logger.Info(msg)
         End SyncLock
     End Sub
@@ -725,10 +732,10 @@ Public Class frmMainTabbed
         SyncLock Me
             If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
             If source Is Nothing Then
-                WriteLogEx(LogMode.All, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg), Nothing)
+                WriteLogEx(LogMode.All, msg, Nothing)
             ElseIf source IsNot Nothing AndAlso source.Count > 0 Then
                 For Each runningSource In source
-                    WriteLogEx(LogMode.One, String.Format("{0}-{1}", Format(Now, "yyyy-MM-dd HH:mm:ss"), msg), runningSource)
+                    WriteLogEx(LogMode.One, msg, runningSource)
                 Next
             End If
             logger.Info(msg)

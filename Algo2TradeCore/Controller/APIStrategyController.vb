@@ -97,7 +97,7 @@ Namespace Controller
         Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
         Public Sub RefreshCancellationToken(ByVal canceller As CancellationTokenSource)
             _cts = canceller
-            _APITicker.RefreshCancellationToken(canceller)
+            If _APITicker IsNot Nothing Then _APITicker.RefreshCancellationToken(canceller)
         End Sub
 #Region "Login"
         Protected MustOverride Function GetLoginURL() As String

@@ -70,7 +70,7 @@ Namespace Adapter
                 subscriptionList(index) = runningInstrumentIdentifier
                 _subscribedInstruments.Add(runningInstrumentIdentifier)
             Next
-            If subscriptionList Is Nothing OrElse UBound(subscriptionList) = 0 Then
+            If subscriptionList Is Nothing OrElse subscriptionList.Length = 0 Then
                 OnHeartbeat("No instruments were subscribed as they may be already subscribed")
                 logger.Error("No tokens to subscribe")
             Else

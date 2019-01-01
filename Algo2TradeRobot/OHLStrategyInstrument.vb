@@ -78,12 +78,7 @@ Public Class OHLStrategyInstrument
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
         _cts.Token.ThrowIfCancellationRequested()
         _LastTick = tickData
-        Select Case tickData.Broker
-            Case APISource.Zerodha
-                Console.WriteLine(CType(tickData, ZerodhaTick).LastPrice & "-" & CType(tickData, ZerodhaTick).InstrumentToken)
-        End Select
         NotifyPropertyChanged("OHL")
-        _cts.Token.ThrowIfCancellationRequested()
         Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
