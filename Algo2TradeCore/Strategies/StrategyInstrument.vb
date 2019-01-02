@@ -80,7 +80,7 @@ Namespace Strategies
         <System.ComponentModel.Browsable(False)>
         Public Property TradableInstrument As IInstrument
         Public Property RawPayloads As Dictionary(Of DateTime, Payload)
-
+        Public Property RawTicks As Concurrent.ConcurrentDictionary(Of DateTime, ITick)
         Protected _cts As CancellationTokenSource
         Protected _LastTick As ITick
         Protected _APIAdapter As APIAdapter
@@ -210,8 +210,10 @@ Namespace Strategies
             TradableInstrument = associatedInstrument
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
-            _candlestickHelper = New Candlestick(Me, _cts)
+            RawTicks = New Concurrent.ConcurrentDictionary(Of Date, ITick)
             RawPayloads = New Dictionary(Of Date, Payload)
+            _candlestickHelper = New Candlestick(Me, _cts)
+            '_candlestickHelper.ConsumeTicks().ConfigureAwait(False)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function RunDirectAsync() As Task
@@ -227,7 +229,9 @@ Namespace Strategies
             If tickData IsNot Nothing AndAlso tickData.Volume <> _Volume Then NotifyPropertyChanged("Volume")
             If tickData IsNot Nothing AndAlso tickData.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
             If tickData IsNot Nothing AndAlso tickData.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
-            '_candlestickHelper.CalculateCandleFromTick(RawPayloads, tickData)
+            If Not RawTicks.TryAdd(tickData.Timestamp, tickData) Then
+                'Console.WriteLine(String.Format("Could not store:{0},{1},{2}", TradingSymbol, tickData.LastPrice, tickData.Timestamp.Value.ToLongTimeString))
+            End If
         End Function
     End Class
 End Namespace

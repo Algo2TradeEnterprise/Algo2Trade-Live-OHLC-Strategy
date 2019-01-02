@@ -16,14 +16,22 @@ Public Class frmMainTabbed
 #Region "Common Delegates"
 
     Delegate Sub SetSFGridDataBind_Delegate(ByVal [grd] As SfDataGrid, ByVal [value] As Object)
-    Public Sub SetSFGridDataBind_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid, ByVal [value] As Object)
+    Public Async Sub SetSFGridDataBind_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid, ByVal [value] As Object)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
         ' If these threads are different, it returns true.  
         If [grd].InvokeRequired Then
             Dim MyDelegate As New SetSFGridDataBind_Delegate(AddressOf SetSFGridDataBind_ThreadSafe)
             Me.Invoke(MyDelegate, New Object() {[grd], [value]})
         Else
-            [grd].DataSource = [value]
+            While True
+                Try
+                    [grd].DataSource = [value]
+                    Exit While
+                Catch sop As System.InvalidOperationException
+                    logger.Error(sop)
+                End Try
+                Await Task.Delay(500).ConfigureAwait(False)
+            End While
         End If
     End Sub
 
@@ -330,13 +338,15 @@ Public Class frmMainTabbed
             Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
+
             _cts.Token.ThrowIfCancellationRequested()
             Await _commonController.ExecuteStrategyAsync(momentumReversalStrategyToExecute)
             _cts.Token.ThrowIfCancellationRequested()
+
             Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
-            'SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
-            'SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
+
+
             While True
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000).ConfigureAwait(False)

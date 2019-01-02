@@ -2,7 +2,6 @@
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports NLog
-
 Namespace Chart
     Public Class Candlestick
 #Region "Events/Event handlers"
@@ -51,11 +50,45 @@ Namespace Chart
 
         Private _parentStrategyInstrument As StrategyInstrument
         Private _cts As New CancellationTokenSource
-        Private _tmrRawPayloadGenerator As Timer
         Public Sub New(ByVal associatedParentStrategyInstrument As StrategyInstrument, ByVal canceller As CancellationTokenSource)
             _parentStrategyInstrument = associatedParentStrategyInstrument
             _cts = canceller
         End Sub
+
+        Public Async Function ConsumeTicks() As Task
+            Try
+                While True
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Await dummy.ConfigureAwait(False)
+                    Await Task.Delay(1000).ConfigureAwait(False)
+                End While
+            Catch ex As Exception
+                Console.WriteLine(ex.ToString)
+            End Try
+        End Function
+        Private Async Function dummy() As Task
+            _cts.Token.ThrowIfCancellationRequested()
+            If _parentStrategyInstrument.RawTicks IsNot Nothing AndAlso _parentStrategyInstrument.RawTicks.Count > 0 Then
+                    'Console.WriteLine(_parentStrategyInstrument.RawTicks.Min(Function(x)
+                    '                                                             Return x.Key
+                    '                                                         End Function))
+                    Dim z As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentStrategyInstrument.RawTicks.Where(Function(y)
+                                                                                                                         Return y.Key = _parentStrategyInstrument.RawTicks.Min(Function(x)
+                                                                                                                                                                                   Return x.Key
+                                                                                                                                                                               End Function)
+                                                                                                                     End Function)
+                    Dim out As ITick
+                    For Each z1 In z
+                        _cts.Token.ThrowIfCancellationRequested()
+                    'CalculateCandleFromTick(_parentStrategyInstrument.RawPayloads, z1.Value)
+                    _cts.Token.ThrowIfCancellationRequested()
+                        'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
+                        _parentStrategyInstrument.RawTicks.TryRemove(z1.Key, out)
+                    Next
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+        End Function
+
         Public Sub CalculateCandleFromTick(ByVal existingPayloads As Dictionary(Of DateTime, Payload), ByVal tickData As ITick)
             SyncLock Me
                 If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
@@ -114,7 +147,11 @@ Namespace Chart
                             .HighPrice = Math.Max(lastExistingPayload.HighPrice, tickData.LastPrice)
                             .LowPrice = Math.Min(lastExistingPayload.LowPrice, tickData.LastPrice)
                             .ClosePrice = tickData.LastPrice
-                            .Volume = tickData.Volume - .PreviousPayload.DailyVolume
+                            If .PreviousPayload IsNot Nothing Then
+                                .Volume = tickData.Volume - .PreviousPayload.DailyVolume
+                            Else
+                                .Volume = tickData.Volume
+                            End If
                             .DailyVolume = tickData.Volume
                         End With
                     Else

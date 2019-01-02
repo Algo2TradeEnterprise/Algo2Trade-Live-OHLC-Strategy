@@ -14,6 +14,10 @@ Public Class MomentumReversalStrategy
 
     Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedParentController, canceller)
+        'Though the TradableStrategyInstruments is being populated from inside by newing it,
+        'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
+        'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
+        'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
@@ -79,6 +83,7 @@ Public Class MomentumReversalStrategy
             'Now create the fresh handlers
             For Each runningTradableInstrument In tradableInstrumentsAsPerStrategy
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of MomentumReversalStrategyInstrument)
+                'If TradableStrategyInstruments Is Nothing Then TradableStrategyInstruments = New List(Of StrategyInstrument)
                 Dim runningTradableStrategyInstrument As New MomentumReversalStrategyInstrument(runningTradableInstrument, Me, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
@@ -86,6 +91,7 @@ Public Class MomentumReversalStrategy
                 AddHandler runningTradableStrategyInstrument.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
 
                 retTradableStrategyInstruments.Add(runningTradableStrategyInstrument)
+                'TradableStrategyInstruments.Add(runningTradableStrategyInstrument)
             Next
             TradableStrategyInstruments = retTradableStrategyInstruments
         Else
