@@ -2,7 +2,7 @@
 Public Class frmZerodhaUserDetails
     Private Sub btnSaveZerodhaUserDetails_Click(sender As Object, e As EventArgs) Handles btnSaveZerodhaUserDetails.Click
         Try
-            'ValidateAll()
+            ValidateAll()
             SaveUserDetails()
         Catch ex As Exception
             MsgBox(ex.Message, MsgBoxStyle.Critical)

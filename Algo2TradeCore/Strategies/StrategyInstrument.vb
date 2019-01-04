@@ -84,7 +84,6 @@ Namespace Strategies
         Protected _cts As CancellationTokenSource
         Protected _LastTick As ITick
         Protected _APIAdapter As APIAdapter
-        Protected _candlestickHelper As Candlestick
         'UI Properties
         <Display(Name:="Symbol", Order:=0)>
         Public Overridable ReadOnly Property TradingSymbol As String
@@ -212,8 +211,6 @@ Namespace Strategies
             _cts = canceller
             RawTicks = New Concurrent.ConcurrentDictionary(Of Date, ITick)
             RawPayloads = New Dictionary(Of Date, Payload)
-            _candlestickHelper = New Candlestick(Me, _cts)
-            '_candlestickHelper.ConsumeTicks().ConfigureAwait(False)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function RunDirectAsync() As Task
@@ -233,5 +230,7 @@ Namespace Strategies
                 'Console.WriteLine(String.Format("Could not store:{0},{1},{2}", TradingSymbol, tickData.LastPrice, tickData.Timestamp.Value.ToLongTimeString))
             End If
         End Function
+        Public MustOverride Async Function MonitorAsync() As Task
+
     End Class
 End Namespace

@@ -83,7 +83,6 @@ Public Class MomentumReversalStrategy
             'Now create the fresh handlers
             For Each runningTradableInstrument In tradableInstrumentsAsPerStrategy
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of MomentumReversalStrategyInstrument)
-                'If TradableStrategyInstruments Is Nothing Then TradableStrategyInstruments = New List(Of StrategyInstrument)
                 Dim runningTradableStrategyInstrument As New MomentumReversalStrategyInstrument(runningTradableInstrument, Me, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
@@ -91,7 +90,6 @@ Public Class MomentumReversalStrategy
                 AddHandler runningTradableStrategyInstrument.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
 
                 retTradableStrategyInstruments.Add(runningTradableStrategyInstrument)
-                'TradableStrategyInstruments.Add(runningTradableStrategyInstrument)
             Next
             TradableStrategyInstruments = retTradableStrategyInstruments
         Else
@@ -105,25 +103,25 @@ Public Class MomentumReversalStrategy
     ''' It will also trigger the RunDirect method if the common condition for trigger for all instruments as per this strategy is satisfied
     ''' </summary>
     ''' <returns></returns>
-    Public Overrides Async Function ExecuteAsync() As Task
-        logger.Debug("ExecuteAsync, parameters:Nothing")
-        _cts.Token.ThrowIfCancellationRequested()
+    'Public Overrides Async Function ExecuteAsync() As Task
+    '    logger.Debug("ExecuteAsync, parameters:Nothing")
+    '    _cts.Token.ThrowIfCancellationRequested()
 
-        'To fire any time based common calls to the strategy instruments
-        While True
-            _cts.Token.ThrowIfCancellationRequested()
-            Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
-            If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
-                If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-                    For Each runningTradableStrategyInstrument In TradableStrategyInstruments
-                        _cts.Token.ThrowIfCancellationRequested()
-                        runningTradableStrategyInstrument.RunDirectAsync()
-                    Next
-                End If
-            End If
-            Await Task.Delay(1001).ConfigureAwait(False)
-        End While
-    End Function
+    '    'To fire any time based common calls to the strategy instruments
+    '    While True
+    '        _cts.Token.ThrowIfCancellationRequested()
+    '        Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
+    '        If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
+    '            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+    '                For Each runningTradableStrategyInstrument In TradableStrategyInstruments
+    '                    _cts.Token.ThrowIfCancellationRequested()
+    '                    runningTradableStrategyInstrument.RunDirectAsync()
+    '                Next
+    '            End If
+    '        End If
+    '        Await Task.Delay(1001).ConfigureAwait(False)
+    '    End While
+    'End Function
     Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task
         logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
         _cts.Token.ThrowIfCancellationRequested()
@@ -156,6 +154,37 @@ Public Class MomentumReversalStrategy
         'TO DO: remove the below hard coding
         'ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
         Return ret
+    End Function
+    Public Overrides Async Function MonitorAsync() As Task
+        While True
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(1000)
+        End While
+        'Try
+        '    Dim localex As Exception = Nothing
+        '    While True
+        '        _cts.Token.ThrowIfCancellationRequested()
+        '        Dim first As Boolean = True
+        '        If first Then
+        '            For Each tradableStrategyInstrument As MomentumReversalStrategyInstrument In TradableStrategyInstruments
+        '                _cts.Token.ThrowIfCancellationRequested()
+        '                If first Then
+        '                    AddHandler tradableStrategyInstrument.JOYMA, Sub(ex1 As Exception)
+        '                                                                     localex = ex1
+        '                                                                 End Sub
+        '                End If
+        '                tradableStrategyInstrument.MonitorAsync.ConfigureAwait(False)
+        '            Next
+        '        End If
+        '        first = False
+        '        If localex IsNot Nothing Then
+        '            Throw New AggregateException(localex)
+        '        End If
+        '        Await Task.Delay(1000)
+        '    End While
+        'Catch ex As Exception
+        '    Throw ex
+        'End Try
     End Function
     Public Overrides Function ToString() As String
         Return Me.GetType().Name

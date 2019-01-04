@@ -215,17 +215,18 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
-    Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
-        Dim newForm As New frmZerodhaUserDetails
-        newForm.ShowDialog()
-    End Sub
-
 #Region "Private Attributes"
     Private _cts As CancellationTokenSource
     Private _lastLoggedMessage As String = Nothing
     Private _commonController As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
 #End Region
+
+    Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
+        Dim newForm As New frmZerodhaUserDetails
+        newForm.ShowDialog()
+    End Sub
+
 
 #Region "Momentum Reversal"
 
@@ -241,7 +242,7 @@ Public Class frmMainTabbed
             Exit Function
         End If
 
-        _cts = New CancellationTokenSource()
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
@@ -338,19 +339,22 @@ Public Class frmMainTabbed
             Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
-
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.ExecuteStrategyAsync(momentumReversalStrategyToExecute)
+            Await _commonController.SubscribeStrategyAsync(momentumReversalStrategyToExecute)
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
 
-
-            While True
-                _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000).ConfigureAwait(False)
-            End While
+            Dim lastException As Exception = Nothing
+            Await Task.Run(Async Function()
+                               Try
+                                   Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+                               Catch ex As Exception
+                                   lastException = ex
+                               End Try
+                           End Function).ConfigureAwait(False)
+            If lastException IsNot Nothing Then Throw lastException
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -362,11 +366,12 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing))
             EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing))
         End Try
-        If _cts.IsCancellationRequested Then
+        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
             If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
             _commonController = Nothing
             _connection = Nothing
         End If
+        _cts = Nothing
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
@@ -393,7 +398,7 @@ Public Class frmMainTabbed
             Exit Function
         End If
 
-        _cts = New CancellationTokenSource()
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
@@ -491,17 +496,21 @@ Public Class frmMainTabbed
             OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.ExecuteStrategyAsync(ohlStrategyToExecute)
+            Await _commonController.SubscribeStrategyAsync(ohlStrategyToExecute)
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
-            'SetGridDataBind_ThreadSafe(dgMainDashboard, dashboadList)
-            'SetGridDisplayIndex_ThreadSafe(dgMainDashboard, "OHL", GetGridColumnCount_ThreadSafe(dgMainDashboard) - 1)
             SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, dashboadList)
-            While True
-                _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000).ConfigureAwait(False)
-            End While
+
+            Dim lastException As Exception = Nothing
+            Await Task.Run(Async Function()
+                               Try
+                                   Await ohlStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+                               Catch ex As Exception
+                                   lastException = ex
+                               End Try
+                           End Function).ConfigureAwait(False)
+            If lastException IsNot Nothing Then Throw lastException
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -513,11 +522,12 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing))
             EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing))
         End Try
-        If _cts.IsCancellationRequested Then
+        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
             If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
             _commonController = Nothing
             _connection = Nothing
         End If
+        _cts = Nothing
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
         Await Task.Run(AddressOf OHLStartWorker).ConfigureAwait(False)
@@ -773,6 +783,5 @@ Public Class frmMainTabbed
 #End Region
 
 #End Region
-
 
 End Class

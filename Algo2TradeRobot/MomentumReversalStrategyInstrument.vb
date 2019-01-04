@@ -1,4 +1,5 @@
-﻿Imports System.Threading
+﻿Imports System.ComponentModel.DataAnnotations
+Imports System.Threading
 Imports Algo2TradeCore
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
@@ -12,6 +13,24 @@ Public Class MomentumReversalStrategyInstrument
 #Region "Logging and Status Progress"
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
+
+    Public Event JOYMA(ByVal ex As Exception)
+    Public Sub ONJOYMA(ByVal ex As Exception)
+        RaiseEvent JOYMA(ex)
+    End Sub
+
+    <Display(Name:="OHL", Order:=10)>
+    Public ReadOnly Property OHL As String
+        Get
+            If Me.OpenPrice = Me.LowPrice Then
+                Return "O=L"
+            ElseIf Me.OpenPrice = Me.HighPrice Then
+                Return "O=H"
+            Else
+                Return Nothing
+            End If
+        End Get
+    End Property
 
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
@@ -58,9 +77,29 @@ Public Class MomentumReversalStrategyInstrument
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
         _cts.Token.ThrowIfCancellationRequested()
         _LastTick = tickData
+        NotifyPropertyChanged("OHL")
         Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
+    Public Overrides Async Function MonitorAsync() As Task
+        While True
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(1000)
+        End While
+        'Dim ctr As Integer
+        'While True
+        '    _cts.Token.ThrowIfCancellationRequested()
+        '    Await Task.Delay(500)
+        '    ctr += 500
+
+        '    If ctr = 115000 Then
+        '        'ret = New ApplicationException("Donno")
+        '        ONJOYMA(New ApplicationException("Donno"))
+        '        Exit While
+        '    End If
+        'End While
+    End Function
+
 
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls

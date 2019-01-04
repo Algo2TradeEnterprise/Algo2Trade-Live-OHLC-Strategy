@@ -60,9 +60,10 @@ Namespace Strategies
             _cts = canceller
         End Sub
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
-        Public MustOverride Overrides Function ToString() As String
-        Public MustOverride Async Function ExecuteAsync() As Task
         Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task
+        Public MustOverride Overrides Function ToString() As String
+        'Public MustOverride Async Function ExecuteAsync() As Task
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
+        Public MustOverride Async Function MonitorAsync() As Task
     End Class
 End Namespace

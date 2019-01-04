@@ -102,8 +102,9 @@ Namespace Controller
 #Region "Login"
         Protected MustOverride Function GetLoginURL() As String
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
-        Public MustOverride Async Function ExecuteStrategyAsync(ByVal strategyToRun As Strategy) As Task
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
+        Public MustOverride Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
+        'Public MustOverride Async Function MonitorAsync(ByVal strategyToRun As Strategy) As Task
 #End Region
 
     End Class

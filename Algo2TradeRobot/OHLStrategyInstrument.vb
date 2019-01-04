@@ -82,6 +82,12 @@ Public Class OHLStrategyInstrument
         Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
+    Public Overrides Async Function MonitorAsync() As Task
+        While True
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(500)
+        End While
+    End Function
 
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls

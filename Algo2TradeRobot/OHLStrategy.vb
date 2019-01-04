@@ -87,25 +87,25 @@ Public Class OHLStrategy
     ''' It will also trigger the RunDirect method if the common condition for trigger for all instruments as per this strategy is satisfied
     ''' </summary>
     ''' <returns></returns>
-    Public Overrides Async Function ExecuteAsync() As Task
-        logger.Debug("ExecuteAsync, parameters:Nothing")
-        _cts.Token.ThrowIfCancellationRequested()
+    'Public Overrides Async Function ExecuteAsync() As Task
+    '    logger.Debug("ExecuteAsync, parameters:Nothing")
+    '    _cts.Token.ThrowIfCancellationRequested()
 
-        'To fire any time based common calls to the strategy instruments
-        While True
-            _cts.Token.ThrowIfCancellationRequested()
-            Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
-            If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
-                If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-                    For Each runningTradableStrategyInstrument In TradableStrategyInstruments
-                        _cts.Token.ThrowIfCancellationRequested()
-                        runningTradableStrategyInstrument.RunDirectAsync()
-                    Next
-                End If
-            End If
-            Await Task.Delay(1001).ConfigureAwait(False)
-        End While
-    End Function
+    '    'To fire any time based common calls to the strategy instruments
+    '    While True
+    '        _cts.Token.ThrowIfCancellationRequested()
+    '        Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
+    '        If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
+    '            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+    '                For Each runningTradableStrategyInstrument In TradableStrategyInstruments
+    '                    _cts.Token.ThrowIfCancellationRequested()
+    '                    runningTradableStrategyInstrument.RunDirectAsync()
+    '                Next
+    '            End If
+    '        End If
+    '        Await Task.Delay(1001).ConfigureAwait(False)
+    '    End While
+    'End Function
     Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task
         logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
         _cts.Token.ThrowIfCancellationRequested()
@@ -139,6 +139,16 @@ Public Class OHLStrategy
         ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
         Return ret
     End Function
+    Public Overrides Async Function MonitorAsync() As Task
+        Dim ctr As Integer = 0
+        While True
+            ctr += 1000
+            If ctr = 10000 Then Throw New ApplicationException("DOnno")
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(1000)
+        End While
+    End Function
+
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function

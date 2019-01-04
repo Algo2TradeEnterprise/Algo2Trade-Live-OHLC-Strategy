@@ -710,7 +710,7 @@ Namespace Controller
         ''' </summary>
         ''' <param name="strategyToRun"></param>
         ''' <returns></returns>
-        Public Overrides Async Function ExecuteStrategyAsync(ByVal strategyToRun As Strategy) As Task
+        Public Overrides Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
             logger.Debug("ExecuteStrategyAsync, strategyToRun:{0}", strategyToRun.ToString)
             _cts.Token.ThrowIfCancellationRequested()
 
@@ -767,6 +767,25 @@ Namespace Controller
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         End Function
+        'Public Overrides Async Function MonitorAsync(ByVal strategyToRun As Strategy) As Task
+        '    If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+        '        Dim tasks As List(Of Task) = Nothing
+        '        For Each runningStrategy In _AllStrategies
+        '            If tasks Is Nothing Then tasks = New List(Of Task)
+        '            tasks.Add(Task.Run(Async Function()
+        '                                   Await runningStrategy.MonitorAsync().ConfigureAwait(False)
+        '                               End Function))
+        '        Next
+        '        Try
+        '            Await Task.WhenAll(tasks)
+        '        Catch ex As Exception
+        '            Console.WriteLine(ex)
+        '        End Try
+        '    End If
+
+        'End Function
+
+
 #End Region
         Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
             If _APITicker IsNot Nothing Then Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
