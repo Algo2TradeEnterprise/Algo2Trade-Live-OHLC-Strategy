@@ -271,6 +271,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
 
+
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
                 AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
@@ -370,8 +371,8 @@ Public Class frmMainTabbed
             If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
             _commonController = Nothing
             _connection = Nothing
+            _cts = Nothing
         End If
-        _cts = Nothing
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
@@ -526,8 +527,8 @@ Public Class frmMainTabbed
             If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
             _commonController = Nothing
             _connection = Nothing
+            _cts = Nothing
         End If
-        _cts = Nothing
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
         Await Task.Run(AddressOf OHLStartWorker).ConfigureAwait(False)
@@ -742,24 +743,20 @@ Public Class frmMainTabbed
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Public Sub ProgressStatus(ByVal msg As String)
-        SyncLock Me
-            If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
-            WriteLogEx(LogMode.All, msg, Nothing)
-            logger.Info(msg)
-        End SyncLock
+        If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
+        WriteLogEx(LogMode.All, msg, Nothing)
+        logger.Info(msg)
     End Sub
     Public Sub ProgressStatusEx(ByVal msg As String, ByVal source As List(Of Object))
-        SyncLock Me
-            If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
-            If source Is Nothing Then
-                WriteLogEx(LogMode.All, msg, Nothing)
-            ElseIf source IsNot Nothing AndAlso source.Count > 0 Then
-                For Each runningSource In source
-                    WriteLogEx(LogMode.One, msg, runningSource)
-                Next
-            End If
-            logger.Info(msg)
-        End SyncLock
+        If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
+        If source Is Nothing Then
+            WriteLogEx(LogMode.All, msg, Nothing)
+        ElseIf source IsNot Nothing AndAlso source.Count > 0 Then
+            For Each runningSource In source
+                WriteLogEx(LogMode.One, msg, runningSource)
+            Next
+        End If
+        logger.Info(msg)
     End Sub
     Private Sub OnHeartbeatEx(msg As String, ByVal source As List(Of Object))
         'Update detailed status on the first part, dont append if the text starts with <

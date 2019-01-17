@@ -32,7 +32,7 @@ Public Class MomentumReversalStrategy
         End If
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
-        Dim tradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
+        Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
         Await Task.Delay(0).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
@@ -51,24 +51,25 @@ Public Class MomentumReversalStrategy
                                                                        End Function).FirstOrDefault
                         _cts.Token.ThrowIfCancellationRequested()
                         If cashInstrumentToAdd IsNot Nothing AndAlso cashInstrumentToAdd.TradingSymbol IsNot Nothing AndAlso
-                            (tradableInstrumentsAsPerStrategy Is Nothing OrElse (tradableInstrumentsAsPerStrategy IsNot Nothing AndAlso
-                            tradableInstrumentsAsPerStrategy.Find(Function(x)
-                                                                      Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentIdentifier
-                                                                  End Function) Is Nothing)) Then
+                            (retTradableInstrumentsAsPerStrategy Is Nothing OrElse (retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso
+                            retTradableInstrumentsAsPerStrategy.Find(Function(x)
+                                                                         Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentIdentifier
+                                                                     End Function) Is Nothing)) Then
                             ret = True
-                            If tradableInstrumentsAsPerStrategy Is Nothing Then tradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            tradableInstrumentsAsPerStrategy.Add(cashInstrumentToAdd)
+                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                            retTradableInstrumentsAsPerStrategy.Add(cashInstrumentToAdd)
                         End If
                     End If
                 Next
+                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
         End If
 
-        If tradableInstrumentsAsPerStrategy IsNot Nothing AndAlso tradableInstrumentsAsPerStrategy.Count > 0 Then
+        If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
             'Now create the strategy tradable instruments
             Dim retTradableStrategyInstruments As List(Of MomentumReversalStrategyInstrument) = Nothing
-            logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", tradableInstrumentsAsPerStrategy.Count)
+            logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", retTradableInstrumentsAsPerStrategy.Count)
             'Remove the old handlers from the previous strategyinstruments collection
             If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                 For Each runningTradableStrategyInstruments In TradableStrategyInstruments
@@ -81,7 +82,7 @@ Public Class MomentumReversalStrategy
             End If
 
             'Now create the fresh handlers
-            For Each runningTradableInstrument In tradableInstrumentsAsPerStrategy
+            For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of MomentumReversalStrategyInstrument)
                 Dim runningTradableStrategyInstrument As New MomentumReversalStrategyInstrument(runningTradableInstrument, Me, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx

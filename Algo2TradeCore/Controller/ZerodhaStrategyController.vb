@@ -11,6 +11,7 @@ Imports Algo2TradeCore.Adapter
 Imports Utilities
 Imports System.Net.Http
 Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.Adapter.APIAdapter
 
 Namespace Controller
     Public Class ZerodhaStrategyController
@@ -25,7 +26,6 @@ Namespace Controller
             MyBase.New(validatedUser, canceller)
             _LoginURL = "https://kite.trade/connect/login"
         End Sub
-
 #Region "Login"
         Protected Overrides Function GetLoginURL() As String
             logger.Debug("GetLoginURL, parameters:Nothing")
@@ -461,72 +461,77 @@ Namespace Controller
             Return ret
         End Function
         Public Async Sub OnSessionExpireAsync()
-            logger.Debug("OnSessionExpireAsync, parameters:Nothing")
-            _cts.Token.ThrowIfCancellationRequested()
-            'Wait for the lock and if locked, then exit immediately
-            If _LoginThreads = 0 Then
-                Interlocked.Increment(_LoginThreads)
-                APIConnection = Nothing
-            Else
-                Exit Sub
-            End If
-            OnHeartbeat("********** Need to login again **********")
-            Dim tempConn As ZerodhaConnection = Nothing
             Try
+                logger.Debug("OnSessionExpireAsync, parameters:Nothing")
+                _cts.Cancel()
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(2000).ConfigureAwait(False)
-                Dim loginMessage As String = Nothing
-                While True
-                    _cts.Token.ThrowIfCancellationRequested()
-                    loginMessage = Nothing
-                    tempConn = Nothing
-                    Try
-                        OnHeartbeat("Attempting to get connection to Zerodha API")
-                        _cts.Token.ThrowIfCancellationRequested()
-                        tempConn = Await LoginAsync().ConfigureAwait(False)
-                        _cts.Token.ThrowIfCancellationRequested()
-                    Catch ex As Exception
-                        loginMessage = ex.Message
-                        logger.Error(ex)
-                    End Try
-                    If tempConn Is Nothing Then
-                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
-                            'No need to retry as its a password failure
-                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
-                            Exit While
-                        Else
-                            OnHeartbeat(String.Format("Login process failed after token expiry:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
-                            _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000)
-                            _cts.Token.ThrowIfCancellationRequested()
-                        End If
-                    Else
-                        OnHeartbeat("Relogin completed, checking to see if strategy instruments need to be resubscribed")
-
-                        If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
-                            For Each runningStratgey In _AllStrategies
-                                _cts.Token.ThrowIfCancellationRequested()
-                                OnHeartbeatEx(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStratgey.ToString), New List(Of Object) From {runningStratgey})
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Await runningStratgey.SubscribeAsync(_APITicker).ConfigureAwait(False)
-                                _cts.Token.ThrowIfCancellationRequested()
-                            Next
-                        End If
-                        OnHeartbeat("Relogin completed with resubscriptions")
-                        Exit While
-                    End If
-                End While
-                If tempConn Is Nothing Then
-                    If loginMessage IsNot Nothing Then
-                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
-                    Else
-                        Throw New ApplicationException("No connection to Zerodha API could be established")
-                    End If
+                'Wait for the lock and if locked, then relexit immediately
+                If _LoginThreads = 0 Then
+                    Interlocked.Increment(_LoginThreads)
+                    APIConnection = Nothing
+                Else
+                    Exit Sub
                 End If
-            Finally
-                Interlocked.Decrement(_LoginThreads)
+                OnHeartbeat("********** Need to login again **********")
+                Dim tempConn As ZerodhaConnection = Nothing
+                Try
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Await Task.Delay(2000).ConfigureAwait(False)
+                    Dim loginMessage As String = Nothing
+                    While True
+                        _cts.Token.ThrowIfCancellationRequested()
+                        loginMessage = Nothing
+                        tempConn = Nothing
+                        Try
+                            OnHeartbeat("Attempting to get connection to Zerodha API")
+                            _cts.Token.ThrowIfCancellationRequested()
+                            tempConn = Await LoginAsync().ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                        Catch ex As Exception
+                            loginMessage = ex.Message
+                            logger.Error(ex)
+                        End Try
+                        If tempConn Is Nothing Then
+                            If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
+                                'No need to retry as its a password failure
+                                OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                                Exit While
+                            Else
+                                OnHeartbeat(String.Format("Login process failed after token expiry:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Await Task.Delay(10000)
+                                _cts.Token.ThrowIfCancellationRequested()
+                            End If
+                        Else
+                            OnHeartbeat("Relogin completed, checking to see if strategy instruments need to be resubscribed")
+
+                            If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+                                For Each runningStratgey In _AllStrategies
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    OnHeartbeatEx(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStratgey.ToString), New List(Of Object) From {runningStratgey})
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Await runningStratgey.SubscribeAsync(_APITicker).ConfigureAwait(False)
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                Next
+                            End If
+                            OnHeartbeat("Relogin completed with resubscriptions")
+                            Exit While
+                        End If
+                    End While
+                    If tempConn Is Nothing Then
+                        If loginMessage IsNot Nothing Then
+                            Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                        Else
+                            Throw New ApplicationException("No connection to Zerodha API could be established")
+                        End If
+                    End If
+                Finally
+                    Interlocked.Decrement(_LoginThreads)
+                End Try
+                _cts.Token.ThrowIfCancellationRequested()
+            Catch ex As Exception
+                Throw ex
             End Try
-            _cts.Token.ThrowIfCancellationRequested()
         End Sub
 #End Region
 
@@ -550,160 +555,10 @@ Namespace Controller
             AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
 
-            Dim lastException As Exception = Nothing
-            Dim allOKWithoutException As Boolean = False
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetInstruments
+            _AllInstruments = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
 
-            Using Waiter As New Waiter(_cts)
-                AddHandler Waiter.Heartbeat, AddressOf OnHeartbeat
-                AddHandler Waiter.WaitingFor, AddressOf OnWaitingFor
-
-                For retryCtr = 1 To _MaxReTries
-                    _cts.Token.ThrowIfCancellationRequested()
-                    lastException = Nothing
-                    While Me.APIConnection Is Nothing
-                        _cts.Token.ThrowIfCancellationRequested()
-                        logger.Debug("Waiting for fresh token before running GetAllInstrumentsAsync")
-                        Await Task.Delay(500).ConfigureAwait(False)
-                        _cts.Token.ThrowIfCancellationRequested()
-                    End While
-                    _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
-
-                    OnHeartbeat("Getting all instruments for the day...")
-                    OnDocumentRetryStatus(retryCtr, _MaxReTries)
-                    Try
-                        _cts.Token.ThrowIfCancellationRequested()
-                        _AllInstruments = Await _APIAdapter.GetAllInstrumentsAsync().ConfigureAwait(False)
-                        _cts.Token.ThrowIfCancellationRequested()
-
-                        logger.Debug("Processing response")
-
-                        If _AllInstruments IsNot Nothing Then
-                            logger.Debug("Getting instruments is complete, _AllInstruments.count:{0}", _AllInstruments.Count)
-                            lastException = Nothing
-                            allOKWithoutException = True
-                            ret = True
-                            Exit For
-                        Else
-                            Throw New ApplicationException(String.Format("Getting all instruments for the day did not succeed"))
-                        End If
-                        _cts.Token.ThrowIfCancellationRequested()
-                    Catch tex As KiteConnect.TokenException
-                        logger.Error(tex)
-                        lastException = tex
-                        Continue For
-                    Catch opx As OperationCanceledException
-                        logger.Error(opx)
-                        lastException = opx
-                        If Not _cts.Token.IsCancellationRequested Then
-                            _cts.Token.ThrowIfCancellationRequested()
-                            If Not Waiter.WaitOnInternetFailure(_WaitDurationOnConnectionFailure) Then
-                                'Provide required wait in case internet was already up
-                                logger.Debug("HTTP->Task was cancelled without internet problem:{0}",
-                                             opx.Message)
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Waiter.SleepRequiredDuration(_WaitDurationOnAnyFailure.TotalSeconds, "Non-explicit cancellation")
-                                _cts.Token.ThrowIfCancellationRequested()
-                            Else
-                                logger.Debug("HTTP->Task was cancelled due to internet problem:{0}, waited prescribed seconds, will now retry",
-                                             opx.Message)
-                                'Since internet was down, no need to consume retries
-                                retryCtr -= 1
-                            End If
-                        End If
-                    Catch hex As HttpRequestException
-                        logger.Error(hex)
-                        lastException = hex
-                        If ExceptionExtensions.GetExceptionMessages(hex).Contains("trust relationship") Then
-                            Throw New ForbiddenException(hex.Message, hex, ForbiddenException.TypeOfException.PossibleReloginRequired)
-                        End If
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If Not Waiter.WaitOnInternetFailure(_WaitDurationOnConnectionFailure) Then
-                            If hex.Message.Contains("429") Or hex.Message.Contains("503") Then
-                                logger.Debug("HTTP->429/503 error without internet problem:{0}",
-                                             hex.Message)
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Waiter.SleepRequiredDuration(_WaitDurationOnServiceUnavailbleFailure.TotalSeconds, "Service unavailable(429/503)")
-                                _cts.Token.ThrowIfCancellationRequested()
-                                'Since site service is blocked, no need to consume retries
-                                retryCtr -= 1
-                            ElseIf hex.Message.Contains("404") Then
-                                logger.Debug("HTTP->404 error without internet problem:{0}",
-                                             hex.Message)
-                                _cts.Token.ThrowIfCancellationRequested()
-                                'No point retrying, exit for
-                                Exit For
-                            Else
-                                If ExceptionExtensions.IsExceptionConnectionRelated(hex) Then
-                                    logger.Debug("HTTP->HttpRequestException without internet problem but of type internet related detected:{0}",
-                                                 hex.Message)
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    Waiter.SleepRequiredDuration(_WaitDurationOnConnectionFailure.TotalSeconds, "Connection HttpRequestException")
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    'Since exception was internet related, no need to consume retries
-                                    retryCtr -= 1
-                                Else
-                                    'Provide required wait in case internet was already up
-                                    logger.Debug("HTTP->HttpRequestException without internet problem:{0}",
-                                                 hex.Message)
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    Waiter.SleepRequiredDuration(_WaitDurationOnAnyFailure.TotalSeconds, "Unknown HttpRequestException:" & hex.Message)
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                End If
-                            End If
-                        Else
-                            logger.Debug("HTTP->HttpRequestException with internet problem:{0}, waited prescribed seconds, will now retry",
-                                         hex.Message)
-                            'Since internet was down, no need to consume retries
-                            retryCtr -= 1
-                        End If
-                    Catch ex As Exception
-                        logger.Error(ex)
-                        lastException = ex
-                        'Exit if it is a network failure check and stop retry to avoid stack overflow
-                        'Need to relogin, no point retrying
-                        If ExceptionExtensions.GetExceptionMessages(ex).Contains("disposed") Then
-                            Throw New ForbiddenException(ex.Message, ex, ForbiddenException.TypeOfException.ExceptionInBetweenLoginProcess)
-                        End If
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If Not Waiter.WaitOnInternetFailure(_WaitDurationOnConnectionFailure) Then
-                            'Provide required wait in case internet was already up
-                            _cts.Token.ThrowIfCancellationRequested()
-                            If ExceptionExtensions.IsExceptionConnectionRelated(ex) Then
-                                logger.Debug("HTTP->Exception without internet problem but of type internet related detected:{0}",
-                                             ex.Message)
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Waiter.SleepRequiredDuration(_WaitDurationOnConnectionFailure.TotalSeconds, "Connection Exception")
-                                _cts.Token.ThrowIfCancellationRequested()
-                                'Since exception was internet related, no need to consume retries
-                                retryCtr -= 1
-                            Else
-                                logger.Debug("HTTP->Exception without internet problem of unknown type detected:{0}",
-                                             ex.Message)
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Waiter.SleepRequiredDuration(_WaitDurationOnAnyFailure.TotalSeconds, "Unknown Exception")
-                                _cts.Token.ThrowIfCancellationRequested()
-                            End If
-                        Else
-                            logger.Debug("HTTP->Exception with internet problem:{0}, waited prescribed seconds, will now retry",
-                                         ex.Message)
-                            'Since internet was down, no need to consume retries
-                            retryCtr -= 1
-                        End If
-                    Finally
-                        OnDocumentDownloadComplete()
-                    End Try
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If _AllInstruments IsNot Nothing Then
-                        Exit For
-                    End If
-                    GC.Collect()
-                Next
-                RemoveHandler Waiter.Heartbeat, AddressOf OnHeartbeat
-                RemoveHandler Waiter.WaitingFor, AddressOf OnWaitingFor
-            End Using
-            _cts.Token.ThrowIfCancellationRequested()
-            If Not allOKWithoutException Then Throw lastException
-            Return ret
+            Return _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0
         End Function
         ''' <summary>
         ''' This will help find all tradable instruments as per the passed strategy and then create the strategy workers for each of these instruments
@@ -716,7 +571,9 @@ Namespace Controller
 
             If strategyToRun IsNot Nothing Then
                 If _AllStrategies Is Nothing Then _AllStrategies = New List(Of Strategy)
+
                 'Remove this strategy if already exists
+
                 _AllStrategies.RemoveAll(Function(x)
                                              Return x.GetType Is strategyToRun.GetType
                                          End Function)
@@ -741,6 +598,7 @@ Namespace Controller
 
                 'Now create a local collection inside the controller for the strategy instruments that need to be subscribed as a dictionary for easy picking during tick receive
                 If _subscribedStrategyInstruments Is Nothing Then _subscribedStrategyInstruments = New Dictionary(Of String, List(Of StrategyInstrument))
+                Dim subscribedInstrumentTokens As List(Of String) = Nothing
                 For Each runningTradableStrategyInstrument In strategyToRun.TradableStrategyInstruments
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim instrumentKey As String = runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier
@@ -758,6 +616,36 @@ Namespace Controller
                     strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
                 Next
 
+                'Create dummy tick so as to trigger an UI response
+                Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
+                Dim allQuotes As IEnumerable(Of IQuote) = Await ExecuteCommandAsync(execCommand, strategyToRun.TradableInstrumentsAsPerStrategy).ConfigureAwait(False)
+                If allQuotes IsNot Nothing AndAlso allQuotes.Count > 0 Then
+                    For Each runningQuote As ZerodhaQuote In allQuotes
+
+                        OnTickerTickAsync(New Tick() With {.AveragePrice = runningQuote.AveragePrice,
+                                          .Bids = If(runningQuote.WrappedQuote.Bids IsNot Nothing, runningQuote.WrappedQuote.Bids.ToArray, Nothing),
+                                          .BuyQuantity = runningQuote.WrappedQuote.BuyQuantity,
+                                          .Change = runningQuote.WrappedQuote.Change,
+                                          .Close = runningQuote.Close,
+                                          .High = runningQuote.High,
+                                          .InstrumentToken = runningQuote.InstrumentToken,
+                                          .LastPrice = runningQuote.LastPrice,
+                                          .LastQuantity = runningQuote.WrappedQuote.LastQuantity,
+                                          .LastTradeTime = runningQuote.WrappedQuote.LastTradeTime,
+                                          .Low = runningQuote.Low,
+                                          .Offers = If(runningQuote.WrappedQuote.Offers IsNot Nothing, runningQuote.WrappedQuote.Offers.ToArray, Nothing),
+                                          .OI = runningQuote.WrappedQuote.OI,
+                                          .OIDayHigh = runningQuote.WrappedQuote.OIDayHigh,
+                                          .OIDayLow = runningQuote.WrappedQuote.OIDayLow,
+                                          .Open = runningQuote.Open,
+                                          .SellQuantity = runningQuote.WrappedQuote.SellQuantity,
+                                          .Timestamp = runningQuote.Timestamp,
+                                          .Tradable = True,
+                                          .Volume = runningQuote.Volume})
+                    Next
+                End If
+
+                'Now subscribe to the actual ticker
                 _cts.Token.ThrowIfCancellationRequested()
                 Await strategyToRun.SubscribeAsync(_APITicker).ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()

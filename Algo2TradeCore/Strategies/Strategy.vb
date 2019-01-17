@@ -51,7 +51,7 @@ Namespace Strategies
 #Region "Logging and Status Progress"
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
-
+        Public Property TradableInstrumentsAsPerStrategy As IEnumerable(Of IInstrument)
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
         Public Property ParentContoller As APIStrategyController
         Protected _cts As CancellationTokenSource

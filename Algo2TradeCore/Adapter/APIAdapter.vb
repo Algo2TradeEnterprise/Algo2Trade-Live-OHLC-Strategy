@@ -38,6 +38,24 @@ Namespace Adapter
         End Sub
         Public MustOverride Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
         Public MustOverride Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
+        Public MustOverride Async Function GetAllQuotes(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
         Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
+        Public Enum ExecutionCommands
+            GetPositions = 1
+            GetQuotes
+            PlaceOrder
+            ModifyOrderQuantity
+            ModifyOrderPrice
+            ModifyTargetOrderPrice
+            ModifySLOrderPrice
+            CancelOrder
+            GetOrderHistory
+            GetOrders
+            GetOrderTrades
+            GetInstruments '
+            InvalidateAccessToken
+            GenerateSession
+            None
+        End Enum
     End Class
 End Namespace

@@ -84,6 +84,7 @@
     <Compile Include="Entities\IConnection.vb" />
     <Compile Include="Entities\IInstrument.vb" />
     <Compile Include="Entities\IOrder.vb" />
+    <Compile Include="Entities\IQuote.vb" />
     <Compile Include="Entities\ITick.vb" />
     <Compile Include="Entities\ITrade.vb" />
     <Compile Include="Entities\IUser.vb" />
@@ -91,6 +92,7 @@
     <Compile Include="Entities\ZerodhaConnection.vb" />
     <Compile Include="Entities\ZerodhaInstrument.vb" />
     <Compile Include="Entities\ZerodhaOrder.vb" />
+    <Compile Include="Entities\ZerodhaQuote.vb" />
     <Compile Include="Entities\ZerodhaTick.vb" />
     <Compile Include="Entities\ZerodhaTrade.vb" />
     <Compile Include="Entities\ZerodhaUser.vb" />

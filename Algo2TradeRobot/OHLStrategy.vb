@@ -28,7 +28,7 @@ Public Class OHLStrategy
         End If
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
-        Dim tradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
+        Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
         Await Task.Delay(0).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
@@ -41,17 +41,18 @@ Public Class OHLStrategy
                 For Each runningFutureAllInstrument In futureAllInstruments
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
-                    If tradableInstrumentsAsPerStrategy Is Nothing Then tradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    tradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
                 Next
+                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
         End If
 
-        If tradableInstrumentsAsPerStrategy IsNot Nothing AndAlso tradableInstrumentsAsPerStrategy.Count > 0 Then
+        If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
             'Now create the strategy tradable instruments
             Dim retTradableStrategyInstruments As List(Of OHLStrategyInstrument) = Nothing
-            logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", tradableInstrumentsAsPerStrategy.Count)
+            logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", retTradableInstrumentsAsPerStrategy.Count)
             'Remove the old handlers from the previous strategyinstruments collection
             If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                 For Each runningTradableStrategyInstruments In TradableStrategyInstruments
@@ -64,7 +65,7 @@ Public Class OHLStrategy
             End If
 
             'Now create the fresh handlers
-            For Each runningTradableInstrument In tradableInstrumentsAsPerStrategy
+            For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of OHLStrategyInstrument)
                 Dim runningTradableStrategyInstrument As New OHLStrategyInstrument(runningTradableInstrument, Me, _cts)
@@ -143,7 +144,7 @@ Public Class OHLStrategy
         Dim ctr As Integer = 0
         While True
             ctr += 1000
-            If ctr = 10000 Then Throw New ApplicationException("DOnno")
+            'If ctr = 10000 Then Throw New ApplicationException("DOnno")
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(1000)
         End While
