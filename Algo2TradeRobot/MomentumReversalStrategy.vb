@@ -157,34 +157,27 @@ Public Class MomentumReversalStrategy
         Return ret
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        While True
-            _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(1000)
-        End While
+        'Dim ctr As Integer
+        'While True
+        '    _cts.Token.ThrowIfCancellationRequested()
+        '    Await Task.Delay(500)
+        '    ctr += 500
+
+        '    If ctr = 10000 Then
+        '        _cts.Cancel()
+        '    End If
+        '    Await Task.Delay(1000)
+        'End While
         'Try
-        '    Dim localex As Exception = Nothing
-        '    While True
-        '        _cts.Token.ThrowIfCancellationRequested()
-        '        Dim first As Boolean = True
-        '        If first Then
-        '            For Each tradableStrategyInstrument As MomentumReversalStrategyInstrument In TradableStrategyInstruments
-        '                _cts.Token.ThrowIfCancellationRequested()
-        '                If first Then
-        '                    AddHandler tradableStrategyInstrument.JOYMA, Sub(ex1 As Exception)
-        '                                                                     localex = ex1
-        '                                                                 End Sub
-        '                End If
-        '                tradableStrategyInstrument.MonitorAsync.ConfigureAwait(False)
-        '            Next
-        '        End If
-        '        first = False
-        '        If localex IsNot Nothing Then
-        '            Throw New AggregateException(localex)
-        '        End If
-        '        Await Task.Delay(1000)
-        '    End While
+        _cts.Token.ThrowIfCancellationRequested()
+        Dim tasks As New List(Of Task)()
+        For Each tradableStrategyInstrument As MomentumReversalStrategyInstrument In TradableStrategyInstruments
+            _cts.Token.ThrowIfCancellationRequested()
+            tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
+        Next
+        Await Task.WhenAll(tasks)
         'Catch ex As Exception
-        '    Throw ex
+        'logger.Error(ex)
         'End Try
     End Function
     Public Overrides Function ToString() As String

@@ -141,13 +141,21 @@ Public Class OHLStrategy
         Return ret
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        Dim ctr As Integer = 0
-        While True
-            ctr += 1000
-            'If ctr = 10000 Then Throw New ApplicationException("DOnno")
+        'Dim ctr As Integer = 0
+        'While True
+        '    ctr += 1000
+        '    'If ctr = 10000 Then Throw New ApplicationException("DOnno")
+        '    _cts.Token.ThrowIfCancellationRequested()
+        '    Await Task.Delay(1000)
+        'End While
+        _cts.Token.ThrowIfCancellationRequested()
+        Dim tasks As New List(Of Task)()
+        For Each tradableStrategyInstrument As OHLStrategyInstrument In TradableStrategyInstruments
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(1000)
-        End While
+            tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
+        Next
+        Await Task.WhenAll(tasks)
+
     End Function
 
     Public Overrides Function ToString() As String

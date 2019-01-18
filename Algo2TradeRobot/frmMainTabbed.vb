@@ -347,15 +347,17 @@ Public Class frmMainTabbed
             Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
 
-            Dim lastException As Exception = Nothing
-            Await Task.Run(Async Function()
-                               Try
-                                   Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
-                               Catch ex As Exception
-                                   lastException = ex
-                               End Try
-                           End Function).ConfigureAwait(False)
-            If lastException IsNot Nothing Then Throw lastException
+            'Dim lastException As Exception = Nothing
+            'Await Task.Run(Async Function()
+            '                   Try
+            '                       Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+            '                   Catch ex As Exception
+            '                       lastException = ex
+            '                   End Try
+            '               End Function).ConfigureAwait(False)
+            'If lastException IsNot Nothing Then Throw lastException
+
+            Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -503,15 +505,7 @@ Public Class frmMainTabbed
             Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
             SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, dashboadList)
 
-            Dim lastException As Exception = Nothing
-            Await Task.Run(Async Function()
-                               Try
-                                   Await ohlStrategyToExecute.MonitorAsync().ConfigureAwait(False)
-                               Catch ex As Exception
-                                   lastException = ex
-                               End Try
-                           End Function).ConfigureAwait(False)
-            If lastException IsNot Nothing Then Throw lastException
+            Await ohlStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)

@@ -14,24 +14,6 @@ Public Class MomentumReversalStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Event JOYMA(ByVal ex As Exception)
-    Public Sub ONJOYMA(ByVal ex As Exception)
-        RaiseEvent JOYMA(ex)
-    End Sub
-
-    <Display(Name:="OHL", Order:=10)>
-    Public ReadOnly Property OHL As String
-        Get
-            If Me.OpenPrice = Me.LowPrice Then
-                Return "O=L"
-            ElseIf Me.OpenPrice = Me.HighPrice Then
-                Return "O=H"
-            Else
-                Return Nothing
-            End If
-        End Get
-    End Property
-
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
         _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentContoller, _cts)
@@ -77,14 +59,20 @@ Public Class MomentumReversalStrategyInstrument
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
         _cts.Token.ThrowIfCancellationRequested()
         _LastTick = tickData
-        NotifyPropertyChanged("OHL")
         Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
     Public Overrides Async Function MonitorAsync() As Task
+        Dim ctr As Integer
         While True
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(1000)
+            Await Task.Delay(500)
+            ctr += 500
+
+            If ctr = 10000 Then
+                '_cts.Cancel()
+            End If
+            'Await Task.Delay(1000)
         End While
         'Dim ctr As Integer
         'While True
