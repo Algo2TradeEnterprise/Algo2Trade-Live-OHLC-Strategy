@@ -49,9 +49,9 @@ Partial Class frmZerodhaUserDetails
         Me.GroupBox1.Controls.Add(Me.lblZerodhaPassword)
         Me.GroupBox1.Controls.Add(Me.lblZerodhaUserId)
         Me.GroupBox1.Location = New System.Drawing.Point(9, 7)
-        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Size = New System.Drawing.Size(460, 183)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
@@ -59,7 +59,7 @@ Partial Class frmZerodhaUserDetails
         'txtZerodhaAPISecret
         '
         Me.txtZerodhaAPISecret.Location = New System.Drawing.Point(103, 138)
-        Me.txtZerodhaAPISecret.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtZerodhaAPISecret.Margin = New System.Windows.Forms.Padding(4)
         Me.txtZerodhaAPISecret.Name = "txtZerodhaAPISecret"
         Me.txtZerodhaAPISecret.Size = New System.Drawing.Size(348, 22)
         Me.txtZerodhaAPISecret.TabIndex = 7
@@ -67,7 +67,7 @@ Partial Class frmZerodhaUserDetails
         'txtZerodhaAPIKey
         '
         Me.txtZerodhaAPIKey.Location = New System.Drawing.Point(103, 100)
-        Me.txtZerodhaAPIKey.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtZerodhaAPIKey.Margin = New System.Windows.Forms.Padding(4)
         Me.txtZerodhaAPIKey.Name = "txtZerodhaAPIKey"
         Me.txtZerodhaAPIKey.Size = New System.Drawing.Size(348, 22)
         Me.txtZerodhaAPIKey.TabIndex = 6
@@ -75,7 +75,7 @@ Partial Class frmZerodhaUserDetails
         'txtZerodhaPassword
         '
         Me.txtZerodhaPassword.Location = New System.Drawing.Point(103, 60)
-        Me.txtZerodhaPassword.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtZerodhaPassword.Margin = New System.Windows.Forms.Padding(4)
         Me.txtZerodhaPassword.Name = "txtZerodhaPassword"
         Me.txtZerodhaPassword.PasswordChar = Global.Microsoft.VisualBasic.ChrW(36)
         Me.txtZerodhaPassword.Size = New System.Drawing.Size(185, 22)
@@ -84,7 +84,7 @@ Partial Class frmZerodhaUserDetails
         'txtZerodhaUserId
         '
         Me.txtZerodhaUserId.Location = New System.Drawing.Point(103, 21)
-        Me.txtZerodhaUserId.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtZerodhaUserId.Margin = New System.Windows.Forms.Padding(4)
         Me.txtZerodhaUserId.Name = "txtZerodhaUserId"
         Me.txtZerodhaUserId.Size = New System.Drawing.Size(185, 22)
         Me.txtZerodhaUserId.TabIndex = 4
@@ -115,9 +115,9 @@ Partial Class frmZerodhaUserDetails
         Me.lblZerodhaPassword.Location = New System.Drawing.Point(9, 64)
         Me.lblZerodhaPassword.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaPassword.Name = "lblZerodhaPassword"
-        Me.lblZerodhaPassword.Size = New System.Drawing.Size(69, 17)
+        Me.lblZerodhaPassword.Size = New System.Drawing.Size(76, 17)
         Me.lblZerodhaPassword.TabIndex = 1
-        Me.lblZerodhaPassword.Text = "Password"
+        Me.lblZerodhaPassword.Text = "Passwords"
         '
         'lblZerodhaUserId
         '
@@ -135,7 +135,7 @@ Partial Class frmZerodhaUserDetails
         Me.btnSaveZerodhaUserDetails.ImageKey = "save-icon-36533.png"
         Me.btnSaveZerodhaUserDetails.ImageList = Me.ImageList1
         Me.btnSaveZerodhaUserDetails.Location = New System.Drawing.Point(480, 16)
-        Me.btnSaveZerodhaUserDetails.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.btnSaveZerodhaUserDetails.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveZerodhaUserDetails.Name = "btnSaveZerodhaUserDetails"
         Me.btnSaveZerodhaUserDetails.Size = New System.Drawing.Size(112, 58)
         Me.btnSaveZerodhaUserDetails.TabIndex = 1
@@ -156,7 +156,7 @@ Partial Class frmZerodhaUserDetails
         Me.ClientSize = New System.Drawing.Size(603, 202)
         Me.Controls.Add(Me.btnSaveZerodhaUserDetails)
         Me.Controls.Add(Me.GroupBox1)
-        Me.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.Margin = New System.Windows.Forms.Padding(4)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmZerodhaUserDetails"
