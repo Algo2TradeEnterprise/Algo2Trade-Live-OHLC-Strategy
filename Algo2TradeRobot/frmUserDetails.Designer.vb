@@ -48,74 +48,84 @@ Partial Class frmZerodhaUserDetails
         Me.GroupBox1.Controls.Add(Me.lblZerodhaAPIKey)
         Me.GroupBox1.Controls.Add(Me.lblZerodhaPassword)
         Me.GroupBox1.Controls.Add(Me.lblZerodhaUserId)
-        Me.GroupBox1.Location = New System.Drawing.Point(7, 6)
+        Me.GroupBox1.Location = New System.Drawing.Point(9, 7)
+        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(345, 149)
+        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.GroupBox1.Size = New System.Drawing.Size(460, 183)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
         '
         'txtZerodhaAPISecret
         '
-        Me.txtZerodhaAPISecret.Location = New System.Drawing.Point(77, 112)
+        Me.txtZerodhaAPISecret.Location = New System.Drawing.Point(103, 138)
+        Me.txtZerodhaAPISecret.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtZerodhaAPISecret.Name = "txtZerodhaAPISecret"
-        Me.txtZerodhaAPISecret.Size = New System.Drawing.Size(262, 20)
+        Me.txtZerodhaAPISecret.Size = New System.Drawing.Size(348, 22)
         Me.txtZerodhaAPISecret.TabIndex = 7
         '
         'txtZerodhaAPIKey
         '
-        Me.txtZerodhaAPIKey.Location = New System.Drawing.Point(77, 81)
+        Me.txtZerodhaAPIKey.Location = New System.Drawing.Point(103, 100)
+        Me.txtZerodhaAPIKey.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtZerodhaAPIKey.Name = "txtZerodhaAPIKey"
-        Me.txtZerodhaAPIKey.Size = New System.Drawing.Size(262, 20)
+        Me.txtZerodhaAPIKey.Size = New System.Drawing.Size(348, 22)
         Me.txtZerodhaAPIKey.TabIndex = 6
         '
         'txtZerodhaPassword
         '
-        Me.txtZerodhaPassword.Location = New System.Drawing.Point(77, 49)
+        Me.txtZerodhaPassword.Location = New System.Drawing.Point(103, 60)
+        Me.txtZerodhaPassword.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtZerodhaPassword.Name = "txtZerodhaPassword"
         Me.txtZerodhaPassword.PasswordChar = Global.Microsoft.VisualBasic.ChrW(36)
-        Me.txtZerodhaPassword.Size = New System.Drawing.Size(140, 20)
+        Me.txtZerodhaPassword.Size = New System.Drawing.Size(185, 22)
         Me.txtZerodhaPassword.TabIndex = 5
         '
         'txtZerodhaUserId
         '
-        Me.txtZerodhaUserId.Location = New System.Drawing.Point(77, 17)
+        Me.txtZerodhaUserId.Location = New System.Drawing.Point(103, 21)
+        Me.txtZerodhaUserId.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtZerodhaUserId.Name = "txtZerodhaUserId"
-        Me.txtZerodhaUserId.Size = New System.Drawing.Size(140, 20)
+        Me.txtZerodhaUserId.Size = New System.Drawing.Size(185, 22)
         Me.txtZerodhaUserId.TabIndex = 4
         '
         'lblZerodhaAPISecret
         '
         Me.lblZerodhaAPISecret.AutoSize = True
-        Me.lblZerodhaAPISecret.Location = New System.Drawing.Point(7, 115)
+        Me.lblZerodhaAPISecret.Location = New System.Drawing.Point(9, 142)
+        Me.lblZerodhaAPISecret.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaAPISecret.Name = "lblZerodhaAPISecret"
-        Me.lblZerodhaAPISecret.Size = New System.Drawing.Size(58, 13)
+        Me.lblZerodhaAPISecret.Size = New System.Drawing.Size(74, 17)
         Me.lblZerodhaAPISecret.TabIndex = 3
         Me.lblZerodhaAPISecret.Text = "API Secret"
         '
         'lblZerodhaAPIKey
         '
         Me.lblZerodhaAPIKey.AutoSize = True
-        Me.lblZerodhaAPIKey.Location = New System.Drawing.Point(7, 84)
+        Me.lblZerodhaAPIKey.Location = New System.Drawing.Point(9, 103)
+        Me.lblZerodhaAPIKey.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaAPIKey.Name = "lblZerodhaAPIKey"
-        Me.lblZerodhaAPIKey.Size = New System.Drawing.Size(45, 13)
+        Me.lblZerodhaAPIKey.Size = New System.Drawing.Size(57, 17)
         Me.lblZerodhaAPIKey.TabIndex = 2
         Me.lblZerodhaAPIKey.Text = "API Key"
         '
         'lblZerodhaPassword
         '
         Me.lblZerodhaPassword.AutoSize = True
-        Me.lblZerodhaPassword.Location = New System.Drawing.Point(7, 52)
+        Me.lblZerodhaPassword.Location = New System.Drawing.Point(9, 64)
+        Me.lblZerodhaPassword.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaPassword.Name = "lblZerodhaPassword"
-        Me.lblZerodhaPassword.Size = New System.Drawing.Size(53, 13)
+        Me.lblZerodhaPassword.Size = New System.Drawing.Size(76, 17)
         Me.lblZerodhaPassword.TabIndex = 1
-        Me.lblZerodhaPassword.Text = "Password"
+        Me.lblZerodhaPassword.Text = "Passwords"
         '
         'lblZerodhaUserId
         '
         Me.lblZerodhaUserId.AutoSize = True
-        Me.lblZerodhaUserId.Location = New System.Drawing.Point(7, 20)
+        Me.lblZerodhaUserId.Location = New System.Drawing.Point(9, 25)
+        Me.lblZerodhaUserId.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaUserId.Name = "lblZerodhaUserId"
-        Me.lblZerodhaUserId.Size = New System.Drawing.Size(38, 13)
+        Me.lblZerodhaUserId.Size = New System.Drawing.Size(49, 17)
         Me.lblZerodhaUserId.TabIndex = 0
         Me.lblZerodhaUserId.Text = "UserId"
         '
@@ -124,9 +134,10 @@ Partial Class frmZerodhaUserDetails
         Me.btnSaveZerodhaUserDetails.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSaveZerodhaUserDetails.ImageKey = "save-icon-36533.png"
         Me.btnSaveZerodhaUserDetails.ImageList = Me.ImageList1
-        Me.btnSaveZerodhaUserDetails.Location = New System.Drawing.Point(360, 13)
+        Me.btnSaveZerodhaUserDetails.Location = New System.Drawing.Point(480, 16)
+        Me.btnSaveZerodhaUserDetails.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnSaveZerodhaUserDetails.Name = "btnSaveZerodhaUserDetails"
-        Me.btnSaveZerodhaUserDetails.Size = New System.Drawing.Size(84, 47)
+        Me.btnSaveZerodhaUserDetails.Size = New System.Drawing.Size(112, 58)
         Me.btnSaveZerodhaUserDetails.TabIndex = 1
         Me.btnSaveZerodhaUserDetails.Text = "&Save"
         Me.btnSaveZerodhaUserDetails.TextAlign = System.Drawing.ContentAlignment.MiddleRight
@@ -140,11 +151,12 @@ Partial Class frmZerodhaUserDetails
         '
         'frmZerodhaUserDetails
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(452, 164)
+        Me.ClientSize = New System.Drawing.Size(603, 202)
         Me.Controls.Add(Me.btnSaveZerodhaUserDetails)
         Me.Controls.Add(Me.GroupBox1)
+        Me.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmZerodhaUserDetails"
