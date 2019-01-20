@@ -115,9 +115,9 @@ Partial Class frmZerodhaUserDetails
         Me.lblZerodhaPassword.Location = New System.Drawing.Point(9, 64)
         Me.lblZerodhaPassword.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaPassword.Name = "lblZerodhaPassword"
-        Me.lblZerodhaPassword.Size = New System.Drawing.Size(76, 17)
+        Me.lblZerodhaPassword.Size = New System.Drawing.Size(69, 17)
         Me.lblZerodhaPassword.TabIndex = 1
-        Me.lblZerodhaPassword.Text = "Passwords"
+        Me.lblZerodhaPassword.Text = "Password"
         '
         'lblZerodhaUserId
         '
