@@ -148,14 +148,24 @@ Public Class OHLStrategy
         '    _cts.Token.ThrowIfCancellationRequested()
         '    Await Task.Delay(1000)
         'End While
-        _cts.Token.ThrowIfCancellationRequested()
-        Dim tasks As New List(Of Task)()
-        For Each tradableStrategyInstrument As OHLStrategyInstrument In TradableStrategyInstruments
-            _cts.Token.ThrowIfCancellationRequested()
-            tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
-        Next
-        Await Task.WhenAll(tasks)
+        Dim lastException As Exception = Nothing
 
+        Try
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tasks As New List(Of Task)()
+            For Each tradableStrategyInstrument As OHLStrategyInstrument In TradableStrategyInstruments
+                _cts.Token.ThrowIfCancellationRequested()
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
+            Next
+            Await Task.WhenAll(tasks).ConfigureAwait(False)
+        Catch ex As Exception
+            lastException = ex
+            logger.Error(ex)
+        End Try
+        If lastException IsNot Nothing Then
+            Await ParentContoller.CloseTickerIfConnectedAsync()
+            Throw lastException
+        End If
     End Function
 
     Public Overrides Function ToString() As String

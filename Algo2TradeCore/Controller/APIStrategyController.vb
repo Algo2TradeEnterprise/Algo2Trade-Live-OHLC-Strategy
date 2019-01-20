@@ -86,6 +86,7 @@ Namespace Controller
         Protected _LoginURL As String
         Protected _LoginThreads As Integer
         Public Property APIConnection As IConnection
+        Public Property OrphanException As Exception
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
         Protected _AllInstruments As IEnumerable(Of IInstrument)

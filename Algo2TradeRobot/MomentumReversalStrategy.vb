@@ -83,6 +83,7 @@ Public Class MomentumReversalStrategy
 
             'Now create the fresh handlers
             For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
+                _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of MomentumReversalStrategyInstrument)
                 Dim runningTradableStrategyInstrument As New MomentumReversalStrategyInstrument(runningTradableInstrument, Me, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
@@ -168,17 +169,24 @@ Public Class MomentumReversalStrategy
         '    End If
         '    Await Task.Delay(1000)
         'End While
-        'Try
-        _cts.Token.ThrowIfCancellationRequested()
-        Dim tasks As New List(Of Task)()
-        For Each tradableStrategyInstrument As MomentumReversalStrategyInstrument In TradableStrategyInstruments
+        Dim lastException As Exception = Nothing
+
+        Try
             _cts.Token.ThrowIfCancellationRequested()
-            tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
-        Next
-        Await Task.WhenAll(tasks)
-        'Catch ex As Exception
-        'logger.Error(ex)
-        'End Try
+            Dim tasks As New List(Of Task)()
+            For Each tradableStrategyInstrument As MomentumReversalStrategyInstrument In TradableStrategyInstruments
+                _cts.Token.ThrowIfCancellationRequested()
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
+            Next
+            Await Task.WhenAll(tasks).ConfigureAwait(False)
+        Catch ex As Exception
+            lastException = ex
+            logger.Error(ex)
+        End Try
+        If lastException IsNot Nothing Then
+            Await ParentContoller.CloseTickerIfConnectedAsync()
+            Throw lastException
+        End If
     End Function
     Public Overrides Function ToString() As String
         Return Me.GetType().Name

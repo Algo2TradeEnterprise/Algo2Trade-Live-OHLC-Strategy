@@ -462,8 +462,9 @@ Namespace Controller
         End Function
         Public Async Sub OnSessionExpireAsync()
             Try
+                OrphanException = Nothing
                 logger.Debug("OnSessionExpireAsync, parameters:Nothing")
-                _cts.Cancel()
+                '_cts.Cancel()
                 _cts.Token.ThrowIfCancellationRequested()
                 'Wait for the lock and if locked, then relexit immediately
                 If _LoginThreads = 0 Then
@@ -530,7 +531,9 @@ Namespace Controller
                 End Try
                 _cts.Token.ThrowIfCancellationRequested()
             Catch ex As Exception
-                Throw ex
+                logger.Error(ex)
+                OrphanException = ex
+                'This should be now handled by the strategies in their monitor method
             End Try
         End Sub
 #End Region

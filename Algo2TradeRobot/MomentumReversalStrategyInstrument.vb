@@ -63,17 +63,37 @@ Public Class MomentumReversalStrategyInstrument
         _cts.Token.ThrowIfCancellationRequested()
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        Dim ctr As Integer
-        While True
-            _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(500)
-            ctr += 500
+        Dim lastException As Exception = Nothing
+        'Try
 
-            If ctr = 10000 Then
-                '_cts.Cancel()
+        While True
+            If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
+                Throw Me.ParentStrategy.ParentContoller.OrphanException
             End If
-            'Await Task.Delay(1000)
+            Dim r As Random = New Random()
+            Dim x = r.Next(0, 11)
+            _cts.Token.ThrowIfCancellationRequested()
+            If x = 7 Then
+                While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+                    _cts.Token.ThrowIfCancellationRequested()
+                    logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
+                    Await Task.Delay(500).ConfigureAwait(False)
+                End While
+
+                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
+            End If
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(1000)
         End While
+        'Catch ex As Exception
+        '    lastException = ex
+        'End Try
+        'If lastException IsNot Nothing Then
+        '    Await Me.ParentStrategy.ParentContoller.CloseTickerIfConnectedAsync()
+        '    Throw lastException
+        'End If
         'Dim ctr As Integer
         'While True
         '    _cts.Token.ThrowIfCancellationRequested()

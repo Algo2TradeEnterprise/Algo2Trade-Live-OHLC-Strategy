@@ -347,16 +347,6 @@ Public Class frmMainTabbed
             Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
 
-            'Dim lastException As Exception = Nothing
-            'Await Task.Run(Async Function()
-            '                   Try
-            '                       Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
-            '                   Catch ex As Exception
-            '                       lastException = ex
-            '                   End Try
-            '               End Function).ConfigureAwait(False)
-            'If lastException IsNot Nothing Then Throw lastException
-
             Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
             logger.Error(cx)
