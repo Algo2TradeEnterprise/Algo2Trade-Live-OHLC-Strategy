@@ -121,9 +121,9 @@
     <value>17, 17</value>
   </metadata>
   <metadata name="tmrMomentumReversalTickerStatus.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>153, 17</value>
+    <value>187, 17</value>
   </metadata>
   <metadata name="tmrOHLTickerStatus.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>385, 13</value>
+    <value>479, 17</value>
   </metadata>
 </root>
