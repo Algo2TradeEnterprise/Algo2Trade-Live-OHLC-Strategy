@@ -23,6 +23,7 @@ Partial Class frmMainTabbed
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmMainTabbed))
         Me.msMainMenuStrip = New System.Windows.Forms.MenuStrip()
         Me.miSecurity = New System.Windows.Forms.ToolStripMenuItem()
         Me.miUserDetails = New System.Windows.Forms.ToolStripMenuItem()
@@ -109,7 +110,7 @@ Partial Class frmMainTabbed
         Me.tabMain.Controls.Add(Me.tabOHL)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tabMain.Location = New System.Drawing.Point(0, 28)
-        Me.tabMain.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.tabMain.Margin = New System.Windows.Forms.Padding(4)
         Me.tabMain.Name = "tabMain"
         Me.tabMain.SelectedIndex = 0
         Me.tabMain.Size = New System.Drawing.Size(1680, 815)
@@ -119,9 +120,9 @@ Partial Class frmMainTabbed
         '
         Me.tabMomentumReversal.Controls.Add(Me.pnlMomentumReversalMainPanelHorizontalSplitter)
         Me.tabMomentumReversal.Location = New System.Drawing.Point(4, 25)
-        Me.tabMomentumReversal.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.tabMomentumReversal.Margin = New System.Windows.Forms.Padding(4)
         Me.tabMomentumReversal.Name = "tabMomentumReversal"
-        Me.tabMomentumReversal.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.tabMomentumReversal.Padding = New System.Windows.Forms.Padding(4)
         Me.tabMomentumReversal.Size = New System.Drawing.Size(1672, 786)
         Me.tabMomentumReversal.TabIndex = 0
         Me.tabMomentumReversal.Text = "Momentum Reversal"
@@ -135,7 +136,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Controls.Add(Me.pnlMomentumReversalBodyVerticalSplitter, 0, 1)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Name = "pnlMomentumReversalMainPanelHorizontalSplitter"
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
@@ -166,7 +167,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Name = "pnlMomentumReversalTopHeaderVerticalSplitter"
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowCount = 1
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
@@ -177,7 +178,7 @@ Partial Class frmMainTabbed
         '
         Me.btnMomentumReversalStop.Dock = System.Windows.Forms.DockStyle.Fill
         Me.btnMomentumReversalStop.Location = New System.Drawing.Point(113, 4)
-        Me.btnMomentumReversalStop.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.btnMomentumReversalStop.Margin = New System.Windows.Forms.Padding(4)
         Me.btnMomentumReversalStop.Name = "btnMomentumReversalStop"
         Me.btnMomentumReversalStop.Size = New System.Drawing.Size(101, 38)
         Me.btnMomentumReversalStop.TabIndex = 10
@@ -188,7 +189,7 @@ Partial Class frmMainTabbed
         '
         Me.btnMomentumReversalStart.Dock = System.Windows.Forms.DockStyle.Fill
         Me.btnMomentumReversalStart.Location = New System.Drawing.Point(4, 4)
-        Me.btnMomentumReversalStart.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.btnMomentumReversalStart.Margin = New System.Windows.Forms.Padding(4)
         Me.btnMomentumReversalStart.Name = "btnMomentumReversalStart"
         Me.btnMomentumReversalStart.Size = New System.Drawing.Size(101, 38)
         Me.btnMomentumReversalStart.TabIndex = 2
@@ -200,7 +201,7 @@ Partial Class frmMainTabbed
         Me.Panel1.Controls.Add(Me.lblMomentumReversalTickerStatus)
         Me.Panel1.Controls.Add(Me.blbMomentumReversalTickerStatus)
         Me.Panel1.Location = New System.Drawing.Point(1466, 4)
-        Me.Panel1.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.Panel1.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel1.Name = "Panel1"
         Me.Panel1.Size = New System.Drawing.Size(180, 38)
         Me.Panel1.TabIndex = 9
@@ -220,7 +221,7 @@ Partial Class frmMainTabbed
         Me.blbMomentumReversalTickerStatus.Color = System.Drawing.Color.Pink
         Me.blbMomentumReversalTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
         Me.blbMomentumReversalTickerStatus.Location = New System.Drawing.Point(133, 0)
-        Me.blbMomentumReversalTickerStatus.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.blbMomentumReversalTickerStatus.Margin = New System.Windows.Forms.Padding(4)
         Me.blbMomentumReversalTickerStatus.Name = "blbMomentumReversalTickerStatus"
         Me.blbMomentumReversalTickerStatus.On = True
         Me.blbMomentumReversalTickerStatus.Size = New System.Drawing.Size(47, 38)
@@ -235,7 +236,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyVerticalSplitter.Controls.Add(Me.pnlMomentumReversalBodyHorizontalSplitter, 0, 0)
         Me.pnlMomentumReversalBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalBodyVerticalSplitter.Location = New System.Drawing.Point(4, 58)
-        Me.pnlMomentumReversalBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlMomentumReversalBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlMomentumReversalBodyVerticalSplitter.Name = "pnlMomentumReversalBodyVerticalSplitter"
         Me.pnlMomentumReversalBodyVerticalSplitter.RowCount = 1
         Me.pnlMomentumReversalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
@@ -250,7 +251,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyHorizontalSplitter.Controls.Add(Me.sfdgvMomentumReversalMainDashboard, 0, 0)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlMomentumReversalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Name = "pnlMomentumReversalBodyHorizontalSplitter"
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowCount = 2
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
@@ -265,7 +266,7 @@ Partial Class frmMainTabbed
         Me.lstMomentumReversalLog.FormattingEnabled = True
         Me.lstMomentumReversalLog.ItemHeight = 16
         Me.lstMomentumReversalLog.Location = New System.Drawing.Point(4, 499)
-        Me.lstMomentumReversalLog.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.lstMomentumReversalLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstMomentumReversalLog.Name = "lstMomentumReversalLog"
         Me.lstMomentumReversalLog.Size = New System.Drawing.Size(1143, 205)
         Me.lstMomentumReversalLog.TabIndex = 9
@@ -281,7 +282,7 @@ Partial Class frmMainTabbed
         Me.sfdgvMomentumReversalMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvMomentumReversalMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
         Me.sfdgvMomentumReversalMainDashboard.Location = New System.Drawing.Point(4, 4)
-        Me.sfdgvMomentumReversalMainDashboard.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.sfdgvMomentumReversalMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvMomentumReversalMainDashboard.Name = "sfdgvMomentumReversalMainDashboard"
         Me.sfdgvMomentumReversalMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
         Me.sfdgvMomentumReversalMainDashboard.Size = New System.Drawing.Size(1143, 487)
@@ -292,10 +293,10 @@ Partial Class frmMainTabbed
         '
         Me.tabOHL.Controls.Add(Me.pnlOHLMainPanelHorizontalSplitter)
         Me.tabOHL.Location = New System.Drawing.Point(4, 25)
-        Me.tabOHL.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.tabOHL.Margin = New System.Windows.Forms.Padding(4)
         Me.tabOHL.Name = "tabOHL"
-        Me.tabOHL.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
-        Me.tabOHL.Size = New System.Drawing.Size(1672, 785)
+        Me.tabOHL.Padding = New System.Windows.Forms.Padding(4)
+        Me.tabOHL.Size = New System.Drawing.Size(1672, 786)
         Me.tabOHL.TabIndex = 1
         Me.tabOHL.Text = "OHL"
         Me.tabOHL.UseVisualStyleBackColor = True
@@ -308,12 +309,12 @@ Partial Class frmMainTabbed
         Me.pnlOHLMainPanelHorizontalSplitter.Controls.Add(Me.pnlOHLBodyVerticalSplitter, 0, 1)
         Me.pnlOHLMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlOHLMainPanelHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlOHLMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlOHLMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlOHLMainPanelHorizontalSplitter.Name = "pnlOHLMainPanelHorizontalSplitter"
         Me.pnlOHLMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlOHLMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlOHLMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlOHLMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1664, 777)
+        Me.pnlOHLMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1664, 778)
         Me.pnlOHLMainPanelHorizontalSplitter.TabIndex = 1
         '
         'pnlOHLTopHeaderVerticalSplitter
@@ -339,7 +340,7 @@ Partial Class frmMainTabbed
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.Panel2, 14, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlOHLTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlOHLTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlOHLTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlOHLTopHeaderVerticalSplitter.Name = "pnlOHLTopHeaderVerticalSplitter"
         Me.pnlOHLTopHeaderVerticalSplitter.RowCount = 1
         Me.pnlOHLTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
@@ -350,7 +351,7 @@ Partial Class frmMainTabbed
         '
         Me.btnOHLStop.Dock = System.Windows.Forms.DockStyle.Fill
         Me.btnOHLStop.Location = New System.Drawing.Point(113, 4)
-        Me.btnOHLStop.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.btnOHLStop.Margin = New System.Windows.Forms.Padding(4)
         Me.btnOHLStop.Name = "btnOHLStop"
         Me.btnOHLStop.Size = New System.Drawing.Size(101, 38)
         Me.btnOHLStop.TabIndex = 11
@@ -361,7 +362,7 @@ Partial Class frmMainTabbed
         '
         Me.btnOHLStart.Dock = System.Windows.Forms.DockStyle.Fill
         Me.btnOHLStart.Location = New System.Drawing.Point(4, 4)
-        Me.btnOHLStart.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.btnOHLStart.Margin = New System.Windows.Forms.Padding(4)
         Me.btnOHLStart.Name = "btnOHLStart"
         Me.btnOHLStart.Size = New System.Drawing.Size(101, 38)
         Me.btnOHLStart.TabIndex = 2
@@ -373,7 +374,7 @@ Partial Class frmMainTabbed
         Me.Panel2.Controls.Add(Me.lblOHLTickerStatus)
         Me.Panel2.Controls.Add(Me.blbOHLTickerStatus)
         Me.Panel2.Location = New System.Drawing.Point(1466, 4)
-        Me.Panel2.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.Panel2.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel2.Name = "Panel2"
         Me.Panel2.Size = New System.Drawing.Size(180, 38)
         Me.Panel2.TabIndex = 9
@@ -393,7 +394,7 @@ Partial Class frmMainTabbed
         Me.blbOHLTickerStatus.Color = System.Drawing.Color.Pink
         Me.blbOHLTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
         Me.blbOHLTickerStatus.Location = New System.Drawing.Point(133, 0)
-        Me.blbOHLTickerStatus.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.blbOHLTickerStatus.Margin = New System.Windows.Forms.Padding(4)
         Me.blbOHLTickerStatus.Name = "blbOHLTickerStatus"
         Me.blbOHLTickerStatus.On = True
         Me.blbOHLTickerStatus.Size = New System.Drawing.Size(47, 38)
@@ -408,11 +409,11 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyVerticalSplitter.Controls.Add(Me.pnlOHLBodyHorizontalSplitter, 0, 0)
         Me.pnlOHLBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlOHLBodyVerticalSplitter.Location = New System.Drawing.Point(4, 58)
-        Me.pnlOHLBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlOHLBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlOHLBodyVerticalSplitter.Name = "pnlOHLBodyVerticalSplitter"
         Me.pnlOHLBodyVerticalSplitter.RowCount = 1
         Me.pnlOHLBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlOHLBodyVerticalSplitter.Size = New System.Drawing.Size(1656, 715)
+        Me.pnlOHLBodyVerticalSplitter.Size = New System.Drawing.Size(1656, 716)
         Me.pnlOHLBodyVerticalSplitter.TabIndex = 1
         '
         'pnlOHLBodyHorizontalSplitter
@@ -423,12 +424,12 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyHorizontalSplitter.Controls.Add(Me.sfdgvOHLMainDashboard, 0, 0)
         Me.pnlOHLBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlOHLBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlOHLBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.pnlOHLBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlOHLBodyHorizontalSplitter.Name = "pnlOHLBodyHorizontalSplitter"
         Me.pnlOHLBodyHorizontalSplitter.RowCount = 2
         Me.pnlOHLBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlOHLBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlOHLBodyHorizontalSplitter.Size = New System.Drawing.Size(1151, 707)
+        Me.pnlOHLBodyHorizontalSplitter.Size = New System.Drawing.Size(1151, 708)
         Me.pnlOHLBodyHorizontalSplitter.TabIndex = 0
         '
         'lstOHLLog
@@ -437,8 +438,8 @@ Partial Class frmMainTabbed
         Me.lstOHLLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstOHLLog.FormattingEnabled = True
         Me.lstOHLLog.ItemHeight = 16
-        Me.lstOHLLog.Location = New System.Drawing.Point(4, 498)
-        Me.lstOHLLog.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.lstOHLLog.Location = New System.Drawing.Point(4, 499)
+        Me.lstOHLLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstOHLLog.Name = "lstOHLLog"
         Me.lstOHLLog.Size = New System.Drawing.Size(1143, 205)
         Me.lstOHLLog.TabIndex = 9
@@ -454,10 +455,10 @@ Partial Class frmMainTabbed
         Me.sfdgvOHLMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvOHLMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
         Me.sfdgvOHLMainDashboard.Location = New System.Drawing.Point(4, 4)
-        Me.sfdgvOHLMainDashboard.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.sfdgvOHLMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvOHLMainDashboard.Name = "sfdgvOHLMainDashboard"
         Me.sfdgvOHLMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvOHLMainDashboard.Size = New System.Drawing.Size(1143, 486)
+        Me.sfdgvOHLMainDashboard.Size = New System.Drawing.Size(1143, 487)
         Me.sfdgvOHLMainDashboard.TabIndex = 6
         Me.sfdgvOHLMainDashboard.Text = "SfDataGrid1"
         '
@@ -476,11 +477,11 @@ Partial Class frmMainTabbed
         Me.ClientSize = New System.Drawing.Size(1680, 843)
         Me.Controls.Add(Me.tabMain)
         Me.Controls.Add(Me.msMainMenuStrip)
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MainMenuStrip = Me.msMainMenuStrip
-        Me.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.Margin = New System.Windows.Forms.Padding(4)
         Me.Name = "frmMainTabbed"
         Me.Text = "Algo2Trade Robot"
-        Me.WindowState = System.Windows.Forms.FormWindowState.Maximized
         Me.msMainMenuStrip.ResumeLayout(False)
         Me.msMainMenuStrip.PerformLayout()
         Me.tabMain.ResumeLayout(False)

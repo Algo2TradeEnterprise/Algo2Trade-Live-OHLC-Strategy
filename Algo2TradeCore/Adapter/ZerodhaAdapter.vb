@@ -135,7 +135,74 @@ Namespace Adapter
             End If
             Return ret
         End Function
+        Public Overrides Async Function PlaceBOLimitOrderAsync(ByVal tradeExchange As Exchange, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7}", tradeExchange, tradingSymbol, transaction, quantity, price, squareOffValue, stopLossValue, tag)
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
 
+            Dim transactionDirection As String = Nothing
+            Select Case transaction
+                Case TransactionType.Buy
+                    transactionDirection = Constants.TRANSACTION_TYPE_BUY
+                Case TransactionType.Sell
+                    transactionDirection = Constants.TRANSACTION_TYPE_SELL
+            End Select
+            Dim transactionExchange As String = Nothing
+            Select Case tradeExchange
+                Case Exchange.BFO
+                    transactionExchange = Constants.EXCHANGE_BFO
+                Case Exchange.BSE
+                    transactionExchange = Constants.EXCHANGE_BSE
+                Case Exchange.CDS
+                    transactionExchange = Constants.EXCHANGE_CDS
+                Case Exchange.MCX
+                    transactionExchange = Constants.EXCHANGE_MCX
+                Case Exchange.NFO
+                    transactionExchange = Constants.EXCHANGE_NFO
+                Case Exchange.NSE
+                    transactionExchange = Constants.EXCHANGE_NSE
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", transactionExchange},
+                {"TradingSymbol", tradingSymbol},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", price},
+                {"Product", Constants.PRODUCT_MIS},
+                {"OrderType", Constants.ORDER_TYPE_LIMIT},
+                {"Validity", Constants.VALIDITY_DAY},
+                {"SquareOffValue", squareOffValue},
+                {"StoplossValue", stopLossValue},
+                {"Variety", Constants.VARIETY_BO},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
         Private Async Function ExecuteCommandAsync(ByVal command As ExecutionCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
             logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
             _cts.Token.ThrowIfCancellationRequested()

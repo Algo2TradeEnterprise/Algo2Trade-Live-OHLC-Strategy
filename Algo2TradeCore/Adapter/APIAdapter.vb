@@ -40,6 +40,7 @@ Namespace Adapter
         Public MustOverride Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
         Public MustOverride Async Function GetAllQuotes(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
         Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
+        Public MustOverride Async Function PlaceBOLimitOrderAsync(ByVal tradeExchange As Exchange, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
         Public Enum ExecutionCommands
             GetPositions = 1
             GetQuotes
@@ -52,10 +53,22 @@ Namespace Adapter
             GetOrderHistory
             GetOrders
             GetOrderTrades
-            GetInstruments '
+            GetInstruments
             InvalidateAccessToken
             GenerateSession
             None
+        End Enum
+        Public Enum TransactionType
+            Buy = 1
+            Sell
+        End Enum
+        Public Enum Exchange
+            NSE = 1
+            BSE
+            NFO
+            BFO
+            MCX
+            CDS
         End Enum
     End Class
 End Namespace

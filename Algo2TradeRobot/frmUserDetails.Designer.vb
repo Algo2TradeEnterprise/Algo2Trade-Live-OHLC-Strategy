@@ -156,6 +156,7 @@ Partial Class frmZerodhaUserDetails
         Me.ClientSize = New System.Drawing.Size(603, 202)
         Me.Controls.Add(Me.btnSaveZerodhaUserDetails)
         Me.Controls.Add(Me.GroupBox1)
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Margin = New System.Windows.Forms.Padding(4)
         Me.MaximizeBox = False
         Me.MinimizeBox = False

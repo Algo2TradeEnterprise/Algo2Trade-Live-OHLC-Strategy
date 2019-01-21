@@ -47,6 +47,9 @@
   <PropertyGroup>
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>algo2tradericon 24x24.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Bulb">
       <HintPath>..\..\LEDBulb\Bulb\bin\Debug\Bulb.exe</HintPath>
@@ -170,6 +173,9 @@
       <Project>{0524d87f-b8bf-4cc2-b955-49950110fe9a}</Project>
       <Name>Utilities</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="algo2tradericon 24x24.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>
