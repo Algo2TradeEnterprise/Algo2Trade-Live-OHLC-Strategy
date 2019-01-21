@@ -90,20 +90,24 @@ Public Class OHLStrategyInstrument
             If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
                 Throw Me.ParentStrategy.ParentContoller.OrphanException
             End If
-            Dim r As Random = New Random()
-            Dim x = r.Next(0, 11)
-            _cts.Token.ThrowIfCancellationRequested()
-            If x = 7 Then
-                While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-                    _cts.Token.ThrowIfCancellationRequested()
-                    logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                    Await Task.Delay(500).ConfigureAwait(False)
-                End While
+            'Dim r As Random = New Random()
+            'Dim x = r.Next(0, 11)
+            '_cts.Token.ThrowIfCancellationRequested()
+            'If x = 7 Then
+            '    'Zerodha call start - requires till end
+            '    While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
+            '        Await Task.Delay(500).ConfigureAwait(False)
+            '    End While
 
-                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-            End If
+            '    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+            '    _cts.Token.ThrowIfCancellationRequested()
+
+            '    Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
+            '    'Zerodha call end
+            'End If
+            Await RunStrategyAsync().ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(1000)
         End While
@@ -126,7 +130,22 @@ Public Class OHLStrategyInstrument
         '        Exit While
         '    End If
         'End While
-
+    End Function
+    Private Async Function RunStrategyAsync() As Task
+        Await Task.Delay(0).ConfigureAwait(False)
+        Dim currentTime As Date = Now
+        Dim ret As Boolean = False
+        If _LastTick.Timestamp IsNot Nothing AndAlso
+            currentTime.Hour = 9 AndAlso currentTime.Minute = 44 AndAlso currentTime.Second >= 20 Then
+            Dim OHLTradePrice As Decimal = _LastTick.LastPrice
+            If Math.Round(_LastTick.Open, 0) = _LastTick.High AndAlso
+                 _LastTick.Open = _LastTick.High Then
+                Console.WriteLine(Me.ToString)
+            ElseIf Math.Round(_LastTick.Open, 0) = _LastTick.Low AndAlso
+                _LastTick.Open = _LastTick.Low Then
+                Console.WriteLine(Me.ToString)
+            End If
+        End If
     End Function
 
 #Region "IDisposable Support"
