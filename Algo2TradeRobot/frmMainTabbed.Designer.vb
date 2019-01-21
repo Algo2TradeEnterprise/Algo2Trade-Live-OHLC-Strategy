@@ -198,8 +198,8 @@ Partial Class frmMainTabbed
         '
         'Panel1
         '
-        Me.Panel1.Controls.Add(Me.lblMomentumReversalTickerStatus)
         Me.Panel1.Controls.Add(Me.blbMomentumReversalTickerStatus)
+        Me.Panel1.Controls.Add(Me.lblMomentumReversalTickerStatus)
         Me.Panel1.Location = New System.Drawing.Point(1466, 4)
         Me.Panel1.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel1.Name = "Panel1"
@@ -371,8 +371,8 @@ Partial Class frmMainTabbed
         '
         'Panel2
         '
-        Me.Panel2.Controls.Add(Me.lblOHLTickerStatus)
         Me.Panel2.Controls.Add(Me.blbOHLTickerStatus)
+        Me.Panel2.Controls.Add(Me.lblOHLTickerStatus)
         Me.Panel2.Location = New System.Drawing.Point(1466, 4)
         Me.Panel2.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel2.Name = "Panel2"
@@ -481,6 +481,7 @@ Partial Class frmMainTabbed
         Me.MainMenuStrip = Me.msMainMenuStrip
         Me.Margin = New System.Windows.Forms.Padding(4)
         Me.Name = "frmMainTabbed"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Algo2Trade Robot"
         Me.msMainMenuStrip.ResumeLayout(False)
         Me.msMainMenuStrip.PerformLayout()

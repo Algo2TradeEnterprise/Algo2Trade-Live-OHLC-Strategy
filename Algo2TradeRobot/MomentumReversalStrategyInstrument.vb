@@ -107,7 +107,11 @@ Public Class MomentumReversalStrategyInstrument
         '    End If
         'End While
     End Function
-
+    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)
+        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = Nothing
+        Throw New NotImplementedException("IsTriggerReceivedForPlaceOrderAsync-MR")
+        Return ret
+    End Function
 
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls

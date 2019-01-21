@@ -97,7 +97,6 @@ Public Class OHLStrategyInstrument
             'Dim x = r.Next(0, 11)
             '_cts.Token.ThrowIfCancellationRequested()
             'If x = 7 Then
-            '    'Zerodha call start - requires till end
             '    While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
             '        _cts.Token.ThrowIfCancellationRequested()
             '        logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
@@ -106,11 +105,14 @@ Public Class OHLStrategyInstrument
 
             '    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
             '    _cts.Token.ThrowIfCancellationRequested()
-
             '    Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-            '    'Zerodha call end
             'End If
-            Dim orderDetails As Dictionary(Of String, Object) = Await RunStrategyAsync().ConfigureAwait(False)
+            Dim orderDetails As Object = Nothing
+            Dim trigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+            If trigger IsNot Nothing AndAlso trigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
+                Interlocked.Increment(_OHLStrategyProtector)
+                orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
+            End If
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(1000)
         End While
@@ -134,64 +136,30 @@ Public Class OHLStrategyInstrument
         '    End If
         'End While
     End Function
-    Private Async Function RunStrategyAsync() As Task(Of Dictionary(Of String, Object))
-        Await Task.Delay(0).ConfigureAwait(False)
+    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)
+        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = Nothing
         Dim currentTime As Date = Now
-        Dim ret As Dictionary(Of String, Object) = Nothing
-        If _LastTick.Timestamp IsNot Nothing AndAlso _OHLStrategyProtector = 0 AndAlso
-            currentTime.Hour = 12 AndAlso currentTime.Minute = 23 AndAlso currentTime.Second = 20 Then
-            Dim trigger As Tuple(Of Boolean, APIAdapter.TransactionType, Decimal) = Await IsTriggerReceivedAsync().ConfigureAwait(False)
-            If trigger IsNot Nothing AndAlso trigger.Item1 = True Then
-                Dim OHLTradePrice As Decimal = trigger.Item3
-                Dim buffer As Decimal = OHLTradePrice * 0.005
-                Dim bufferModified As Decimal = Math.Round(ConvertFloorCeling(buffer, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
-                Dim price As Decimal = Nothing
-                Dim target As Decimal = Nothing
-                Dim stoploss As Decimal = Nothing
-                Select Case trigger.Item2
-                    Case APIAdapter.TransactionType.Buy
-                        price = OHLTradePrice + bufferModified
-                        target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                        stoploss = If(Math.Abs(OHLTradePrice - _LastTick.Low) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(OHLTradePrice - _LastTick.Low))
-                    Case APIAdapter.TransactionType.Sell
-                        price = OHLTradePrice - bufferModified
-                        target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                        stoploss = If(Math.Abs(_LastTick.High - OHLTradePrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.High - OHLTradePrice))
-                End Select
-                Interlocked.Increment(_OHLStrategyProtector)
-                'Place Order
-                While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-                    _cts.Token.ThrowIfCancellationRequested()
-                    logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                    Await Task.Delay(500).ConfigureAwait(False)
-                End While
-                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
-                _cts.Token.ThrowIfCancellationRequested()
-                Try
-                    ret = Await _APIAdapter.PlaceBOLimitOrderAsync(tradeExchange:=APIAdapter.Exchange.NSE,
-                                                                   tradingSymbol:=TradingSymbol,
-                                                                   transaction:=trigger.Item2,
-                                                                   quantity:=1,
-                                                                   price:=price,
-                                                                   squareOffValue:=target,
-                                                                   stopLossValue:=stoploss,
-                                                                   tag:=Me.ToString).ConfigureAwait(False)
-                Catch ex As Exception
-                    OnHeartbeat(String.Format("PlaceOrder execution failed. Will not retry. Error:{0}", ex.Message))
-                End Try
+        If _LastTick.Timestamp IsNot Nothing AndAlso
+        currentTime.Hour = 20 AndAlso currentTime.Minute = 57 AndAlso currentTime.Second = 20 Then
+            Dim OHLTradePrice As Decimal = _LastTick.LastPrice
+            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
+            Dim entryPrice As Decimal = Nothing
+            Dim target As Decimal = Nothing
+            Dim stoploss As Decimal = Nothing
+            Dim quantity As Integer = 1
+            If Math.Round(_LastTick.Open, 0) = _LastTick.High AndAlso
+                _LastTick.Open = _LastTick.High Then
+                entryPrice = OHLTradePrice - buffer
+                target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                stoploss = If(Math.Abs(_LastTick.High - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.High - entryPrice))
+                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Sell, quantity, entryPrice, target, stoploss)
+            ElseIf Math.Round(_LastTick.Open, 0) = _LastTick.Low AndAlso
+                _LastTick.Open = _LastTick.Low Then
+                entryPrice = OHLTradePrice + buffer
+                target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                stoploss = If(Math.Abs(entryPrice - _LastTick.Low) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Low))
+                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Buy, quantity, entryPrice, target, stoploss)
             End If
-        End If
-        Return ret
-    End Function
-    Private Async Function IsTriggerReceivedAsync() As Task(Of Tuple(Of Boolean, APIAdapter.TransactionType, Decimal))
-        Await Task.Delay(0).ConfigureAwait(False)
-        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Decimal) = Nothing
-        If _LastTick.Open = _LastTick.High AndAlso
-                 _LastTick.Open = _LastTick.High Then
-            ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Decimal)(True, APIAdapter.TransactionType.Sell, _LastTick.LastPrice)
-        ElseIf _LastTick.Open = _LastTick.Low AndAlso
-            _LastTick.Open = _LastTick.Low Then
-            ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Decimal)(True, APIAdapter.TransactionType.Buy, _LastTick.LastPrice)
         End If
         Return ret
     End Function

@@ -135,7 +135,50 @@ Namespace Adapter
             End If
             Return ret
         End Function
-        Public Overrides Async Function PlaceBOLimitOrderAsync(ByVal tradeExchange As Exchange, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+        Public Overrides Async Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
+            logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            Dim ret As List(Of ZerodhaOrder) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(List(Of Order)) Then
+                OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
+                Dim zerodhaReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
+                For Each runningOrder As Order In zerodhaReturedOrders
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If ret Is Nothing Then ret = New List(Of ZerodhaOrder)
+                    ret.Add(New ZerodhaOrder With {.WrappedOrder = runningOrder})
+                Next
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function PlaceBOLimitMISOrderAsync(ByVal tradeExchange As Exchange,
+                                                                   ByVal tradingSymbol As String,
+                                                                   ByVal transaction As TransactionType,
+                                                                   ByVal quantity As Integer,
+                                                                   ByVal price As Decimal,
+                                                                   ByVal squareOffValue As Decimal,
+                                                                   ByVal stopLossValue As Decimal,
+                                                                   ByVal tag As String) As Task(Of Dictionary(Of String, Object))
             logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7}", tradeExchange, tradingSymbol, transaction, quantity, price, squareOffValue, stopLossValue, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
