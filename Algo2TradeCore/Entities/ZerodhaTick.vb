@@ -53,8 +53,6 @@ Namespace Entities
                 Return WrappedTick.Timestamp
             End Get
         End Property
-
-
         Public Property WrappedTick As Tick
         Public ReadOnly Property Broker As APISource Implements ITick.Broker
             Get

@@ -62,6 +62,11 @@ Public Class MomentumReversalStrategyInstrument
         Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
+    Public Overrides Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
+        _cts.Token.ThrowIfCancellationRequested()
+        Await MyBase.ProcessOrderAsync(orderData).ConfigureAwait(False)
+        _cts.Token.ThrowIfCancellationRequested()
+    End Function
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
         'Try

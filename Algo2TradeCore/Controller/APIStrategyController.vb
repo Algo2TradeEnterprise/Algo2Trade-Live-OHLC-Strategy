@@ -157,6 +157,20 @@ Namespace Controller
                                 Else
                                     Throw New ApplicationException(String.Format("Getting all quotes did not succeed"))
                                 End If
+                            Case ExecutionCommands.GetOrders
+                                Dim allOrderResponse As IEnumerable(Of IOrder) = Nothing
+                                allOrderResponse = Await _APIAdapter.GetAllOrdersAsync().ConfigureAwait(False)
+                                If allOrderResponse IsNot Nothing Then
+                                    logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", allOrderResponse.Count)
+                                    lastException = Nothing
+                                    allOKWithoutException = True
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    ret = allOrderResponse
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Exit For
+                                Else
+                                    Throw New ApplicationException(String.Format("Getting all orders did not succeed"))
+                                End If
                         End Select
                     Catch tex As KiteConnect.TokenException
                         logger.Error(tex)
@@ -281,6 +295,8 @@ Namespace Controller
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
         Public MustOverride Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
+        Public MustOverride Async Function FillOrderDetailsAsyc(ByVal strategyToRun As Strategy) As Task
+
         'Public MustOverride Async Function MonitorAsync(ByVal strategyToRun As Strategy) As Task
 #End Region
 

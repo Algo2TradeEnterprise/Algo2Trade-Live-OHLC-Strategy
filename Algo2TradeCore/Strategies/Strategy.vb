@@ -65,5 +65,11 @@ Namespace Strategies
         'Public MustOverride Async Function ExecuteAsync() As Task
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task
+        Public Overridable Async Function FillOrderDetailsAsync() As Task
+            While True
+                Await Me.ParentContoller.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
+                Await Task.Delay(10000).ConfigureAwait(False)
+            End While
+        End Function
     End Class
 End Namespace

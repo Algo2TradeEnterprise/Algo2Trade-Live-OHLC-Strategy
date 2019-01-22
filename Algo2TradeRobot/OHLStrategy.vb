@@ -180,6 +180,8 @@ Public Class OHLStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
             Next
+            'Task to run order update periodically
+            tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -190,6 +192,7 @@ Public Class OHLStrategy
             Throw lastException
         End If
     End Function
+
 
     Public Overrides Function ToString() As String
         Return Me.GetType().Name

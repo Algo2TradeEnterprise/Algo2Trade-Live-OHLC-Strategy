@@ -90,6 +90,8 @@ Namespace Strategies
         Public Property TradableInstrument As IInstrument
         Public Property RawPayloads As Dictionary(Of DateTime, Payload)
         Public Property RawTicks As Concurrent.ConcurrentDictionary(Of DateTime, ITick)
+        Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+
         Protected _cts As CancellationTokenSource
         Protected _LastTick As ITick
         Protected _APIAdapter As APIAdapter
@@ -223,6 +225,7 @@ Namespace Strategies
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
             RawTicks = New Concurrent.ConcurrentDictionary(Of Date, ITick)
+            OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
             RawPayloads = New Dictionary(Of Date, Payload)
         End Sub
         Public MustOverride Overrides Function ToString() As String
@@ -242,6 +245,10 @@ Namespace Strategies
             If Not RawTicks.TryAdd(tickData.Timestamp, tickData) Then
                 'Console.WriteLine(String.Format("Could not store:{0},{1},{2}", TradingSymbol, tickData.LastPrice, tickData.Timestamp.Value.ToLongTimeString))
             End If
+        End Function
+        Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
+            Await Task.Delay(0).ConfigureAwait(False)
+            OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
         End Function
         Public MustOverride Async Function MonitorAsync() As Task
         Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)
