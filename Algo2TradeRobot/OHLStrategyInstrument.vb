@@ -167,7 +167,7 @@ Public Class OHLStrategyInstrument
             Dim entryPrice As Decimal = Nothing
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
-            Dim quantity As Integer = 1
+            Dim quantity As Integer = Math.Floor(2000 * 13 / entryPrice)
             If Math.Round(_LastTick.Open, 0) = _LastTick.High AndAlso
                 _LastTick.Open = _LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
