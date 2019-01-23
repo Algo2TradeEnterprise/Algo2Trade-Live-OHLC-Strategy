@@ -71,5 +71,28 @@ Namespace Strategies
                 Await Task.Delay(10000).ConfigureAwait(False)
             End While
         End Function
+        Public Overridable Function GetKiteExceptionResponse(ByVal kex As Exception) As Tuple(Of String, ExceptionResponse)
+            Dim ret As Tuple(Of String, ExceptionResponse) = Nothing
+            If kex.GetType = GetType(KiteConnect.GeneralException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            ElseIf kex.GetType = GetType(KiteConnect.GeneralException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            ElseIf kex.GetType = GetType(KiteConnect.PermissionException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            ElseIf kex.GetType = GetType(KiteConnect.OrderException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            ElseIf kex.GetType = GetType(KiteConnect.InputException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            ElseIf kex.GetType = GetType(KiteConnect.DataException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            ElseIf kex.GetType = GetType(KiteConnect.NetworkException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            End If
+            Return ret
+        End Function
+        Public Enum ExceptionResponse
+            Retry = 1
+            Ignore
+        End Enum
     End Class
 End Namespace

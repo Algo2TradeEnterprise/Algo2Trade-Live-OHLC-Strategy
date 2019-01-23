@@ -123,13 +123,18 @@ Namespace Adapter
             End If
 
             If tempRet.GetType = GetType(List(Of Trade)) Then
-                OnHeartbeat(String.Format("Creating Zerodha trade collection from API trades, count:{0}", tempRet.count))
-                Dim zerodhaReturedTrades As List(Of Trade) = CType(tempRet, List(Of Trade))
-                For Each runningTrade As Trade In zerodhaReturedTrades
-                    _cts.Token.ThrowIfCancellationRequested()
+                If tempRet.count > 0 Then
+                    OnHeartbeat(String.Format("Creating Zerodha trade collection from API trades, count:{0}", tempRet.count))
+                    Dim zerodhaReturedTrades As List(Of Trade) = CType(tempRet, List(Of Trade))
+                    For Each runningTrade As Trade In zerodhaReturedTrades
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret Is Nothing Then ret = New List(Of ZerodhaTrade)
+                        ret.Add(New ZerodhaTrade With {.WrappedTrade = runningTrade})
+                    Next
+                Else
+                    OnHeartbeat(String.Format("Zerodha command execution did not return any list of trade, command:{0}", execCommand.ToString))
                     If ret Is Nothing Then ret = New List(Of ZerodhaTrade)
-                    ret.Add(New ZerodhaTrade With {.WrappedTrade = runningTrade})
-                Next
+                End If
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of trade, command:{0}", execCommand.ToString))
             End If
@@ -159,15 +164,51 @@ Namespace Adapter
             End If
 
             If tempRet.GetType = GetType(List(Of Order)) Then
-                OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
-                Dim zerodhaReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
-                For Each runningOrder As Order In zerodhaReturedOrders
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If ret Is Nothing Then ret = New List(Of ZerodhaOrder)
-                    ret.Add(New ZerodhaOrder With {.WrappedOrder = runningOrder})
-                Next
+                If tempRet.count > 0 Then
+                    OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
+                    Dim zerodhaReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
+                    For Each runningOrder As Order In zerodhaReturedOrders
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret Is Nothing Then ret = New List(Of ZerodhaOrder)
+                        ret.Add(New ZerodhaOrder With {.WrappedOrder = runningOrder})
+                    Next
+                Else
+                    OnHeartbeat(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+                End If
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function ModifyStoplossOrderAsync(ByVal orderId As String, ByVal triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
+            logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, triggerPrice)
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.ModifySLOrderPrice
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {{"OrderId", orderId}, {"TriggerPrice", triggerPrice}}
+            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("ModifyOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
             End If
             Return ret
         End Function

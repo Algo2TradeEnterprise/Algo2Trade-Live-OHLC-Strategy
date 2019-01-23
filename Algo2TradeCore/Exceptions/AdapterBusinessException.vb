@@ -1,18 +1,16 @@
 ﻿Imports System.Runtime.Serialization
-Namespace ErrorHandlers
+Namespace Exceptions
     ''' <summary>
     ''' Custom class for handling business exceptions
     ''' </summary>
     <Serializable()>
-    Public Class AuthenticationException
+    Public Class AdapterBusinessException
         Inherits ApplicationException
         Implements IDisposable
 
 #Region "Enums"
         Public Enum TypeOfException
-            FirstLevelFailure = 1
-            SecondLevelFailure
-            GenericConnectionFailure
+            RMSError = 1
         End Enum
 #End Region
 
@@ -102,32 +100,31 @@ Namespace ErrorHandlers
 
         ' IDisposable
         Protected Overridable Sub Dispose(disposing As Boolean)
-            If Not Me.disposedValue Then
+            If Not disposedValue Then
                 If disposing Then
                     ' TODO: dispose managed state (managed objects).
-                    ExceptionDetails = Nothing
                 End If
 
                 ' TODO: free unmanaged resources (unmanaged objects) and override Finalize() below.
                 ' TODO: set large fields to null.
             End If
-            Me.disposedValue = True
+            disposedValue = True
         End Sub
 
-        ' TODO: override Finalize() only if Dispose(ByVal disposing As Boolean) above has code to free unmanaged resources.
-        Protected Overrides Sub Finalize()
-            ' Do not change this code.  Put cleanup code in Dispose(ByVal disposing As Boolean) above.
-            Dispose(False)
-            MyBase.Finalize()
-        End Sub
+        ' TODO: override Finalize() only if Dispose(disposing As Boolean) above has code to free unmanaged resources.
+        'Protected Overrides Sub Finalize()
+        '    ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
+        '    Dispose(False)
+        '    MyBase.Finalize()
+        'End Sub
 
         ' This code added by Visual Basic to correctly implement the disposable pattern.
         Public Sub Dispose() Implements IDisposable.Dispose
             ' Do not change this code.  Put cleanup code in Dispose(disposing As Boolean) above.
             Dispose(True)
-            GC.SuppressFinalize(Me)
+            ' TODO: uncomment the following line if Finalize() is overridden above.
+            ' GC.SuppressFinalize(Me)
         End Sub
 #End Region
-
     End Class
 End Namespace

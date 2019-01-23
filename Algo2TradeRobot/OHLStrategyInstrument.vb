@@ -113,10 +113,26 @@ Public Class OHLStrategyInstrument
             '    Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
             'End If
             Dim orderDetails As Object = Nothing
-            Dim trigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
-            If trigger IsNot Nothing AndAlso trigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
+            Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+            If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
                 Interlocked.Increment(_OHLStrategyProtector)
                 orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
+            End If
+            Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+            If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                Try
+                    Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                Catch ex As Exception
+                    Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
+                    If exceptionResponse IsNot Nothing Then
+                        Select Case exceptionResponse.Item2
+                            Case Strategy.ExceptionResponse.Ignore
+                                OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
+                            Case Strategy.ExceptionResponse.Retry
+                                OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
+                        End Select
+                    End If
+                End Try
             End If
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(1000)
@@ -145,7 +161,7 @@ Public Class OHLStrategyInstrument
         Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = Nothing
         Dim currentTime As Date = Now
         If _LastTick.Timestamp IsNot Nothing AndAlso
-        currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second = 20 Then
+        currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 20 Then
             Dim OHLTradePrice As Decimal = _LastTick.LastPrice
             Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
             Dim entryPrice As Decimal = Nothing
@@ -165,6 +181,31 @@ Public Class OHLStrategyInstrument
                 stoploss = If(Math.Abs(entryPrice - _LastTick.Low) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Low))
                 ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Buy, quantity, entryPrice, target, stoploss)
             End If
+        End If
+        Return ret
+    End Function
+    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
+        Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            For Each parentOrderId In OrderDetails.Keys
+                Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
+                    parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                    Dim triggerPrice As Decimal = _LastTick.Open
+                    Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
+                    If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                        triggerPrice -= buffer
+                    ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                        triggerPrice += buffer
+                    End If
+                    For Each slOrder In parentBusinessOrder.SLOrder
+                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso slOrder.TriggerPrice <> triggerPrice Then
+                            If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
+                            ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
+                        End If
+                    Next
+                End If
+            Next
         End If
         Return ret
     End Function

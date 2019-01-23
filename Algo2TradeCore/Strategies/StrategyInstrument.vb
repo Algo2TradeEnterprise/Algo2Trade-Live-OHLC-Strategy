@@ -8,6 +8,7 @@ Imports Algo2TradeCore.Entities
 Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
+Imports Utilities.Numbers.NumberManipulation
 
 Namespace Strategies
     Public MustInherit Class StrategyInstrument
@@ -80,6 +81,7 @@ Namespace Strategies
 #Region "Enum"
         Public Enum ExecuteCommands
             PlaceBOLimtMISOrder = 1
+            ModifyStoplossOrder
         End Enum
 #End Region
 
@@ -250,8 +252,15 @@ Namespace Strategies
             Await Task.Delay(0).ConfigureAwait(False)
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
         End Function
+        Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
+            Dim bufferPrice As Double = Nothing
+            'Assuming 1% target, we can afford to have buffer as 2.5% of that 1% target
+            bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, 0.05, floorOrCeiling)
+            Return bufferPrice
+        End Function
         Public MustOverride Async Function MonitorAsync() As Task
         Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)
+        Protected MustOverride Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
 
         Protected Async Function ExecuteCommandAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task(Of Object)
             Dim ret As Object = Nothing
@@ -279,16 +288,16 @@ Namespace Strategies
                         _cts.Token.ThrowIfCancellationRequested()
                         Select Case command
                             Case ExecuteCommands.PlaceBOLimtMISOrder
-                                Dim trigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
-                                If trigger IsNot Nothing AndAlso trigger.Item1 = True Then
+                                Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+                                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=APIAdapter.Exchange.NSE,
                                                                                                        tradingSymbol:=TradingSymbol,
-                                                                                                       transaction:=trigger.Item2,
-                                                                                                       quantity:=trigger.Item3,
-                                                                                                       price:=trigger.Item4,
-                                                                                                       squareOffValue:=trigger.Item5,
-                                                                                                       stopLossValue:=trigger.Item6,
+                                                                                                       transaction:=placeOrderTrigger.Item2,
+                                                                                                       quantity:=placeOrderTrigger.Item3,
+                                                                                                       price:=placeOrderTrigger.Item4,
+                                                                                                       squareOffValue:=placeOrderTrigger.Item5,
+                                                                                                       stopLossValue:=placeOrderTrigger.Item6,
                                                                                                        tag:=Me.ToString).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
@@ -307,11 +316,47 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
+                            Case ExecuteCommands.ModifyStoplossOrder
+                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                                If modifyStoplossOrderTriggers IsNot Nothing AndAlso modifyStoplossOrderTriggers.Count > 0 Then
+                                    For Each modifyStoplossOrderTrigger In modifyStoplossOrderTriggers
+                                        If modifyStoplossOrderTrigger.Item1 = True Then
+                                            Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
+                                            modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=modifyStoplossOrderTrigger.Item2,
+                                                                                                                     triggerPrice:=modifyStoplossOrderTrigger.Item3)
+                                            If modifyStoplossOrderResponse IsNot Nothing Then
+                                                logger.Debug("Modify stoploss order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(modifyStoplossOrderResponse))
+                                                lastException = Nothing
+                                                allOKWithoutException = True
+                                                _cts.Token.ThrowIfCancellationRequested()
+                                                ret = modifyStoplossOrderResponse
+                                                _cts.Token.ThrowIfCancellationRequested()
+                                                Exit For
+                                            Else
+                                                Throw New ApplicationException(String.Format("Modify stoploss order did not succeed"))
+                                            End If
+                                        Else
+                                            lastException = Nothing
+                                            allOKWithoutException = True
+                                            _cts.Token.ThrowIfCancellationRequested()
+                                            Exit For
+                                        End If
+                                    Next
+                                Else
+                                    lastException = Nothing
+                                    allOKWithoutException = True
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Exit For
+                                End If
                         End Select
                     Catch tex As KiteConnect.TokenException
                         logger.Error(tex)
                         lastException = tex
                         Continue For
+                    Catch kex As KiteConnect.KiteException
+                        logger.Error(kex)
+                        lastException = kex
+                        Exit For
                     Catch opx As OperationCanceledException
                         logger.Error(opx)
                         lastException = opx

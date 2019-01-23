@@ -162,20 +162,24 @@ Namespace Controller
                                 allOrderResponse = Await _APIAdapter.GetAllOrdersAsync().ConfigureAwait(False)
                                 If allOrderResponse IsNot Nothing Then
                                     logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", allOrderResponse.Count)
-                                    lastException = Nothing
-                                    allOKWithoutException = True
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    ret = allOrderResponse
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    Exit For
                                 Else
-                                    Throw New ApplicationException(String.Format("Getting all orders did not succeed"))
+                                    logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", 0)
                                 End If
+                                lastException = Nothing
+                                allOKWithoutException = True
+                                _cts.Token.ThrowIfCancellationRequested()
+                                ret = allOrderResponse
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Exit For
                         End Select
                     Catch tex As KiteConnect.TokenException
                         logger.Error(tex)
                         lastException = tex
                         Continue For
+                    Catch kex As KiteConnect.KiteException
+                        logger.Error(kex)
+                        lastException = kex
+                        Exit For
                     Catch opx As OperationCanceledException
                         logger.Error(opx)
                         lastException = opx

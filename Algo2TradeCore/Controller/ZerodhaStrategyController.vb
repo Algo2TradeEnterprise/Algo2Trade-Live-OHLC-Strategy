@@ -232,18 +232,18 @@ Namespace Controller
                             Else
                                 If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
                                     Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.FirstLevelFaulure)
+                                                                   AuthenticationException.TypeOfException.FirstLevelFailure)
                                 Else
-                                    Throw New AuthenticationException("Step 1 authentication did not produce any questions in the response", AuthenticationException.TypeOfException.FirstLevelFaulure)
+                                    Throw New AuthenticationException("Step 1 authentication did not produce any questions in the response", AuthenticationException.TypeOfException.FirstLevelFailure)
                                 End If
                             End If
                         Else
                             If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
                                 Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.FirstLevelFaulure)
+                                                                   AuthenticationException.TypeOfException.FirstLevelFailure)
                             Else
                                 Throw New AuthenticationException("Step 1 authentication prepration to get to the login page failed",
-                                                                   AuthenticationException.TypeOfException.FirstLevelFaulure)
+                                                                   AuthenticationException.TypeOfException.FirstLevelFailure)
                             End If
                         End If
                         RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
@@ -679,7 +679,6 @@ Namespace Controller
             Await Task.Delay(0).ConfigureAwait(False)
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
             Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
-            Console.WriteLine(Utils.JsonSerialize(allOrders))
             If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
                 Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
                                                                                  Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
@@ -714,11 +713,13 @@ Namespace Controller
                     End If
                     For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
                         If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
-                            Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
+                            If runningStrategyInstrument.ToString = wrappedParentOrder.WrappedOrder.Tag Then
+                                Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
                                                                             .ParentOrder = parentOrder,
                                                                             .SLOrder = slOrder,
                                                                             .TargetOrder = targetOrder}
-                            Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
+                                Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
+                            End If
                         End If
                     Next
                 Next
@@ -776,7 +777,9 @@ Namespace Controller
             logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
             If orderData.Status = "COMPLETE" Then
                 For Each runningStrategy In _AllStrategies
-                    If orderData.Tag.Contains(runningStrategy.ToString) Then FillOrderDetailsAsyc(runningStrategy).ConfigureAwait(False)
+                    If orderData.Tag IsNot Nothing AndAlso orderData.Tag.Contains(runningStrategy.ToString) Then
+                        FillOrderDetailsAsyc(runningStrategy).ConfigureAwait(False)
+                    End If
                 Next
             End If
             Await Task.Delay(0).ConfigureAwait(False)

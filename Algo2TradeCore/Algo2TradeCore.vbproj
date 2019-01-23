@@ -98,6 +98,7 @@
     <Compile Include="Entities\ZerodhaTick.vb" />
     <Compile Include="Entities\ZerodhaTrade.vb" />
     <Compile Include="Entities\ZerodhaUser.vb" />
+    <Compile Include="Exceptions\AdapterBusinessException.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
