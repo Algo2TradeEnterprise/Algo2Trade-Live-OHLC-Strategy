@@ -102,6 +102,8 @@ Namespace Strategies
         Public Property RawPayloads As Dictionary(Of DateTime, Payload)
         Public Property RawTicks As Concurrent.ConcurrentDictionary(Of DateTime, ITick)
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+
+#Region "UI Properties"
         <Display(Name:="Active Trades", Order:=11)>
         Public ReadOnly Property ActiveTrades As Integer
             Get
@@ -187,8 +189,6 @@ Namespace Strategies
                 Return plOfDay
             End Get
         End Property
-
-#Region "UI Properties"
         <Display(Name:="Symbol", Order:=0)>
         Public Overridable ReadOnly Property TradingSymbol As String
             Get
