@@ -119,8 +119,8 @@ Namespace Strategies
                 Return tradeCount
             End Get
         End Property
-        <System.ComponentModel.Browsable(False)>
-        Public ReadOnly Property ActiveTrades As Integer
+        <Display(Name:="Active Instrument", Order:=12)>
+        Public ReadOnly Property ActiveInstrument As Boolean
             Get
                 Dim tradeCount As Integer = 0
                 If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
@@ -141,16 +141,6 @@ Namespace Strategies
                     Next
                 End If
                 Return tradeCount
-            End Get
-        End Property
-        <Display(Name:="Active Instrument", Order:=12)>
-        Public ReadOnly Property ActiveInstrument As Boolean
-            Get
-                If ActiveTrades > 0 Then
-                    Return True
-                Else
-                    Return False
-                End If
             End Get
         End Property
         <Display(Name:="Profit & Loss", Order:=13)>
