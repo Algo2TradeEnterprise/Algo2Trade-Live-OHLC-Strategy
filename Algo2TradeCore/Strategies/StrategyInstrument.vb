@@ -102,6 +102,7 @@ Namespace Strategies
         Public Property RawPayloads As Dictionary(Of DateTime, Payload)
         Public Property RawTicks As Concurrent.ConcurrentDictionary(Of DateTime, ITick)
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+        <Display(Name:="Active Trades", Order:=11)>
         Public ReadOnly Property ActiveTrades As Integer
             Get
                 Dim tradeCount As Integer = 0
@@ -125,6 +126,7 @@ Namespace Strategies
                 Return tradeCount
             End Get
         End Property
+        <Display(Name:="Active Instrument", Order:=12)>
         Public ReadOnly Property ActiveInstrument As Boolean
             Get
                 If ActiveTrades > 0 Then
@@ -134,6 +136,7 @@ Namespace Strategies
                 End If
             End Get
         End Property
+        <Display(Name:="Profit & Loss", Order:=13)>
         Public ReadOnly Property PL As Decimal
             Get
                 Dim plOfDay As Decimal = 0

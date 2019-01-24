@@ -66,6 +66,17 @@ Namespace Strategies
                 Return instrumentCount
             End Get
         End Property
+        Public ReadOnly Property TotalPL As Decimal
+            Get
+                Dim plOfDay As Decimal = 0
+                If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                    For Each runningStrategyInstrument In TradableStrategyInstruments
+                        plOfDay += runningStrategyInstrument.PL
+                    Next
+                End If
+                Return plOfDay
+            End Get
+        End Property
         Public Property ParentContoller As APIStrategyController
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource)
