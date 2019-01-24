@@ -104,7 +104,22 @@ Namespace Strategies
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
 
 #Region "UI Properties"
-        <Display(Name:="Active Trades", Order:=11)>
+        <Display(Name:="Total Trades", Order:=11)>
+        Public ReadOnly Property TotalTrades As Integer
+            Get
+                Dim tradeCount As Integer = 0
+                If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+                    For Each parentOrderId In OrderDetails.Keys
+                        Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                            tradeCount += 1
+                        End If
+                    Next
+                End If
+                Return tradeCount
+            End Get
+        End Property
+        <System.ComponentModel.Browsable(False)>
         Public ReadOnly Property ActiveTrades As Integer
             Get
                 Dim tradeCount As Integer = 0
@@ -348,7 +363,7 @@ Namespace Strategies
         End Function
         Public MustOverride Async Function MonitorAsync() As Task
         Public Overridable Async Function ExitAllTrades() As Task
-            Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+            Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders()
             If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
                 Try
                     Await ExecuteCommandAsync(ExecuteCommands.CancelOrder, Nothing).ConfigureAwait(False)
