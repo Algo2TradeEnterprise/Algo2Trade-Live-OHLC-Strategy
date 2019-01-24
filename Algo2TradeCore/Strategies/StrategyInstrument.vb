@@ -122,25 +122,26 @@ Namespace Strategies
         <Display(Name:="Active Instrument", Order:=12)>
         Public ReadOnly Property ActiveInstrument As Boolean
             Get
-                Dim tradeCount As Integer = 0
+                Dim ret As Boolean = False
                 If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                     For Each parentOrderId In OrderDetails.Keys
                         Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
+                        If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
                             parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                            Dim openOrder As Boolean = False
                             For Each slOrder In parentBusinessOrder.SLOrder
                                 If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                    openOrder = True
+                                    ret = True
                                 End If
                             Next
-                            If openOrder Then tradeCount += 1
-                        ElseIf parentBusinessOrder.ParentOrder.Status = "OPEN" Then
-                            tradeCount += 1
+                        ElseIf parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            ret = True
+                        Else
+                            ret = False
                         End If
+                        If ret Then Exit For
                     Next
                 End If
-                Return tradeCount
+                Return ret
             End Get
         End Property
         <Display(Name:="Profit & Loss", Order:=13)>
