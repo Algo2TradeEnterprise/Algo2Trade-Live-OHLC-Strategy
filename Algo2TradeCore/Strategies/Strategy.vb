@@ -53,6 +53,19 @@ Namespace Strategies
 #End Region
         Public Property TradableInstrumentsAsPerStrategy As IEnumerable(Of IInstrument)
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
+        Public ReadOnly Property ActiveInstruments As Integer
+            Get
+                Dim instrumentCount As Integer = 0
+                If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                    For Each runningStrategyInstrument In TradableStrategyInstruments
+                        If runningStrategyInstrument.ActiveInstrument Then
+                            instrumentCount += 1
+                        End If
+                    Next
+                End If
+                Return instrumentCount
+            End Get
+        End Property
         Public Property ParentContoller As APIStrategyController
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource)
@@ -67,32 +80,53 @@ Namespace Strategies
         Public MustOverride Async Function MonitorAsync() As Task
         Public Overridable Async Function FillOrderDetailsAsync() As Task
             While True
+                If Me.ParentContoller.OrphanException IsNot Nothing Then
+                    Throw Me.ParentContoller.OrphanException
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
                 Await Me.ParentContoller.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
                 Await Task.Delay(10000).ConfigureAwait(False)
             End While
         End Function
-        Public Overridable Function GetKiteExceptionResponse(ByVal kex As Exception) As Tuple(Of String, ExceptionResponse)
+        Public Overridable Async Function ExitAllTrades() As Task
+            While True
+                If Me.ParentContoller.OrphanException IsNot Nothing Then
+                    Throw Me.ParentContoller.OrphanException
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                    For Each runningStrategyInstrument In TradableStrategyInstruments
+                        runningStrategyInstrument.ExitAllTrades()
+                    Next
+                End If
+            End While
+        End Function
+        Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
+        Public Overridable Function GetKiteExceptionResponse(ByVal ex As Exception) As Tuple(Of String, ExceptionResponse)
             Dim ret As Tuple(Of String, ExceptionResponse) = Nothing
-            If kex.GetType = GetType(KiteConnect.GeneralException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
-            ElseIf kex.GetType = GetType(KiteConnect.GeneralException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
-            ElseIf kex.GetType = GetType(KiteConnect.PermissionException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
-            ElseIf kex.GetType = GetType(KiteConnect.OrderException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
-            ElseIf kex.GetType = GetType(KiteConnect.InputException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
-            ElseIf kex.GetType = GetType(KiteConnect.DataException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
-            ElseIf kex.GetType = GetType(KiteConnect.NetworkException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(kex.Message, ExceptionResponse.Ignore)
+            If ex.GetType = GetType(KiteConnect.GeneralException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            ElseIf ex.GetType = GetType(KiteConnect.GeneralException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            ElseIf ex.GetType = GetType(KiteConnect.PermissionException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            ElseIf ex.GetType = GetType(KiteConnect.OrderException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            ElseIf ex.GetType = GetType(KiteConnect.InputException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            ElseIf ex.GetType = GetType(KiteConnect.DataException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            ElseIf ex.GetType = GetType(KiteConnect.NetworkException) Then
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+            Else
+                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.NotKiteException)
             End If
             Return ret
         End Function
         Public Enum ExceptionResponse
             Retry = 1
             Ignore
+            NotKiteException
         End Enum
     End Class
 End Namespace

@@ -59,6 +59,6 @@ Namespace Entities
         Public Overrides Function ToString() As String
             Return InstrumentIdentifier
         End Function
-        Public Property WrappedLastTick As Tick
+        Public Property LastTick As ZerodhaTick
     End Class
 End Namespace

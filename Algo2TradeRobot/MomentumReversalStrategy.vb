@@ -191,4 +191,7 @@ Public Class MomentumReversalStrategy
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function
+    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
+        Return False
+    End Function
 End Class

@@ -26,6 +26,7 @@ Namespace Controller
             MyBase.New(validatedUser, canceller)
             _LoginURL = "https://kite.trade/connect/login"
         End Sub
+
 #Region "Login"
         Protected Overrides Function GetLoginURL() As String
             logger.Debug("GetLoginURL, parameters:Nothing")
@@ -770,12 +771,13 @@ Namespace Controller
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
                     runningStrategyInstrument.ProcessTickAsync(runningTick).ConfigureAwait(False)
+                    CType(runningStrategyInstrument.TradableInstrument, ZerodhaInstrument).LastTick = runningTick
                 Next
             End If
         End Sub
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
             logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
-            If orderData.Status = "COMPLETE" Then
+            If orderData.Status = "COMPLETE" OrElse orderData.Status = "MODIFIED" OrElse orderData.Status = "CANCELLED" Then
                 For Each runningStrategy In _AllStrategies
                     If orderData.Tag IsNot Nothing AndAlso orderData.Tag.Contains(runningStrategy.ToString) Then
                         FillOrderDetailsAsyc(runningStrategy).ConfigureAwait(False)

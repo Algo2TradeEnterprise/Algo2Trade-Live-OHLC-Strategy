@@ -42,7 +42,9 @@ Namespace Adapter
         Public MustOverride Async Function GetAllQuotes(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
         Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
         Public MustOverride Async Function ModifyStoplossOrderAsync(ByVal orderId As String, ByVal triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
+        Public MustOverride Async Function CancelBOOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
         Public MustOverride Async Function PlaceBOLimitMISOrderAsync(ByVal tradeExchange As Exchange, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+        Public MustOverride Async Function PlaceBOSLMISOrderAsync(ByVal tradeExchange As Exchange, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal triggerPrice As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
         Public Enum ExecutionCommands
             GetPositions = 1
             GetQuotes

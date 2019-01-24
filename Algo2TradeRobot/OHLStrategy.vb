@@ -182,6 +182,7 @@ Public Class OHLStrategy
             Next
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync))
+            'tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -192,9 +193,15 @@ Public Class OHLStrategy
             Throw lastException
         End If
     End Function
-
-
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
+    End Function
+    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
+        Dim currentTime As Date = Now
+        If currentTime.Hour = 14 AndAlso currentTime.Minute = 28 AndAlso currentTime.Second >= 20 Then
+            Return True
+        Else
+            Return False
+        End If
     End Function
 End Class

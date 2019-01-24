@@ -91,74 +91,60 @@ Public Class OHLStrategyInstrument
         _cts.Token.ThrowIfCancellationRequested()
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        Dim lastException As Exception = Nothing
-        'Try
-
-        While True
-            If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
-                Throw Me.ParentStrategy.ParentContoller.OrphanException
-            End If
-            'Dim r As Random = New Random()
-            'Dim x = r.Next(0, 11)
-            '_cts.Token.ThrowIfCancellationRequested()
-            'If x = 7 Then
-            '    While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-            '        Await Task.Delay(500).ConfigureAwait(False)
-            '    End While
-
-            '    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
-            '    _cts.Token.ThrowIfCancellationRequested()
-            '    Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-            'End If
-            Dim orderDetails As Object = Nothing
-            Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
-            If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
-                Interlocked.Increment(_OHLStrategyProtector)
-                orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
-            End If
-            Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
-            If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
-                Try
-                    Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                Catch ex As Exception
-                    Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
-                    If exceptionResponse IsNot Nothing Then
-                        Select Case exceptionResponse.Item2
-                            Case Strategy.ExceptionResponse.Ignore
-                                OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
-                            Case Strategy.ExceptionResponse.Retry
-                                OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
-                        End Select
-                    End If
-                End Try
-            End If
-            _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(1000)
-        End While
-        'Catch ex As Exception
-        '    lastException = ex
-        'End Try
-        'If lastException IsNot Nothing Then
-        '    Await Me.ParentStrategy.ParentContoller.CloseTickerIfConnectedAsync()
-        '    Throw lastException
-        'End If
-        'Dim ctr As Integer
-        'While True
-        '    _cts.Token.ThrowIfCancellationRequested()
-        '    Await Task.Delay(500)
-        '    ctr += 500
-
-        '    If ctr = 115000 Then
-        '        'ret = New ApplicationException("Donno")
-        '        ONJOYMA(New ApplicationException("Donno"))
-        '        Exit While
-        '    End If
-        'End While
+        Try
+            While True
+                If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
+                    Throw Me.ParentStrategy.ParentContoller.OrphanException
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim orderDetails As Object = Nothing
+                Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
+                    Interlocked.Increment(_OHLStrategyProtector)
+                    Try
+                        orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
+                    Catch ex As Exception
+                        Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
+                        If exceptionResponse IsNot Nothing Then
+                            Select Case exceptionResponse.Item2
+                                Case Strategy.ExceptionResponse.Ignore
+                                    OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
+                                Case Strategy.ExceptionResponse.Retry
+                                    OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
+                                Case Strategy.ExceptionResponse.NotKiteException
+                                    Throw ex
+                            End Select
+                        End If
+                    End Try
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                    Try
+                        Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                    Catch ex As Exception
+                        Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
+                        If exceptionResponse IsNot Nothing Then
+                            Select Case exceptionResponse.Item2
+                                Case Strategy.ExceptionResponse.Ignore
+                                    OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
+                                Case Strategy.ExceptionResponse.Retry
+                                    OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
+                                Case Strategy.ExceptionResponse.NotKiteException
+                                    Throw ex
+                            End Select
+                        End If
+                    End Try
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(1000)
+            End While
+        Catch ex As Exception
+            logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+        End Try
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)
-        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal) = Nothing
+    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)
+        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = Nothing
         Dim currentTime As Date = Now
         If _LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 20 Then
@@ -167,19 +153,21 @@ Public Class OHLStrategyInstrument
             Dim entryPrice As Decimal = Nothing
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
-            Dim quantity As Integer = Math.Floor(2000 * 13 / entryPrice)
+            Dim quantity As Integer = Nothing
             If Math.Round(_LastTick.Open, 0) = _LastTick.High AndAlso
                 _LastTick.Open = _LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
+                quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(_LastTick.High - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.High - entryPrice))
-                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Sell, quantity, entryPrice, target, stoploss)
+                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Sell, quantity, entryPrice, Nothing, target, stoploss)
             ElseIf Math.Round(_LastTick.Open, 0) = _LastTick.Low AndAlso
                 _LastTick.Open = _LastTick.Low Then
                 entryPrice = OHLTradePrice + buffer
+                quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(entryPrice - _LastTick.Low) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Low))
-                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Buy, quantity, entryPrice, target, stoploss)
+                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Buy, quantity, entryPrice, Nothing, target, stoploss)
             End If
         End If
         Return ret
