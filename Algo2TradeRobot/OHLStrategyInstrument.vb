@@ -121,7 +121,7 @@ Public Class OHLStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 3 Then
-                    sldelayctr = 0
+                    slDelayCtr = 0
                     Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
                     If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                         Try
@@ -144,7 +144,7 @@ Public Class OHLStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000)
-                sldelayctr += 1
+                slDelayCtr += 1
             End While
         Catch ex As Exception
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
