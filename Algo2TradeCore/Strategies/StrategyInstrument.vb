@@ -337,7 +337,10 @@ Namespace Strategies
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
             Await Task.Delay(0).ConfigureAwait(False)
-            If tickData IsNot Nothing AndAlso tickData.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
+            If tickData IsNot Nothing AndAlso tickData.LastPrice <> _LastPrice Then
+                NotifyPropertyChanged("LastPrice")
+                NotifyPropertyChanged("PL")
+            End If
             If tickData IsNot Nothing AndAlso tickData.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
             If tickData IsNot Nothing AndAlso tickData.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
             If tickData IsNot Nothing AndAlso tickData.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
