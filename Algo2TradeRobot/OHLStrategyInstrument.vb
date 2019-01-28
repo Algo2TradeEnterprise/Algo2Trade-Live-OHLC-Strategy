@@ -59,7 +59,7 @@ Public Class OHLStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         Catch ex As Exception
-            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
             logger.Error(ex.ToString)
         End Try
     End Function
