@@ -119,38 +119,29 @@ Namespace Strategies
                 Return tradeCount
             End Get
         End Property
-        <System.ComponentModel.Browsable(False)>
-        Public ReadOnly Property ActiveTrades As Integer
-            Get
-                Dim tradeCount As Integer = 0
-                If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-                    For Each parentOrderId In OrderDetails.Keys
-                        Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
-                            parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                            Dim openOrder As Boolean = False
-                            For Each slOrder In parentBusinessOrder.SLOrder
-                                If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                    openOrder = True
-                                End If
-                            Next
-                            If openOrder Then tradeCount += 1
-                        ElseIf parentBusinessOrder.ParentOrder.Status = "OPEN" Then
-                            tradeCount += 1
-                        End If
-                    Next
-                End If
-                Return tradeCount
-            End Get
-        End Property
         <Display(Name:="Active Instrument", Order:=12)>
         Public ReadOnly Property ActiveInstrument As Boolean
             Get
-                If ActiveTrades > 0 Then
-                    Return True
-                Else
-                    Return False
+                Dim ret As Boolean = False
+                If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+                    For Each parentOrderId In OrderDetails.Keys
+                        Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                        If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
+                            parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                            For Each slOrder In parentBusinessOrder.SLOrder
+                                If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                                    ret = True
+                                End If
+                            Next
+                        ElseIf parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            ret = True
+                        Else
+                            ret = False
+                        End If
+                        If ret Then Exit For
+                    Next
                 End If
+                Return ret
             End Get
         End Property
         <Display(Name:="Profit & Loss", Order:=13)>
@@ -349,6 +340,7 @@ Namespace Strategies
             If tickData IsNot Nothing AndAlso tickData.Volume <> _Volume Then NotifyPropertyChanged("Volume")
             If tickData IsNot Nothing AndAlso tickData.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
             If tickData IsNot Nothing AndAlso tickData.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
+            If tickData IsNot Nothing AndAlso tickData.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
             If Not RawTicks.TryAdd(tickData.Timestamp, tickData) Then
                 'Console.WriteLine(String.Format("Could not store:{0},{1},{2}", TradingSymbol, tickData.LastPrice, tickData.Timestamp.Value.ToLongTimeString))
             End If

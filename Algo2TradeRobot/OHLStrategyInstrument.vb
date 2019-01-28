@@ -59,7 +59,7 @@ Public Class OHLStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         Catch ex As Exception
-            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
             logger.Error(ex.ToString)
         End Try
     End Function
@@ -104,6 +104,7 @@ Public Class OHLStrategyInstrument
                     Try
                         orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
                     Catch ex As Exception
+                        logger.Error(ex)
                         Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
                         If exceptionResponse IsNot Nothing Then
                             Select Case exceptionResponse.Item2
@@ -123,6 +124,7 @@ Public Class OHLStrategyInstrument
                     Try
                         Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                     Catch ex As Exception
+                        logger.Error(ex)
                         Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
                         If exceptionResponse IsNot Nothing Then
                             Select Case exceptionResponse.Item2
