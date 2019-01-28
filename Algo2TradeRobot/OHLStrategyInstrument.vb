@@ -92,6 +92,7 @@ Public Class OHLStrategyInstrument
     End Function
     Public Overrides Async Function MonitorAsync() As Task
         Try
+            Dim slDelayCtr As Integer = 0
             While True
                 If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentContoller.OrphanException
@@ -119,27 +120,31 @@ Public Class OHLStrategyInstrument
                     End Try
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
-                If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
-                    Try
-                        Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                    Catch ex As Exception
-                        logger.Error(ex)
-                        Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
-                        If exceptionResponse IsNot Nothing Then
-                            Select Case exceptionResponse.Item2
-                                Case Strategy.ExceptionResponse.Ignore
-                                    OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
-                                Case Strategy.ExceptionResponse.Retry
-                                    OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
-                                Case Strategy.ExceptionResponse.NotKiteException
-                                    Throw ex
-                            End Select
-                        End If
-                    End Try
+                If slDelayCtr = 3 Then
+                    sldelayctr = 0
+                    Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                    If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                        Try
+                            Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                        Catch ex As Exception
+                            logger.Error(ex)
+                            Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
+                            If exceptionResponse IsNot Nothing Then
+                                Select Case exceptionResponse.Item2
+                                    Case Strategy.ExceptionResponse.Ignore
+                                        OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
+                                    Case Strategy.ExceptionResponse.Retry
+                                        OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
+                                    Case Strategy.ExceptionResponse.NotKiteException
+                                        Throw ex
+                                End Select
+                            End If
+                        End Try
+                    End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000)
+                sldelayctr += 1
             End While
         Catch ex As Exception
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
