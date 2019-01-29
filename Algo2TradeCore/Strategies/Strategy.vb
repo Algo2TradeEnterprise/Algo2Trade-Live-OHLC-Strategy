@@ -51,6 +51,7 @@ Namespace Strategies
 #Region "Logging and Status Progress"
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
+        Public ReadOnly Property StrategyIdentifier As String
         Public Property TradableInstrumentsAsPerStrategy As IEnumerable(Of IInstrument)
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
         Public ReadOnly Property ActiveInstruments As Integer
@@ -79,9 +80,10 @@ Namespace Strategies
         End Property
         Public Property ParentContoller As APIStrategyController
         Protected _cts As CancellationTokenSource
-        Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource)
+        Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource, ByVal associatedStrategyIdentifier As String)
             Me.ParentContoller = associatedParentController
             _cts = canceller
+            Me.StrategyIdentifier = associatedStrategyIdentifier
         End Sub
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task

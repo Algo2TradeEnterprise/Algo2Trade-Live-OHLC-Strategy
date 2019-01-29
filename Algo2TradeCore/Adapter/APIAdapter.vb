@@ -65,6 +65,7 @@ Namespace Adapter
         Public Enum TransactionType
             Buy = 1
             Sell
+            None
         End Enum
         Public Enum Exchange
             NSE = 1
@@ -73,6 +74,7 @@ Namespace Adapter
             BFO
             MCX
             CDS
+            None
         End Enum
     End Class
 End Namespace

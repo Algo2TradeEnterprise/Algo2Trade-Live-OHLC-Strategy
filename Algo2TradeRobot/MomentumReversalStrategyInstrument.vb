@@ -25,6 +25,9 @@ Public Class MomentumReversalStrategyInstrument
     Public Overrides Function ToString() As String
         Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
     End Function
+    Public Overrides Function GenerateTag() As String
+        Return String.Format("{0}_{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.TradingSymbol)
+    End Function
     Public Overrides Async Function RunDirectAsync() As Task
         logger.Debug("{0}->RunDirectAsync, parameters:None", Me.ToString)
         _cts.Token.ThrowIfCancellationRequested()
@@ -112,8 +115,8 @@ Public Class MomentumReversalStrategyInstrument
         '    End If
         'End While
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)
-        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = Nothing
+    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
+        Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         Throw New NotImplementedException("IsTriggerReceivedForPlaceOrderAsync-MR")
         Return ret
     End Function

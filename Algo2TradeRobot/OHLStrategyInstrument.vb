@@ -42,6 +42,9 @@ Public Class OHLStrategyInstrument
     Public Overrides Function ToString() As String
         Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
     End Function
+    Public Overrides Function GenerateTag() As String
+        Return String.Format("{0}_{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.TradingSymbol)
+    End Function
     Public Overrides Async Function RunDirectAsync() As Task
         logger.Debug("{0}->RunDirectAsync, parameters:None", Me.ToString)
         _cts.Token.ThrowIfCancellationRequested()
@@ -99,7 +102,7 @@ Public Class OHLStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
                     Interlocked.Increment(_OHLStrategyProtector)
                     Try
@@ -150,8 +153,8 @@ Public Class OHLStrategyInstrument
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
         End Try
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)
-        Dim ret As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = Nothing
+    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
+        Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         Dim currentTime As Date = Now
         If _LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 10 Then
@@ -161,20 +164,51 @@ Public Class OHLStrategyInstrument
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
             Dim quantity As Integer = Nothing
+            Dim tag As String = GenerateTag()
             If Math.Round(_LastTick.Open, 0) = _LastTick.High AndAlso
                 _LastTick.Open = _LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(_LastTick.High - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.High - entryPrice))
-                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Sell, quantity, entryPrice, Nothing, target, stoploss)
+                If stoploss > target Then
+                    target = 1
+                    stoploss = 1
+                    tag = String.Format("{0}_{1}", tag, "0")
+                Else
+                    tag = String.Format("{0}_{1}", tag, "1")
+                End If
+                Dim parameters As New PlaceOrderParameters With
+                {.EntryDirection = APIAdapter.TransactionType.Sell,
+                .Quantity = quantity,
+                .Price = entryPrice,
+                .TriggerPrice = Nothing,
+                .SquareOffValue = target,
+                .StoplossValue = stoploss,
+                .Tag = tag}
+                ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
             ElseIf Math.Round(_LastTick.Open, 0) = _LastTick.Low AndAlso
                 _LastTick.Open = _LastTick.Low Then
                 entryPrice = OHLTradePrice + buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(entryPrice - _LastTick.Low) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Low))
-                ret = New Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)(True, APIAdapter.TransactionType.Buy, quantity, entryPrice, Nothing, target, stoploss)
+                If stoploss > target Then
+                    target = 1
+                    stoploss = 1
+                    tag = String.Format("{0}_{1}", tag, "0")
+                Else
+                    tag = String.Format("{0}_{1}", tag, "1")
+                End If
+                Dim parameters As New PlaceOrderParameters With
+                    {.EntryDirection = APIAdapter.TransactionType.Buy,
+                    .Quantity = quantity,
+                    .Price = entryPrice,
+                    .TriggerPrice = Nothing,
+                    .SquareOffValue = target,
+                    .StoplossValue = stoploss,
+                    .Tag = tag}
+                ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
             End If
         End If
         Return ret
@@ -186,19 +220,21 @@ Public Class OHLStrategyInstrument
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
                 If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
                     parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                    Dim triggerPrice As Decimal = _LastTick.Open
-                    Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
-                    If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                        triggerPrice -= buffer
-                    ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                        triggerPrice += buffer
-                    End If
-                    For Each slOrder In parentBusinessOrder.SLOrder
-                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso slOrder.TriggerPrice <> triggerPrice Then
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
-                            ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
+                    If parentBusinessOrder.ParentOrder.Tag.Substring(GenerateTag().Count + 1) = "1" Then
+                        Dim triggerPrice As Decimal = _LastTick.Open
+                        Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
+                        If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                            triggerPrice -= buffer
+                        ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                            triggerPrice += buffer
                         End If
-                    Next
+                        For Each slOrder In parentBusinessOrder.SLOrder
+                            If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso slOrder.TriggerPrice <> triggerPrice Then
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
+                                ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
+                            End If
+                        Next
+                    End If
                 End If
             Next
         End If

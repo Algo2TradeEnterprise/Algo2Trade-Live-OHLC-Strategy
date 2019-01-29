@@ -3,6 +3,7 @@
 Namespace Entities
     Public Class ZerodhaOrder
         Implements IOrder
+
         Public Property WrappedOrder As Order
 
         Public ReadOnly Property OrderIdentifier As String Implements IOrder.OrderIdentifier
@@ -74,6 +75,12 @@ Namespace Entities
         Public ReadOnly Property AveragePrice As Decimal Implements IOrder.AveragePrice
             Get
                 Return WrappedOrder.AveragePrice
+            End Get
+        End Property
+
+        Public ReadOnly Property Tag As String Implements IOrder.Tag
+            Get
+                Return WrappedOrder.Tag
             End Get
         End Property
     End Class

@@ -160,7 +160,7 @@ Namespace Strategies
                                     ElseIf slOrder.TransactionType = "SELL" Then
                                         plOfDay += slOrder.AveragePrice * slOrder.Quantity
                                     End If
-                                Else
+                                ElseIf Not slOrder.Status = "REJECTED" Then
                                     calculateWithLTP = True
                                 End If
                             Next
@@ -175,7 +175,7 @@ Namespace Strategies
                                     ElseIf targetOrder.TransactionType = "SELL" Then
                                         plOfDay += targetOrder.AveragePrice * targetOrder.Quantity
                                     End If
-                                Else
+                                ElseIf Not targetOrder.Status = "REJECTED" Then
                                     calculateWithLTP = True
                                 End If
                             Next
@@ -324,6 +324,7 @@ Namespace Strategies
             RawPayloads = New Dictionary(Of Date, Payload)
         End Sub
         Public MustOverride Overrides Function ToString() As String
+        Public MustOverride Function GenerateTag() As String
         Public MustOverride Async Function RunDirectAsync() As Task
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
@@ -376,7 +377,7 @@ Namespace Strategies
                 End Try
             End If
         End Function
-        Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal)
+        Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Protected MustOverride Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
         Protected Overridable Function IsTriggerReceivedForExitAllOrders() As List(Of Tuple(Of Boolean, String, String))
             Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
@@ -433,17 +434,17 @@ Namespace Strategies
                         _cts.Token.ThrowIfCancellationRequested()
                         Select Case command
                             Case ExecuteCommands.PlaceBOLimtMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=APIAdapter.Exchange.NSE,
                                                                                                        tradingSymbol:=TradingSymbol,
-                                                                                                       transaction:=placeOrderTrigger.Item2,
-                                                                                                       quantity:=placeOrderTrigger.Item3,
-                                                                                                       price:=placeOrderTrigger.Item4,
-                                                                                                       squareOffValue:=placeOrderTrigger.Item6,
-                                                                                                       stopLossValue:=placeOrderTrigger.Item7,
-                                                                                                       tag:=Me.ToString).ConfigureAwait(False)
+                                                                                                       transaction:=placeOrderTrigger.Item2.EntryDirection,
+                                                                                                       quantity:=placeOrderTrigger.Item2.Quantity,
+                                                                                                       price:=placeOrderTrigger.Item2.Price,
+                                                                                                       squareOffValue:=placeOrderTrigger.Item2.SquareOffValue,
+                                                                                                       stopLossValue:=placeOrderTrigger.Item2.StoplossValue,
+                                                                                                       tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
                                         lastException = Nothing
@@ -526,18 +527,18 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceBOSLMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, APIAdapter.TransactionType, Integer, Decimal, Decimal, Decimal, Decimal) = IsTriggerReceivedForPlaceOrder()
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=APIAdapter.Exchange.NSE,
                                                                                                     tradingSymbol:=TradingSymbol,
-                                                                                                    transaction:=placeOrderTrigger.Item2,
-                                                                                                    quantity:=placeOrderTrigger.Item3,
-                                                                                                    price:=placeOrderTrigger.Item4,
-                                                                                                    triggerPrice:=placeOrderTrigger.Item5,
-                                                                                                    squareOffValue:=placeOrderTrigger.Item6,
-                                                                                                    stopLossValue:=placeOrderTrigger.Item7,
-                                                                                                    tag:=Me.ToString).ConfigureAwait(False)
+                                                                                                    transaction:=placeOrderTrigger.Item2.EntryDirection,
+                                                                                                    quantity:=placeOrderTrigger.Item2.Quantity,
+                                                                                                    price:=placeOrderTrigger.Item2.Price,
+                                                                                                    triggerPrice:=placeOrderTrigger.Item2.TriggerPrice,
+                                                                                                    squareOffValue:=placeOrderTrigger.Item2.SquareOffValue,
+                                                                                                    stopLossValue:=placeOrderTrigger.Item2.StoplossValue,
+                                                                                                    tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
                                         lastException = Nothing
@@ -678,5 +679,14 @@ Namespace Strategies
             If Not allOKWithoutException Then Throw lastException
             Return ret
         End Function
+        Public Class PlaceOrderParameters
+            Public Property EntryDirection As APIAdapter.TransactionType = APIAdapter.TransactionType.None
+            Public Property Quantity As Integer = 0
+            Public Property Price As Decimal = Nothing
+            Public Property TriggerPrice As Decimal = Nothing
+            Public Property SquareOffValue As Decimal = Nothing
+            Public Property StoplossValue As Decimal = Nothing
+            Public Property Tag As String = Nothing
+        End Class
     End Class
 End Namespace

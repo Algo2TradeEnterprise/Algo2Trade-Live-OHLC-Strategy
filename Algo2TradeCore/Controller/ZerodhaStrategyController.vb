@@ -714,12 +714,13 @@ Namespace Controller
                     End If
                     For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
                         If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
-                            If runningStrategyInstrument.ToString = wrappedParentOrder.WrappedOrder.Tag Then
+                            If wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
                                 Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
                                                                             .ParentOrder = parentOrder,
                                                                             .SLOrder = slOrder,
                                                                             .TargetOrder = targetOrder}
                                 Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
+                                logger.Debug(Utils.JsonSerialize(runningStrategyInstrument.OrderDetails))
                             End If
                         End If
                     Next
