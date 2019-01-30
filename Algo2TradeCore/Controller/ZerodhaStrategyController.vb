@@ -714,7 +714,8 @@ Namespace Controller
                     End If
                     For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
                         If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
-                            If wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
+                            If wrappedParentOrder.WrappedOrder.Tag IsNot Nothing AndAlso
+                                wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
                                 Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
                                                                             .ParentOrder = parentOrder,
                                                                             .SLOrder = slOrder,

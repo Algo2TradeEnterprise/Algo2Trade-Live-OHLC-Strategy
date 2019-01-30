@@ -92,27 +92,35 @@ Namespace Strategies
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task
         Public Overridable Async Function FillOrderDetailsAsync() As Task
-            While True
-                If Me.ParentContoller.OrphanException IsNot Nothing Then
-                    Throw Me.ParentContoller.OrphanException
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                Await Me.ParentContoller.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
-                Await Task.Delay(10000).ConfigureAwait(False)
-            End While
+            Try
+                While True
+                    If Me.ParentContoller.OrphanException IsNot Nothing Then
+                        Throw Me.ParentContoller.OrphanException
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Await Me.ParentContoller.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
+                    Await Task.Delay(10000).ConfigureAwait(False)
+                End While
+            Catch ex As Exception
+                logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
+            End Try
         End Function
         Public Overridable Async Function ExitAllTrades() As Task
-            While True
-                If Me.ParentContoller.OrphanException IsNot Nothing Then
-                    Throw Me.ParentContoller.OrphanException
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-                    For Each runningStrategyInstrument In TradableStrategyInstruments
-                        runningStrategyInstrument.ExitAllTrades()
-                    Next
-                End If
-            End While
+            Try
+                While True
+                    If Me.ParentContoller.OrphanException IsNot Nothing Then
+                        Throw Me.ParentContoller.OrphanException
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                        For Each runningStrategyInstrument In TradableStrategyInstruments
+                            runningStrategyInstrument.ExitAllTrades()
+                        Next
+                    End If
+                End While
+            Catch ex As Exception
+                logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
+            End Try
         End Function
         Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
         Public Overridable Function GetKiteExceptionResponse(ByVal ex As Exception) As Tuple(Of String, ExceptionResponse)

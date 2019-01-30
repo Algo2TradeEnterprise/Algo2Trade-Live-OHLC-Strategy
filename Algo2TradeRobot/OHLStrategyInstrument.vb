@@ -170,10 +170,9 @@ Public Class OHLStrategyInstrument
                 entryPrice = OHLTradePrice - buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                stoploss = If(Math.Abs(_LastTick.High - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.High - entryPrice))
+                stoploss = If(Math.Abs(_LastTick.Open - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.Open - entryPrice))
                 If stoploss > target Then
-                    target = 1
-                    stoploss = 1
+                    stoploss = target
                     tag = String.Format("{0}_{1}", tag, "0")
                 Else
                     tag = String.Format("{0}_{1}", tag, "1")
@@ -192,10 +191,9 @@ Public Class OHLStrategyInstrument
                 entryPrice = OHLTradePrice + buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                stoploss = If(Math.Abs(entryPrice - _LastTick.Low) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Low))
+                stoploss = If(Math.Abs(entryPrice - _LastTick.Open) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Open))
                 If stoploss > target Then
-                    target = 1
-                    stoploss = 1
+                    stoploss = target
                     tag = String.Format("{0}_{1}", tag, "0")
                 Else
                     tag = String.Format("{0}_{1}", tag, "1")
