@@ -55,6 +55,7 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -74,12 +75,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapter\APIAdapter.vb" />
+    <Compile Include="Adapter\APIHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\APITicker.vb" />
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
+    <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
-    <Compile Include="Chart\Candlestick.vb" />
+    <Compile Include="ChartHandler\ChartStyle\CandleStickChart.vb" />
     <Compile Include="Controller\APIStrategyController.vb" />
     <Compile Include="Controller\ZerodhaStrategyController.vb" />
+    <Compile Include="Entities\OHLCPayload.vb" />
     <Compile Include="Entities\Enums.vb" />
     <Compile Include="Entities\IBusinessOrder.vb" />
     <Compile Include="Entities\IConnection.vb" />
@@ -89,7 +93,7 @@
     <Compile Include="Entities\ITick.vb" />
     <Compile Include="Entities\ITrade.vb" />
     <Compile Include="Entities\IUser.vb" />
-    <Compile Include="Entities\Payload.vb" />
+    <Compile Include="Entities\IPayload.vb" />
     <Compile Include="Entities\ZerodhaBusinessOrder.vb" />
     <Compile Include="Entities\ZerodhaConnection.vb" />
     <Compile Include="Entities\ZerodhaInstrument.vb" />
@@ -142,6 +146,9 @@
       <Project>{0524d87f-b8bf-4cc2-b955-49950110fe9a}</Project>
       <Name>Utilities</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ChartHandler\Indicator\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

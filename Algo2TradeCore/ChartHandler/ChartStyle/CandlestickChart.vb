@@ -2,7 +2,7 @@
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports NLog
-Namespace Chart
+Namespace ChartHandler.ChartStyle
     Public Class Candlestick
 #Region "Events/Event handlers"
         Public Event DocumentDownloadCompleteEx(ByVal source As List(Of Object))
@@ -48,95 +48,59 @@ Namespace Chart
         Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Private _parentStrategyInstrument As StrategyInstrument
+        Private _parentInstrument As IInstrument
         Private _cts As New CancellationTokenSource
-        Public Sub New(ByVal associatedParentStrategyInstrument As StrategyInstrument, ByVal canceller As CancellationTokenSource)
-            _parentStrategyInstrument = associatedParentStrategyInstrument
+        Public Sub New(ByVal assoicatedParentInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
+            _parentInstrument = assoicatedParentInstrument
             _cts = canceller
         End Sub
 
-        Public Async Function ConsumeTicks() As Task
-            Try
-                While True
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Await dummy.ConfigureAwait(False)
-                    Await Task.Delay(1000).ConfigureAwait(False)
-                End While
-            Catch ex As Exception
-                Console.WriteLine(ex.ToString)
-            End Try
-        End Function
-        Private Async Function dummy() As Task
-            _cts.Token.ThrowIfCancellationRequested()
-            If _parentStrategyInstrument.RawTicks IsNot Nothing AndAlso _parentStrategyInstrument.RawTicks.Count > 0 Then
-                    'Console.WriteLine(_parentStrategyInstrument.RawTicks.Min(Function(x)
-                    '                                                             Return x.Key
-                    '                                                         End Function))
-                    Dim z As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentStrategyInstrument.RawTicks.Where(Function(y)
-                                                                                                                         Return y.Key = _parentStrategyInstrument.RawTicks.Min(Function(x)
-                                                                                                                                                                                   Return x.Key
-                                                                                                                                                                               End Function)
-                                                                                                                     End Function)
-                    Dim out As ITick
-                    For Each z1 In z
-                        _cts.Token.ThrowIfCancellationRequested()
-                    'CalculateCandleFromTick(_parentStrategyInstrument.RawPayloads, z1.Value)
-                    _cts.Token.ThrowIfCancellationRequested()
-                        'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
-                        _parentStrategyInstrument.RawTicks.TryRemove(z1.Key, out)
-                    Next
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
+        Public Async Function FIFOProcessTickToCandleStickAsync() As Task
+            Await Task.Delay(0).ConfigureAwait(False)
+            If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
+                Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
+                                                                                                                     Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
+                                                                                                                                                                       Return x.Key
+                                                                                                                                                                   End Function)
+                                                                                                                 End Function)
+                Dim removedTick As ITick
+                For Each runningFIFOTick In FIFOTicks
+                    CalculateCandleStickFromTick(_parentInstrument.RawPayloads, runningFIFOTick.Value)
+                    'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
+                    _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
+                Next
+            End If
         End Function
 
-        Public Sub CalculateCandleFromTick(ByVal existingPayloads As Dictionary(Of DateTime, Payload), ByVal tickData As ITick)
+        Private Sub CalculateCandleStickFromTick(ByVal existingPayloads As Dictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick)
             SyncLock Me
                 If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
                     Exit Sub
                 End If
 
-                Dim lastExistingPayload As Payload = Nothing
+                Dim lastExistingPayload As OHLCPayload = Nothing
                 If existingPayloads IsNot Nothing AndAlso existingPayloads.Count > 0 Then
                     lastExistingPayload = existingPayloads.LastOrDefault.Value
                 End If
                 '3 condition exist
-                Dim runningPayload As Payload = Nothing
+                Dim runningPayload As OHLCPayload = Nothing
                 If lastExistingPayload IsNot Nothing Then
-                    'Fill up any blank payload between lastPayload and current timestamp
-                    Dim runningPayloadDateTime As DateTime = lastExistingPayload.SnapshotDateTime.AddMinutes(1)
-                    Dim prevPayload As Payload = lastExistingPayload
-                    While Utilities.Time.IsDateTimeLessTillMinutes(runningPayloadDateTime, tickData.Timestamp.Value)
-                        runningPayload = New Payload
-                        With runningPayload
-                            .TradingSymbol = _parentStrategyInstrument.TradingSymbol
-                            .OpenPrice = prevPayload.ClosePrice
-                            .LowPrice = prevPayload.ClosePrice
-                            .HighPrice = prevPayload.ClosePrice
-                            .ClosePrice = prevPayload.ClosePrice
-                            .Volume = 0
-                            .DailyVolume = prevPayload.DailyVolume
-                            .SnapshotDateTime = runningPayloadDateTime
-                            .PreviousPayload = prevPayload
-                            existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
-                            runningPayloadDateTime = runningPayloadDateTime.AddMinutes(1)
-                        End With
-                        prevPayload = runningPayload
-                    End While
-                    'Refresh last existing paylos from the list created above
-                    lastExistingPayload = existingPayloads.LastOrDefault.Value
-                    'Means no gap filling in the candles was done
-                    If Utilities.Time.IsDateTimeEqualTillMinutes(lastExistingPayload.SnapshotDateTime, tickData.Timestamp.Value.AddMinutes(-1)) Then
+                    If Not Utilities.Time.IsDateTimeEqualTillMinutes(lastExistingPayload.SnapshotDateTime, tickData.Timestamp.Value) Then
                         'Fresh candle needs to be created
                         'Print previous candle
                         'Console.WriteLine(Utilities.Strings.JsonSerialize(lastExistingPayload))
-                        runningPayload = New Payload
+                        runningPayload = New OHLCPayload
                         With runningPayload
-                            .TradingSymbol = _parentStrategyInstrument.TradingSymbol
+                            .TradingSymbol = _parentInstrument.TradingSymbol
                             .OpenPrice = tickData.LastPrice
-                            .LowPrice = tickData.LastPrice
                             .HighPrice = tickData.LastPrice
+                            .LowPrice = tickData.LastPrice
                             .ClosePrice = tickData.LastPrice
-                            .Volume = tickData.Volume - lastExistingPayload.DailyVolume
+                            If lastExistingPayload.SnapshotDateTime.Date = tickData.Timestamp.Value.Date Then
+                                .Volume = tickData.Volume - lastExistingPayload.DailyVolume
+                            Else
+                                .Volume = tickData.Volume
+                            End If
                             .DailyVolume = tickData.Volume
                             .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(tickData.Timestamp.Value)
                             .PreviousPayload = lastExistingPayload
@@ -148,7 +112,11 @@ Namespace Chart
                             .LowPrice = Math.Min(lastExistingPayload.LowPrice, tickData.LastPrice)
                             .ClosePrice = tickData.LastPrice
                             If .PreviousPayload IsNot Nothing Then
-                                .Volume = tickData.Volume - .PreviousPayload.DailyVolume
+                                If .PreviousPayload.SnapshotDateTime.Date = tickData.Timestamp.Value.Date Then
+                                    .Volume = tickData.Volume - .PreviousPayload.DailyVolume
+                                Else
+                                    .Volume = tickData.Volume
+                                End If
                             Else
                                 .Volume = tickData.Volume
                             End If
@@ -156,23 +124,23 @@ Namespace Chart
                         End With
                     Else
                         'SHould not come here
-                        Throw New NotImplementedException
+                        Throw New NotImplementedException("Why have you come here")
                     End If
                 Else
-                    runningPayload = New Payload
+                    runningPayload = New OHLCPayload
                     With runningPayload
-                        .TradingSymbol = _parentStrategyInstrument.TradingSymbol
+                        .TradingSymbol = _parentInstrument.TradingSymbol
                         .OpenPrice = tickData.LastPrice
-                        .LowPrice = tickData.LastPrice
                         .HighPrice = tickData.LastPrice
+                        .LowPrice = tickData.LastPrice
                         .ClosePrice = tickData.LastPrice
                         .Volume = tickData.Volume
                         .DailyVolume = tickData.Volume
                         .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(tickData.Timestamp.Value)
-                        .PreviousPayload = Nothing
+                        .PreviousPayload = lastExistingPayload
                     End With
                 End If
-                existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
+                If runningPayload IsNot Nothing Then existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
             End SyncLock
         End Sub
         Public Overrides Function ToString() As String

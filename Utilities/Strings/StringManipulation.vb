@@ -36,6 +36,7 @@ Namespace Strings
         Public Function JsonDeserialize(Json As String) As Dictionary(Of String, Object)
             'logger.Debug("Deserializing from JSON")
             Dim jss = New JavaScriptSerializer()
+            jss.MaxJsonLength = Integer.MaxValue
             Dim dict As Dictionary(Of String, Object) = jss.Deserialize(Of Dictionary(Of String, Object))(Json)
             Return dict
         End Function

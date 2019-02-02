@@ -88,7 +88,6 @@ Namespace Strategies
 #End Region
 
         Protected _cts As CancellationTokenSource
-        Protected _LastTick As ITick
         Protected _APIAdapter As APIAdapter
         Protected _MaxReTries As Integer = 20
         Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
@@ -99,8 +98,6 @@ Namespace Strategies
         Public Property ParentStrategy As Strategy
         <System.ComponentModel.Browsable(False)>
         Public Property TradableInstrument As IInstrument
-        Public Property RawPayloads As Dictionary(Of DateTime, Payload)
-        Public Property RawTicks As Concurrent.ConcurrentDictionary(Of DateTime, ITick)
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
 
 #Region "UI Properties"
@@ -209,8 +206,8 @@ Namespace Strategies
         <Display(Name:="Tradable", Order:=1)>
         Public Overridable ReadOnly Property Tradabale As Boolean
             Get
-                If _LastTick IsNot Nothing Then
-                    _Tradabale = _LastTick.Tradable
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _Tradabale = TradableInstrument.LastTick.Tradable
                     Return _Tradabale
                 Else
                     Return Nothing
@@ -221,8 +218,8 @@ Namespace Strategies
         <Display(Name:="Open", Order:=2)>
         Public Overridable ReadOnly Property OpenPrice As Decimal
             Get
-                If _LastTick IsNot Nothing Then
-                    _OpenPrice = _LastTick.Open
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _OpenPrice = TradableInstrument.LastTick.Open
                     Return _OpenPrice
                 Else
                     Return Nothing
@@ -233,8 +230,8 @@ Namespace Strategies
         <Display(Name:="High", Order:=3)>
         Public Overridable ReadOnly Property HighPrice As Decimal
             Get
-                If _LastTick IsNot Nothing Then
-                    _HighPrice = _LastTick.High
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _HighPrice = TradableInstrument.LastTick.High
                     Return _HighPrice
                 Else
                     Return Nothing
@@ -245,8 +242,8 @@ Namespace Strategies
         <Display(Name:="Low", Order:=4)>
         Public Overridable ReadOnly Property LowPrice As Decimal
             Get
-                If _LastTick IsNot Nothing Then
-                    _LowPrice = _LastTick.Low
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _LowPrice = TradableInstrument.LastTick.Low
                     Return _LowPrice
                 Else
                     Return Nothing
@@ -257,8 +254,8 @@ Namespace Strategies
         <Display(Name:="Previous Close", Order:=5)>
         Public Overridable ReadOnly Property ClosePrice As Decimal
             Get
-                If _LastTick IsNot Nothing Then
-                    _ClosePrice = _LastTick.Close
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _ClosePrice = TradableInstrument.LastTick.Close
                     Return _ClosePrice
                 Else
                     Return Nothing
@@ -269,8 +266,8 @@ Namespace Strategies
         <Display(Name:="Volume", Order:=6)>
         Public Overridable ReadOnly Property Volume As Long
             Get
-                If _LastTick IsNot Nothing Then
-                    _Volume = _LastTick.Volume
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _Volume = TradableInstrument.LastTick.Volume
                     Return _Volume
                 Else
                     Return Nothing
@@ -281,8 +278,8 @@ Namespace Strategies
         <Display(Name:="Average Price", Order:=7)>
         Public Overridable ReadOnly Property AveragePrice As Decimal
             Get
-                If _LastTick IsNot Nothing Then
-                    _AveragePrice = _LastTick.AveragePrice
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _AveragePrice = TradableInstrument.LastTick.AveragePrice
                     Return _AveragePrice
                 Else
                     Return Nothing
@@ -293,8 +290,8 @@ Namespace Strategies
         <Display(Name:="Last Price", Order:=8)>
         Public Overridable ReadOnly Property LastPrice As Decimal
             Get
-                If _LastTick IsNot Nothing Then
-                    _LastPrice = _LastTick.LastPrice
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _LastPrice = TradableInstrument.LastTick.LastPrice
                     Return _LastPrice
                 Else
                     Return Nothing
@@ -305,8 +302,8 @@ Namespace Strategies
         <Display(Name:="Timestamp", Order:=9)>
         Public Overridable ReadOnly Property Timestamp As Date?
             Get
-                If _LastTick IsNot Nothing Then
-                    _Timestamp = _LastTick.Timestamp
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _Timestamp = TradableInstrument.LastTick.Timestamp
                     Return _Timestamp
                 Else
                     Return Nothing
@@ -319,32 +316,22 @@ Namespace Strategies
             TradableInstrument = associatedInstrument
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
-            RawTicks = New Concurrent.ConcurrentDictionary(Of Date, ITick)
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
-            RawPayloads = New Dictionary(Of Date, Payload)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Function GenerateTag() As String
-        Public MustOverride Async Function RunDirectAsync() As Task
-        Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
-        Public Overridable Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
+        Public Overridable Async Function HandleTickTriggerToUIETCAsync() As Task
             Await Task.Delay(0).ConfigureAwait(False)
-            If tickData IsNot Nothing AndAlso tickData.LastPrice <> _LastPrice Then
-                NotifyPropertyChanged("LastPrice")
-                NotifyPropertyChanged("PL")
-            End If
-            If tickData IsNot Nothing AndAlso tickData.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
-            If tickData IsNot Nothing AndAlso tickData.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
-            If tickData IsNot Nothing AndAlso tickData.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
-            If tickData IsNot Nothing AndAlso tickData.Low <> _LowPrice Then NotifyPropertyChanged("LowPrice")
-            If tickData IsNot Nothing AndAlso tickData.Close <> _ClosePrice Then NotifyPropertyChanged("ClosePrice")
-            If tickData IsNot Nothing AndAlso tickData.Volume <> _Volume Then NotifyPropertyChanged("Volume")
-            If tickData IsNot Nothing AndAlso tickData.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
-            If tickData IsNot Nothing AndAlso tickData.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
-            If tickData IsNot Nothing AndAlso tickData.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
-            If Not RawTicks.TryAdd(tickData.Timestamp, tickData) Then
-                'Console.WriteLine(String.Format("Could not store:{0},{1},{2}", TradingSymbol, tickData.LastPrice, tickData.Timestamp.Value.ToLongTimeString))
-            End If
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Low <> _LowPrice Then NotifyPropertyChanged("LowPrice")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Close <> _ClosePrice Then NotifyPropertyChanged("ClosePrice")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Volume <> _Volume Then NotifyPropertyChanged("Volume")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
+            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
         End Function
         Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
             Await Task.Delay(0).ConfigureAwait(False)

@@ -49,7 +49,7 @@ Public Class OHLStrategy
             'End If
 
             'Get OHL Strategy Instruments
-            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
+            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
                 dt = readCSV.GetDataTableFromCSV(0)
@@ -66,11 +66,12 @@ Public Class OHLStrategy
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+
+                    'Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
         End If
-
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
             'Now create the strategy tradable instruments
@@ -130,7 +131,7 @@ Public Class OHLStrategy
     '        Await Task.Delay(1001).ConfigureAwait(False)
     '    End While
     'End Function
-    Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task
+    Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
         _cts.Token.ThrowIfCancellationRequested()
         If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
@@ -142,15 +143,17 @@ Public Class OHLStrategy
             Next
             _cts.Token.ThrowIfCancellationRequested()
             Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
+            Await usableFetcher.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
         End If
     End Function
+
     Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         logger.Debug("IsTriggerReachedAsync, parameters:Nothing")
         _cts.Token.ThrowIfCancellationRequested()
         Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        Dim currentTime As Date = ISTNow
+        Dim currentTime As Date = ISTNow()
         Dim compareTime As TimeSpan = Nothing
         TimeSpan.TryParse("15:32:30", compareTime)
         If IsTimeEqualTillSeconds(currentTime, compareTime) Then
@@ -198,7 +201,7 @@ Public Class OHLStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
         Dim currentTime As Date = Now
-        If currentTime.Hour = 14 AndAlso currentTime.Minute = 28 AndAlso currentTime.Second >= 20 Then
+        If currentTime.Hour = 14 AndAlso currentTime.Minute = 30 AndAlso currentTime.Second >= 0 Then
             Return True
         Else
             Return False

@@ -28,41 +28,11 @@ Public Class MomentumReversalStrategyInstrument
     Public Overrides Function GenerateTag() As String
         Return String.Format("{0}_{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.TradingSymbol)
     End Function
-    Public Overrides Async Function RunDirectAsync() As Task
-        logger.Debug("{0}->RunDirectAsync, parameters:None", Me.ToString)
-        _cts.Token.ThrowIfCancellationRequested()
-        Try
-            While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-                _cts.Token.ThrowIfCancellationRequested()
-                logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                Await Task.Delay(500).ConfigureAwait(False)
-            End While
-            Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
-            If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
-                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-                _cts.Token.ThrowIfCancellationRequested()
-            End If
-        Catch ex As Exception
-            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-            logger.Error(ex.ToString)
-        End Try
-    End Function
-    Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
-        logger.Debug("{0}->IsTriggerReachedAsync, parameters:None", Me.ToString)
-        Await Task.Delay(0).ConfigureAwait(False)
-        Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        'Code for momentum reversal trigger
-        'TO DO: Remove the below hard coding
-        'ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
-        Return ret
-    End Function
-    Public Overrides Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
+    Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
         _cts.Token.ThrowIfCancellationRequested()
-        _LastTick = tickData
-        Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
+        '_LastTick = tickData
+        Await MyBase.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
     Public Overrides Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
@@ -72,58 +42,42 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
-        'Try
+        Try
 
-        While True
-            If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
-                Throw Me.ParentStrategy.ParentContoller.OrphanException
-            End If
-            Dim r As Random = New Random()
-            Dim x = r.Next(0, 11)
-            _cts.Token.ThrowIfCancellationRequested()
-            If x = 7 Then
-                While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-                    _cts.Token.ThrowIfCancellationRequested()
-                    logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                    Await Task.Delay(500).ConfigureAwait(False)
-                End While
-
-                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+            While True
+                If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
+                    Throw Me.ParentStrategy.ParentContoller.OrphanException
+                End If
+                Dim r As Random = New Random()
+                Dim x = r.Next(0, 11)
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-            End If
-            _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(1000)
-        End While
-        'Catch ex As Exception
-        '    lastException = ex
-        'End Try
-        'If lastException IsNot Nothing Then
-        '    Await Me.ParentStrategy.ParentContoller.CloseTickerIfConnectedAsync()
-        '    Throw lastException
-        'End If
-        'Dim ctr As Integer
-        'While True
-        '    _cts.Token.ThrowIfCancellationRequested()
-        '    Await Task.Delay(500)
-        '    ctr += 500
+                If x = 7 Then
+                    While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+                        _cts.Token.ThrowIfCancellationRequested()
+                        logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
+                        Await Task.Delay(500).ConfigureAwait(False)
+                    End While
 
-        '    If ctr = 115000 Then
-        '        'ret = New ApplicationException("Donno")
-        '        ONJOYMA(New ApplicationException("Donno"))
-        '        Exit While
-        '    End If
-        'End While
+                    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(1000)
+            End While
+        Catch ex As Exception
+            logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+            Throw ex
+        End Try
+
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         Throw New NotImplementedException("IsTriggerReceivedForPlaceOrderAsync-MR")
-        Return ret
     End Function
     Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
         Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
         Throw New NotImplementedException("IsTriggerReceivedForModifyStoplossOrder-MR")
-        Return ret
     End Function
 
 #Region "IDisposable Support"

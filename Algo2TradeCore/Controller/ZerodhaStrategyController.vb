@@ -279,6 +279,29 @@ Namespace Controller
                         _cts.Token.ThrowIfCancellationRequested()
                         Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
+
+                        'Now open the historicaldatafetcher
+                        If _APIHistoricalDataFetcher IsNot Nothing Then
+                            _APIHistoricalDataFetcher.ClearLocalUniqueSubscriptionList()
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            RemoveHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
+                            RemoveHandler _APIHistoricalDataFetcher.WaitingFor, AddressOf OnWaitingFor
+                            RemoveHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                            RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                        Else
+                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, _cts)
+                        End If
+
+                        AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
+                        AddHandler _APIHistoricalDataFetcher.WaitingFor, AddressOf OnWaitingFor
+                        AddHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                        AddHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Await _APIHistoricalDataFetcher.ConnectFetcherAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
                     End If
                 Catch tex As KiteConnect.TokenException
                     logger.Error(tex)
@@ -508,11 +531,11 @@ Namespace Controller
                             OnHeartbeat("Relogin completed, checking to see if strategy instruments need to be resubscribed")
 
                             If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
-                                For Each runningStratgey In _AllStrategies
+                                For Each runningStrategy In _AllStrategies
                                     _cts.Token.ThrowIfCancellationRequested()
-                                    OnHeartbeatEx(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStratgey.ToString), New List(Of Object) From {runningStratgey})
+                                    OnHeartbeatEx(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStrategy.ToString), New List(Of Object) From {runningStrategy})
                                     _cts.Token.ThrowIfCancellationRequested()
-                                    Await runningStratgey.SubscribeAsync(_APITicker).ConfigureAwait(False)
+                                    Await runningStrategy.SubscribeAsync(_APITicker, _APIHistoricalDataFetcher).ConfigureAwait(False)
                                     _cts.Token.ThrowIfCancellationRequested()
                                 Next
                             End If
@@ -651,7 +674,7 @@ Namespace Controller
 
                 'Now subscribe to the actual ticker
                 _cts.Token.ThrowIfCancellationRequested()
-                Await strategyToRun.SubscribeAsync(_APITicker).ConfigureAwait(False)
+                Await strategyToRun.SubscribeAsync(_APITicker, _APIHistoricalDataFetcher).ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()
 
                 'OnHeartbeat(String.Format("Executing the strategy by creating relevant instrument workers, strategy:{0}", strategyToRun.ToString))
@@ -730,6 +753,20 @@ Namespace Controller
         End Function
 #End Region
 
+#Region "Fetcher Events"
+        Public Overrides Async Function CloseFetcherIfConnectedAsync() As Task
+            If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        End Function
+        Public Async Sub OnFetcherCandlesAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
+            'TO DO: To write
+        End Sub
+
+        Public Overrides Sub OnFetcherError(ByVal errorMessage As String)
+            logger.Debug("OnFetcherError, errorMessage:{0}", errorMessage)
+            MyBase.OnTickerError(errorMessage)
+            'If errorMessage.Contains("403") Then OnSessionExpireAsync()
+        End Sub
+#End Region
 #Region "Ticker Events"
         Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
             If _APITicker IsNot Nothing Then Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -772,8 +809,14 @@ Namespace Controller
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    runningStrategyInstrument.ProcessTickAsync(runningTick).ConfigureAwait(False)
-                    CType(runningStrategyInstrument.TradableInstrument, ZerodhaInstrument).LastTick = runningTick
+                    runningStrategyInstrument.TradableInstrument.LastTick = runningTick
+                    'Since tick is supposed to be processed once for each tradableinstrument, hence we exit the loop so that it 
+                    'is not processed twice
+                    Exit For
+                Next
+                'This for loop needs to be after the tick is published
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                    runningStrategyInstrument.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
                 Next
             End If
         End Sub

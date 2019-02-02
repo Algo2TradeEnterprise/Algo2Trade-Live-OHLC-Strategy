@@ -124,7 +124,7 @@ Public Class MomentumReversalStrategy
     '        Await Task.Delay(1001).ConfigureAwait(False)
     '    End While
     'End Function
-    Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task
+    Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
         _cts.Token.ThrowIfCancellationRequested()
         If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
@@ -136,6 +136,7 @@ Public Class MomentumReversalStrategy
             Next
             _cts.Token.ThrowIfCancellationRequested()
             Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
+            Await usableFetcher.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
         End If
     End Function
@@ -192,6 +193,11 @@ Public Class MomentumReversalStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
-        Return False
+        Dim currentTime As Date = Now
+        If currentTime.Hour = 14 AndAlso currentTime.Minute = 30 AndAlso currentTime.Second >= 0 Then
+            Return True
+        Else
+            Return False
+        End If
     End Function
 End Class

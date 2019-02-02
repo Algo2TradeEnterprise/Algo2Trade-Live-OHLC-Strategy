@@ -27,6 +27,7 @@ Namespace Controller
         Public Event TickerError(ByVal errorMessage As String)
         Public Event TickerNoReconnect()
         Public Event TickerReconnect()
+        Public Event FetcherError(ByVal errorMessage As String)
 
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
@@ -71,6 +72,9 @@ Namespace Controller
         Public Overridable Sub OnTickerReconnect()
             RaiseEvent TickerReconnect()
         End Sub
+        Public Overridable Sub OnFetcherError(ByVal errorMessage As String)
+            RaiseEvent FetcherError(errorMessage)
+        End Sub
 #End Region
 
 #Region "Logging and Status Progress"
@@ -89,6 +93,7 @@ Namespace Controller
         Public Property OrphanException As Exception
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
+        Protected _APIHistoricalDataFetcher As APIHistoricalDataFetcher
         Protected _AllInstruments As IEnumerable(Of IInstrument)
         Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, List(Of StrategyInstrument))
@@ -100,9 +105,12 @@ Namespace Controller
         End Sub
         Public MustOverride Function GetErrorResponse(ByVal response As Object) As String
         Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
+        Public MustOverride Async Function CloseFetcherIfConnectedAsync() As Task
+
         Public Sub RefreshCancellationToken(ByVal canceller As CancellationTokenSource)
             _cts = canceller
             If _APITicker IsNot Nothing Then _APITicker.RefreshCancellationToken(canceller)
+            If _APIHistoricalDataFetcher IsNot Nothing Then _APIHistoricalDataFetcher.RefreshCancellationToken(canceller)
         End Sub
         Protected Async Function ExecuteCommandAsync(ByVal command As APIAdapter.ExecutionCommands, ByVal data As Object) As Task(Of Object)
             Dim ret As Object = Nothing

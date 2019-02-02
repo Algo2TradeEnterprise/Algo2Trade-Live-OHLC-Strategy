@@ -11,7 +11,6 @@ Namespace Adapter
 #Region "Logging and Status Progress"
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
-
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, canceller)

@@ -45,47 +45,12 @@ Public Class OHLStrategyInstrument
     Public Overrides Function GenerateTag() As String
         Return String.Format("{0}_{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.TradingSymbol)
     End Function
-    Public Overrides Async Function RunDirectAsync() As Task
-        logger.Debug("{0}->RunDirectAsync, parameters:None", Me.ToString)
-        _cts.Token.ThrowIfCancellationRequested()
-        Try
-            While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
-                _cts.Token.ThrowIfCancellationRequested()
-                logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                Await Task.Delay(500).ConfigureAwait(False)
-            End While
-            Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
-            If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
-                _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
-                _cts.Token.ThrowIfCancellationRequested()
-            End If
-        Catch ex As Exception
-            logger.Debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-            logger.Error(ex.ToString)
-        End Try
-    End Function
-    Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
-        logger.Debug("{0}->IsTriggerReachedAsync, parameters:None", Me.ToString)
-        _cts.Token.ThrowIfCancellationRequested()
-        Await Task.Delay(0).ConfigureAwait(False)
-        Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        If _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.Low Then
-            ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=L,({0})", _LastTick.Open)})
-        ElseIf _LastTick IsNot Nothing AndAlso _LastTick.Timestamp IsNot Nothing AndAlso _LastTick.Open = _LastTick.High Then
-            ret = New Tuple(Of Boolean, Trigger)(True, New Trigger() With {.Category = Trigger.TriggerType.PriceMatched, .Description = String.Format("O=H,({0})", _LastTick.Open)})
-        End If
-        'TO DO: Remove the below hard coding
-        ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
-        Return ret
-    End Function
-    Public Overrides Async Function ProcessTickAsync(ByVal tickData As ITick) As Task
+    Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
         _cts.Token.ThrowIfCancellationRequested()
-        _LastTick = tickData
+        '_LastTick = tickData
         NotifyPropertyChanged("OHL")
-        Await MyBase.ProcessTickAsync(tickData).ConfigureAwait(False)
+        Await MyBase.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
     Public Overrides Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
@@ -150,27 +115,30 @@ Public Class OHLStrategyInstrument
                 slDelayCtr += 1
             End While
         Catch ex As Exception
+            'To log exceptions getting created from this function as the bubble up of the exception
+            'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+            Throw ex
         End Try
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         Dim currentTime As Date = Now
-        If _LastTick.Timestamp IsNot Nothing AndAlso
+        If TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 10 Then
-            Dim OHLTradePrice As Decimal = _LastTick.LastPrice
+            Dim OHLTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
             Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
             Dim entryPrice As Decimal = Nothing
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
             Dim quantity As Integer = Nothing
             Dim tag As String = GenerateTag()
-            If Math.Round(_LastTick.Open, 0) = _LastTick.High AndAlso
-                _LastTick.Open = _LastTick.High Then
+            If Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.High AndAlso
+                TradableInstrument.LastTick.Open = TradableInstrument.LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                stoploss = If(Math.Abs(_LastTick.Open - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(_LastTick.Open - entryPrice))
+                stoploss = If(Math.Abs(TradableInstrument.LastTick.Open - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(TradableInstrument.LastTick.Open - entryPrice))
                 If stoploss > target Then
                     stoploss = target
                     tag = String.Format("{0}_{1}", tag, "0")
@@ -186,12 +154,12 @@ Public Class OHLStrategyInstrument
                 .StoplossValue = stoploss,
                 .Tag = tag}
                 ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
-            ElseIf Math.Round(_LastTick.Open, 0) = _LastTick.Low AndAlso
-                _LastTick.Open = _LastTick.Low Then
+            ElseIf Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.Low AndAlso
+                TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
                 entryPrice = OHLTradePrice + buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                stoploss = If(Math.Abs(entryPrice - _LastTick.Open) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - _LastTick.Open))
+                stoploss = If(Math.Abs(entryPrice - TradableInstrument.LastTick.Open) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - TradableInstrument.LastTick.Open))
                 If stoploss > target Then
                     stoploss = target
                     tag = String.Format("{0}_{1}", tag, "0")
@@ -219,7 +187,7 @@ Public Class OHLStrategyInstrument
                 If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
                     parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
                     If parentBusinessOrder.ParentOrder.Tag.Substring(GenerateTag().Count + 1) = "1" Then
-                        Dim triggerPrice As Decimal = _LastTick.Open
+                        Dim triggerPrice As Decimal = TradableInstrument.LastTick.Open
                         Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
                         If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                             triggerPrice -= buffer

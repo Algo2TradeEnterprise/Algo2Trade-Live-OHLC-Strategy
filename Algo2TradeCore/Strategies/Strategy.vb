@@ -86,7 +86,7 @@ Namespace Strategies
             Me.StrategyIdentifier = associatedStrategyIdentifier
         End Sub
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
-        Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker) As Task
+        Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         Public MustOverride Overrides Function ToString() As String
         'Public MustOverride Async Function ExecuteAsync() As Task
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
@@ -102,7 +102,10 @@ Namespace Strategies
                     Await Task.Delay(10000).ConfigureAwait(False)
                 End While
             Catch ex As Exception
+                'To log exceptions getting created from this function as the bubble up of the exception
+                'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
                 logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
             End Try
         End Function
         Public Overridable Async Function ExitAllTrades() As Task
@@ -114,12 +117,15 @@ Namespace Strategies
                     _cts.Token.ThrowIfCancellationRequested()
                     If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                         For Each runningStrategyInstrument In TradableStrategyInstruments
-                            runningStrategyInstrument.ExitAllTrades()
+                            Await runningStrategyInstrument.ExitAllTrades().ConfigureAwait(False)
                         Next
                     End If
                 End While
             Catch ex As Exception
+                'To log exceptions getting created from this function as the bubble up of the exception
+                'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
                 logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
             End Try
         End Function
         Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
