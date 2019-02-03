@@ -701,9 +701,12 @@ Namespace Controller
         'End Function
         Public Overrides Async Function FillOrderDetailsAsyc(ByVal strategyToRun As Strategy) As Task
             Try
+                _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(0).ConfigureAwait(False)
                 Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
+                _cts.Token.ThrowIfCancellationRequested()
                 Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
                 If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
                     Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
                                                                                      Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)

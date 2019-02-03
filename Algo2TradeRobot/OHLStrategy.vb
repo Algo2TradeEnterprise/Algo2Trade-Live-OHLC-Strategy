@@ -49,7 +49,7 @@ Public Class OHLStrategy
             'End If
 
             'Get OHL Strategy Instruments
-            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
+            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
                 dt = readCSV.GetDataTableFromCSV(0)
@@ -65,12 +65,11 @@ Public Class OHLStrategy
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
 
-                    'If i = 5 Then Exit For
+                    'If i = 0 Then Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-
             End If
         End If
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
@@ -182,10 +181,10 @@ Public Class OHLStrategy
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As OHLStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             'Task to run order update periodically
-            tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync))
+            tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             'tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception

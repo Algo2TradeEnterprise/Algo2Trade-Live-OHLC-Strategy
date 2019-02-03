@@ -177,7 +177,7 @@ Public Class MomentumReversalStrategy
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As MomentumReversalStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync))
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception

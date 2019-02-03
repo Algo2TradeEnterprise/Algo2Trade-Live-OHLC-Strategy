@@ -118,6 +118,11 @@ Namespace Adapter
                     Console.WriteLine(nextTimeToDo.ToLongTimeString)
 
                     While Now < nextTimeToDo
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If _stopPollRunning Then
+                            _isPollRunning = False
+                            Exit While
+                        End If
                         Await Task.Delay(1000)
                     End While
                 End While
@@ -160,6 +165,16 @@ Namespace Adapter
                     AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                     AddHandler browser.Heartbeat, AddressOf OnHeartbeat
                     AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+
+                    'Start Indibar
+                    'While Me.ParentController.APIConnection Is Nothing
+                    '    _cts.Token.ThrowIfCancellationRequested()
+                    '    logger.Debug("Token exception. Will close fetcher")
+                    '    Await Me.ParentController.CloseFetcherIfConnectedAsync()
+                    '    Exit Function
+                    'End While
+                    'If _stopPollRunning Then Exit Function
+                    'End Indibar
 
                     'Keep the below headers constant for all login browser operations
                     browser.UserAgent = GetRandomUserAgent()
@@ -217,7 +232,7 @@ Namespace Adapter
             Return _isPollRunning
         End Function
         Public Overrides Async Function CloseFetcherIfConnectedAsync() As Task
-            'Intentionally no _cts.Token.ThrowIfCancellationRequested() since we need to close the ticker when cancellation is done
+            'Intentionally no _cts.Token.ThrowIfCancellationRequested() since we need to close the fetcher when cancellation is done
             While IsConnected()
                 _stopPollRunning = True
                 Await Task.Delay(100).ConfigureAwait(False)

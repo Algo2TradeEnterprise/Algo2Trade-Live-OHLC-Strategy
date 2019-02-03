@@ -43,7 +43,6 @@ Public Class MomentumReversalStrategyInstrument
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
         Try
-
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
