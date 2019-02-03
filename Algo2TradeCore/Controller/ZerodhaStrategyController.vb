@@ -767,6 +767,7 @@ Namespace Controller
             'If errorMessage.Contains("403") Then OnSessionExpireAsync()
         End Sub
 #End Region
+
 #Region "Ticker Events"
         Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
             If _APITicker IsNot Nothing Then Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)

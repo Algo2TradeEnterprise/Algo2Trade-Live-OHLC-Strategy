@@ -53,6 +53,7 @@ Namespace Adapter
         Public MustOverride Function IsConnected() As Boolean
         Public MustOverride Async Function CloseFetcherIfConnectedAsync() As Task
         Public MustOverride Async Function StartPollingAsync() As Task
+        Protected MustOverride Async Function GetHistoricalCandleStick() As Task
 
         Public Sub RefreshCancellationToken(ByVal canceller As CancellationTokenSource)
             _cts = canceller

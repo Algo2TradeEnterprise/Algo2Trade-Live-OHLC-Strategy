@@ -52,7 +52,8 @@ Namespace Adapter
                 _stopPollRunning = False
                 _isPollRunning = False
                 ServicePointManager.DefaultConnectionLimit = 10
-
+                Dim lastTimeWhenDone As Date = Date.MinValue
+                Dim nextTimeToDo As Date = Date.MinValue
                 While True
                     If _stopPollRunning Then
                         _isPollRunning = False
@@ -60,6 +61,7 @@ Namespace Adapter
                     End If
                     _isPollRunning = True
                     _cts.Token.ThrowIfCancellationRequested()
+                    lastTimeWhenDone = Now
                     If _subscribedInstruments IsNot Nothing AndAlso _subscribedInstruments.Count > 0 Then
                         Dim tasks As New List(Of Task)()
                         Dim specificInstrumentsHistoricalDataFetcher As List(Of ZerodhaHistoricalDataFetcher) = Nothing
@@ -74,8 +76,39 @@ Namespace Adapter
                         Next
                         OnHeartbeat("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
+                        'Cleanup
+                        For Each subscribedInstrument In _subscribedInstruments
+                            _cts.Token.ThrowIfCancellationRequested()
+                            subscribedInstrument = Nothing
+                        Next
+                        For Each task In tasks
+                            _cts.Token.ThrowIfCancellationRequested()
+                            task.Dispose()
+                            task = Nothing
+                        Next
+                        System.GC.AddMemoryPressure(1024 * 1024)
+                        System.GC.Collect()
+                        specificInstrumentsHistoricalDataFetcher.Clear()
+                        specificInstrumentsHistoricalDataFetcher.TrimExcess()
+                        specificInstrumentsHistoricalDataFetcher = Nothing
+                        tasks.Clear()
+                        tasks.TrimExcess()
+                        tasks = Nothing
                     End If
-                    Await Task.Delay(6000)
+                    _cts.Token.ThrowIfCancellationRequested()
+
+                    If Utilities.Time.IsDateTimeEqualTillMinutes(lastTimeWhenDone, nextTimeToDo) Then
+                        'Already done for this minute
+                        lastTimeWhenDone = lastTimeWhenDone.AddMinutes(1)
+                        nextTimeToDo = New Date(lastTimeWhenDone.Year, lastTimeWhenDone.Month, lastTimeWhenDone.Day, lastTimeWhenDone.Hour, lastTimeWhenDone.Minute, 5)
+                    Else
+                        nextTimeToDo = New Date(lastTimeWhenDone.Year, lastTimeWhenDone.Month, lastTimeWhenDone.Day, lastTimeWhenDone.Hour, lastTimeWhenDone.Minute, 5)
+                    End If
+                    Console.WriteLine(nextTimeToDo.ToLongTimeString)
+
+                    While Now < nextTimeToDo
+                        Await Task.Delay(1000)
+                    End While
                 End While
             Catch ex As Exception
                 Throw ex
@@ -102,14 +135,14 @@ Namespace Adapter
             End If
         End Function
 
-        Public Async Function GetHistoricalCandleStick() As Task(Of String)
+        Protected Overrides Async Function GetHistoricalCandleStick() As Task
             If _instrumentIdentifer Is Nothing Then Exit Function
             _cts.Token.ThrowIfCancellationRequested()
 
             HttpBrowser.KillCookies()
             _cts.Token.ThrowIfCancellationRequested()
 
-            Using browser As New HttpBrowser(Nothing, DecompressionMethods.GZip, TimeSpan.FromSeconds(45), _cts)
+            Using browser As New HttpBrowser(Nothing, DecompressionMethods.GZip, TimeSpan.FromSeconds(30), _cts)
                 AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                 AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                 AddHandler browser.Heartbeat, AddressOf OnHeartbeat
@@ -130,8 +163,7 @@ Namespace Adapter
                                                                 _instrumentIdentifer,
                                                                 Now.AddDays(-27).ToString("yyyy-MM-dd"),
                                                                 Now.ToString("yyyy-MM-dd"))
-                logger.Debug("Opening historical candle page, GetLoginURL:{0}, headers:{1}", historicalDataURL, Utils.JsonSerialize(headers))
-
+                logger.Debug("Opening historical candle page, GetHistoricalDataURL:{0}, headers:{1}", historicalDataURL, Utils.JsonSerialize(headers))
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL,
                                                                                       Http.HttpMethod.Get,
