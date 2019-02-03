@@ -1,4 +1,5 @@
-﻿Namespace Entities
+﻿Imports Algo2TradeCore.Controller
+Namespace Entities
     Public Interface IInstrument
         Property InstrumentIdentifier As String
 
@@ -13,5 +14,6 @@
         Property LastTick As ITick
         ReadOnly Property RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick)
         ReadOnly Property RawPayloads As Dictionary(Of Date, OHLCPayload)
+        ReadOnly Property ParentController As APIStrategyController
     End Interface
 End Namespace

@@ -700,56 +700,70 @@ Namespace Controller
 
         'End Function
         Public Overrides Async Function FillOrderDetailsAsyc(ByVal strategyToRun As Strategy) As Task
-            Await Task.Delay(0).ConfigureAwait(False)
-            Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
-            Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
-            If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
-                Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
-                                                                                 Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                                 Return y.WrappedOrder.ParentOrderId = Nothing
-                                                                             End Function)
-                For Each parentOrder In parentOrders
-                    Dim wrappedParentOrder As ZerodhaOrder = CType(parentOrder, ZerodhaOrder)
-                    Dim targetOrder As IEnumerable(Of IOrder) = Nothing
-                    Dim slOrder As IEnumerable(Of IOrder) = Nothing
-                    If wrappedParentOrder.WrappedOrder.TransactionType = "BUY" Then
-                        targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                   Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                   Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                          y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice
-                                                               End Function)
-                        slOrder = allOrders.ToList.FindAll(Function(x)
-                                                               Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                               Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                      y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice
-                                                           End Function)
-                    ElseIf wrappedParentOrder.WrappedOrder.TransactionType = "SELL" Then
-                        targetOrder = allOrders.ToList.FindAll(Function(x)
+            Try
+                Await Task.Delay(0).ConfigureAwait(False)
+                Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
+                Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+                If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
+                    Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
+                                                                                     Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                                     Return y.WrappedOrder.ParentOrderId = Nothing
+                                                                                 End Function)
+                    For Each parentOrder In parentOrders
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim wrappedParentOrder As ZerodhaOrder = CType(parentOrder, ZerodhaOrder)
+                        Dim targetOrder As IEnumerable(Of IOrder) = Nothing
+                        Dim slOrder As IEnumerable(Of IOrder) = Nothing
+                        If wrappedParentOrder.WrappedOrder.TransactionType = "BUY" Then
+                            _cts.Token.ThrowIfCancellationRequested()
+                            targetOrder = allOrders.ToList.FindAll(Function(x)
+                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                       Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                              y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                   End Function)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            slOrder = allOrders.ToList.FindAll(Function(x)
                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
                                                                           y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice
                                                                End Function)
-                        slOrder = allOrders.ToList.FindAll(Function(x)
-                                                               Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                               Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                      y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice
-                                                           End Function)
-                    End If
-                    For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
-                        If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
-                            If wrappedParentOrder.WrappedOrder.Tag IsNot Nothing AndAlso
-                                wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
-                                Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
-                                                                            .ParentOrder = parentOrder,
-                                                                            .SLOrder = slOrder,
-                                                                            .TargetOrder = targetOrder}
-                                Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
-                                logger.Debug(Utils.JsonSerialize(runningStrategyInstrument.OrderDetails))
-                            End If
+                        ElseIf wrappedParentOrder.WrappedOrder.TransactionType = "SELL" Then
+                            _cts.Token.ThrowIfCancellationRequested()
+                            targetOrder = allOrders.ToList.FindAll(Function(x)
+                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                       Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                              y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                   End Function)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            slOrder = allOrders.ToList.FindAll(Function(x)
+                                                                   Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                   Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                          y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice
+                                                               End Function)
                         End If
+                        For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
+                            _cts.Token.ThrowIfCancellationRequested()
+                            If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
+                                If wrappedParentOrder.WrappedOrder.Tag IsNot Nothing AndAlso
+                                    wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
+                                    Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
+                                                                                .ParentOrder = parentOrder,
+                                                                                .SLOrder = slOrder,
+                                                                                .TargetOrder = targetOrder}
+                                    Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
+                                    logger.Debug(Utils.JsonSerialize(runningStrategyInstrument.OrderDetails))
+                                End If
+                            End If
+                        Next
                     Next
-                Next
-            End If
+                End If
+            Catch cex As OperationCanceledException
+                logger.Error(cex)
+                OrphanException = cex
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
+            End Try
         End Function
 #End Region
 
@@ -757,12 +771,15 @@ Namespace Controller
         Public Overrides Async Function CloseFetcherIfConnectedAsync() As Task
             If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
         End Function
-        Public Async Sub OnFetcherCandlesAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
+        Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
             'TO DO: To write
+            Await Task.Delay(0).ConfigureAwait(False)
+            Console.WriteLine(String.Format("Received: {0}", instrumentIdentifier))
         End Sub
 
-        Public Overrides Sub OnFetcherError(ByVal errorMessage As String)
+        Public Overrides Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
             logger.Debug("OnFetcherError, errorMessage:{0}", errorMessage)
+            Console.WriteLine(String.Format("Error: {0}", instrumentIdentifier))
             MyBase.OnTickerError(errorMessage)
             'If errorMessage.Contains("403") Then OnSessionExpireAsync()
         End Sub

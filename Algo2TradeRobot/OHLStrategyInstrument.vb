@@ -33,7 +33,7 @@ Public Class OHLStrategyInstrument
 
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
-        _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentContoller, _cts)
+        _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
         AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
@@ -62,8 +62,8 @@ Public Class OHLStrategyInstrument
         Try
             Dim slDelayCtr As Integer = 0
             While True
-                If Me.ParentStrategy.ParentContoller.OrphanException IsNot Nothing Then
-                    Throw Me.ParentStrategy.ParentContoller.OrphanException
+                If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing

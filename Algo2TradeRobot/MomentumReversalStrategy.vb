@@ -185,7 +185,8 @@ Public Class MomentumReversalStrategy
             logger.Error(ex)
         End Try
         If lastException IsNot Nothing Then
-            Await ParentContoller.CloseTickerIfConnectedAsync()
+            Await ParentController.CloseTickerIfConnectedAsync()
+            Await ParentController.CloseFetcherIfConnectedAsync()
             Throw lastException
         End If
     End Function

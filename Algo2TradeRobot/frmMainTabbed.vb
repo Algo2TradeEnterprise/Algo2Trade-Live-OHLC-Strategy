@@ -359,12 +359,13 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
             EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
         End Try
-        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            _commonController = Nothing
-            _connection = Nothing
-            _cts = Nothing
-        End If
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
@@ -374,6 +375,7 @@ Public Class frmMainTabbed
     End Sub
     Private Async Sub btnMomentumReversalStop_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
         _cts.Cancel()
     End Sub
 #End Region
@@ -507,12 +509,13 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing))
             EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing))
         End Try
-        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            _commonController = Nothing
-            _connection = Nothing
-            _cts = Nothing
-        End If
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
         Await Task.Run(AddressOf OHLStartWorker).ConfigureAwait(False)
@@ -522,6 +525,7 @@ Public Class frmMainTabbed
     End Sub
     Private Async Sub btnOHLStop_Click(sender As Object, e As EventArgs) Handles btnOHLStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
         _cts.Cancel()
     End Sub
 #End Region

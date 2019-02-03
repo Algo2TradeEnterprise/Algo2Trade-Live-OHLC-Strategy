@@ -1,5 +1,6 @@
 ﻿Imports KiteConnect
 Imports Algo2TradeCore.ChartHandler.ChartStyle
+Imports Algo2TradeCore.Controller
 
 Namespace Entities
     <Serializable>
@@ -9,11 +10,13 @@ Namespace Entities
         Private _RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick)
         Private _RawPayloads As Dictionary(Of Date, OHLCPayload)
         Private _candleStickCreator As Candlestick
-        Public Sub New(ByVal associatedIdentifer As String)
+        Private _ParentController As APIStrategyController
+        Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal associatedIdentifer As String)
             InstrumentIdentifier = associatedIdentifer
             _RawTicks = New Concurrent.ConcurrentDictionary(Of Date, ITick)
             _RawPayloads = New Dictionary(Of Date, OHLCPayload)
-            _candleStickCreator = New Candlestick(Me, New Threading.CancellationTokenSource)
+            _ParentController = associatedParentController
+            _candleStickCreator = New Candlestick(Me.ParentController, Me, New Threading.CancellationTokenSource)
             'Intentionally created a new token since we dont want to cancel this process via the global cancellationtoken
             'No handlers necessary to be captured as we are not anticipating anyt internet hit or long running transaction
         End Sub
@@ -95,6 +98,12 @@ Namespace Entities
         Public ReadOnly Property RawPayloads As Dictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
             Get
                 Return _RawPayloads
+            End Get
+        End Property
+
+        Public ReadOnly Property ParentController As APIStrategyController Implements IInstrument.ParentController
+            Get
+                Return _ParentController
             End Get
         End Property
     End Class

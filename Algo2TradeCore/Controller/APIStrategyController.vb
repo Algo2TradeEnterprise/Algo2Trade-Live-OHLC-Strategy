@@ -27,7 +27,7 @@ Namespace Controller
         Public Event TickerError(ByVal errorMessage As String)
         Public Event TickerNoReconnect()
         Public Event TickerReconnect()
-        Public Event FetcherError(ByVal errorMessage As String)
+        Public Event FetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
 
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
@@ -72,8 +72,8 @@ Namespace Controller
         Public Overridable Sub OnTickerReconnect()
             RaiseEvent TickerReconnect()
         End Sub
-        Public Overridable Sub OnFetcherError(ByVal errorMessage As String)
-            RaiseEvent FetcherError(errorMessage)
+        Public Overridable Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
+            RaiseEvent FetcherError(instrumentIdentifier, errorMessage)
         End Sub
 #End Region
 

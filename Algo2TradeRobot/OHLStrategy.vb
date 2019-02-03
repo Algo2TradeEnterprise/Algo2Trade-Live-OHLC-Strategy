@@ -67,9 +67,10 @@ Public Class OHLStrategy
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
 
-                    'Exit For
+                    'If i = 5 Then Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+
             End If
         End If
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
@@ -192,7 +193,8 @@ Public Class OHLStrategy
             logger.Error(ex)
         End Try
         If lastException IsNot Nothing Then
-            Await ParentContoller.CloseTickerIfConnectedAsync()
+            Await ParentController.CloseTickerIfConnectedAsync()
+            Await ParentController.CloseFetcherIfConnectedAsync()
             Throw lastException
         End If
     End Function

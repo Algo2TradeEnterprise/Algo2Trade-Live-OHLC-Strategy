@@ -55,7 +55,7 @@ Namespace Adapter
                 For Each runningInstrument As Instrument In zerodhaReturedInstruments
                     _cts.Token.ThrowIfCancellationRequested()
                     If ret Is Nothing Then ret = New List(Of ZerodhaInstrument)
-                    ret.Add(New ZerodhaInstrument(runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
+                    ret.Add(New ZerodhaInstrument(Me.ParentController, runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
                 Next
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of instrument, command:{0}", execCommand.ToString))

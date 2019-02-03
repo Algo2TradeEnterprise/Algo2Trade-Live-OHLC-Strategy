@@ -78,10 +78,10 @@ Namespace Strategies
                 Return plOfDay
             End Get
         End Property
-        Public Property ParentContoller As APIStrategyController
+        Public Property ParentController As APIStrategyController
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource, ByVal associatedStrategyIdentifier As String)
-            Me.ParentContoller = associatedParentController
+            Me.ParentController = associatedParentController
             _cts = canceller
             Me.StrategyIdentifier = associatedStrategyIdentifier
         End Sub
@@ -94,11 +94,11 @@ Namespace Strategies
         Public Overridable Async Function FillOrderDetailsAsync() As Task
             Try
                 While True
-                    If Me.ParentContoller.OrphanException IsNot Nothing Then
-                        Throw Me.ParentContoller.OrphanException
+                    If Me.ParentController.OrphanException IsNot Nothing Then
+                        Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
-                    Await Me.ParentContoller.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
+                    Await Me.ParentController.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
                     Await Task.Delay(10000).ConfigureAwait(False)
                 End While
             Catch ex As Exception
@@ -111,8 +111,8 @@ Namespace Strategies
         Public Overridable Async Function ExitAllTrades() As Task
             Try
                 While True
-                    If Me.ParentContoller.OrphanException IsNot Nothing Then
-                        Throw Me.ParentContoller.OrphanException
+                    If Me.ParentController.OrphanException IsNot Nothing Then
+                        Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
                     If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then

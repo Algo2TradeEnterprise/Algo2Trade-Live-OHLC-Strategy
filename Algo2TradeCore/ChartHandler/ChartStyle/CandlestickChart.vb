@@ -1,6 +1,6 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Entities
-Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.Controller
 Imports NLog
 Namespace ChartHandler.ChartStyle
     Public Class Candlestick
@@ -48,28 +48,35 @@ Namespace ChartHandler.ChartStyle
         Public Shared logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+        Public Property ParentController As APIStrategyController
         Private _parentInstrument As IInstrument
         Private _cts As New CancellationTokenSource
-        Public Sub New(ByVal assoicatedParentInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
+        Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal assoicatedParentInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
+            Me.ParentController = associatedParentController
             _parentInstrument = assoicatedParentInstrument
             _cts = canceller
         End Sub
 
         Public Async Function FIFOProcessTickToCandleStickAsync() As Task
-            Await Task.Delay(0).ConfigureAwait(False)
-            If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
-                Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
-                                                                                                                     Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
-                                                                                                                                                                       Return x.Key
-                                                                                                                                                                   End Function)
-                                                                                                                 End Function)
-                Dim removedTick As ITick
-                For Each runningFIFOTick In FIFOTicks
-                    CalculateCandleStickFromTick(_parentInstrument.RawPayloads, runningFIFOTick.Value)
-                    'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
-                    _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
-                Next
-            End If
+            Try
+                Await Task.Delay(0).ConfigureAwait(False)
+                If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
+                    Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
+                                                                                                                         Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
+                                                                                                                                                                           Return x.Key
+                                                                                                                                                                       End Function)
+                                                                                                                     End Function)
+                    Dim removedTick As ITick = Nothing
+                    For Each runningFIFOTick In FIFOTicks
+                        CalculateCandleStickFromTick(_parentInstrument.RawPayloads, runningFIFOTick.Value)
+                        'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
+                        _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
+                    Next
+                End If
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Me.ParentController.OrphanException = ex
+            End Try
         End Function
 
         Private Sub CalculateCandleStickFromTick(ByVal existingPayloads As Dictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick)

@@ -3,7 +3,6 @@ Imports System.ComponentModel.DataAnnotations
 Imports System.Net.Http
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
-Imports Algo2TradeCore.Chart
 Imports Algo2TradeCore.Entities
 Imports NLog
 Imports Utilities
@@ -321,20 +320,29 @@ Namespace Strategies
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Function GenerateTag() As String
         Public Overridable Async Function HandleTickTriggerToUIETCAsync() As Task
-            Await Task.Delay(0).ConfigureAwait(False)
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Low <> _LowPrice Then NotifyPropertyChanged("LowPrice")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Close <> _ClosePrice Then NotifyPropertyChanged("ClosePrice")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Volume <> _Volume Then NotifyPropertyChanged("Volume")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
-            If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
+            Try
+                Await Task.Delay(0).ConfigureAwait(False)
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Low <> _LowPrice Then NotifyPropertyChanged("LowPrice")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Close <> _ClosePrice Then NotifyPropertyChanged("ClosePrice")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Volume <> _Volume Then NotifyPropertyChanged("Volume")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
+            Catch cex As OperationCanceledException
+                logger.Error(cex)
+                Me.ParentStrategy.ParentController.OrphanException = cex
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
+            End Try
         End Function
         Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
             Await Task.Delay(0).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
         End Function
         Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
@@ -407,13 +415,13 @@ Namespace Strategies
                 For retryCtr = 1 To _MaxReTries
                     _cts.Token.ThrowIfCancellationRequested()
                     lastException = Nothing
-                    While Me.ParentStrategy.ParentContoller.APIConnection Is Nothing
+                    While Me.ParentStrategy.ParentController.APIConnection Is Nothing
                         _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Waiting for fresh token before running command:{0}", command.ToString)
                         Await Task.Delay(500).ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                     End While
-                    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentContoller.APIConnection.AccessToken)
+                    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentController.APIConnection.AccessToken)
 
                     logger.Debug("Firing command:{0}", command.ToString)
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
