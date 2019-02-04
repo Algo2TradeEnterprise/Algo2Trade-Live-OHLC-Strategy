@@ -191,6 +191,18 @@ Namespace Strategies
                 Return plOfDay
             End Get
         End Property
+
+        <Display(Name:="Last Candle Time", Order:=14)>
+        Public ReadOnly Property LastCandleTime As String
+            Get
+                If TradableInstrument.RawPayloads IsNot Nothing AndAlso TradableInstrument.RawPayloads.Count > 0 Then
+                    Return TradableInstrument.RawPayloads.Keys.LastOrDefault.ToString("HH:mm:ss")
+                Else
+                    Return "00:00:00"
+                End If
+            End Get
+        End Property
+
         <Display(Name:="Symbol", Order:=0)>
         Public Overridable ReadOnly Property TradingSymbol As String
             Get
@@ -332,6 +344,7 @@ Namespace Strategies
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastCandleTime")
             Catch cex As OperationCanceledException
                 logger.Error(cex)
                 Me.ParentStrategy.ParentController.OrphanException = cex

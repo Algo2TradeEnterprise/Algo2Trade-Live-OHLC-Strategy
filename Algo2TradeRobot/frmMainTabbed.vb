@@ -35,6 +35,26 @@ Public Class frmMainTabbed
         End If
     End Sub
 
+    Delegate Sub SetSFGridFreezFirstColumn_Delegate(ByVal [grd] As SfDataGrid)
+    Public Async Sub SetSFGridFreezFirstColumn_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [grd].InvokeRequired Then
+            Dim MyDelegate As New SetSFGridFreezFirstColumn_Delegate(AddressOf SetSFGridFreezFirstColumn_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[grd]})
+        Else
+            While True
+                Try
+                    [grd].FrozenColumnCount = 1
+                    Exit While
+                Catch sop As System.InvalidOperationException
+                    logger.Error(sop)
+                End Try
+                Await Task.Delay(500).ConfigureAwait(False)
+            End While
+        End If
+    End Sub
+
     Delegate Sub SetGridDisplayIndex_Delegate(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
     Public Sub SetGridDisplayIndex_ThreadSafe(ByVal [grd] As DataGridView, ByVal [colName] As String, ByVal [value] As Integer)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
@@ -349,6 +369,7 @@ Public Class frmMainTabbed
 
             Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
 
             Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
@@ -502,6 +523,7 @@ Public Class frmMainTabbed
 
             Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
             SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, dashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
 
             Await ohlStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch cx As OperationCanceledException
@@ -622,6 +644,7 @@ Public Class frmMainTabbed
     Private Enum GridMode
         TouchupPopupFilter
         TouchupAutogeneratingColumn
+        FrozenGridColumn
         None
     End Enum
     Private Sub ManipulateGridEx(ByVal mode As GridMode, ByVal parameter As Object, ByVal source As Object)
