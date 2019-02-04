@@ -777,20 +777,21 @@ Namespace Controller
         Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
             'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
             Await Task.Delay(0).ConfigureAwait(False)
-            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
-                    If historicalCandlesJSONDict.ContainsKey("data") Then
-                        Dim a As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
-                        If a.ContainsKey("candles") Then
-                            Dim b As ArrayList = a("candles")
-                            Console.WriteLine("")
-                        End If
-                        Console.WriteLine("")
-                    End If
-                    'runningStrategyInstrument.TradableInstrument.RawPayloads
-                    Exit For
-                Next
-            End If
+            'If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+            '    For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
+            '        If historicalCandlesJSONDict.ContainsKey("data") Then
+            '            Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
+            '            If historicalCandlesDict.ContainsKey("candles") Then
+            '                Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
+            '                For Each historicalCandle In historicalCandles
+            '                    'TO DO: Candle creation
+            '                Next
+            '            End If
+            '        End If
+            '        'runningStrategyInstrument.TradableInstrument.RawPayloads
+            '        Exit For
+            '    Next
+            'End If
         End Sub
 
         Public Overrides Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)

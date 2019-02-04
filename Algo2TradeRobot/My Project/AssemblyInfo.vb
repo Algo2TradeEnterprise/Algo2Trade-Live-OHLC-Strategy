@@ -8,12 +8,12 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("Algo2Trade Momentum Reversal")>
+<Assembly: AssemblyTitle("Algo2Trade Robot")>
 <Assembly: AssemblyDescription("")>
-<Assembly: AssemblyCompany("")>
-<Assembly: AssemblyProduct("Algo2Trade Momentum Reversal")>
+<Assembly: AssemblyCompany("Hubristic Purveyor Pvt. Ltd.")>
+<Assembly: AssemblyProduct("Algo2Trade Live")>
 <Assembly: AssemblyCopyright("Copyright ©  2018")>
-<Assembly: AssemblyTrademark("")>
+<Assembly: AssemblyTrademark("Algo2Trade")>
 
 <Assembly: ComVisible(False)>
 
