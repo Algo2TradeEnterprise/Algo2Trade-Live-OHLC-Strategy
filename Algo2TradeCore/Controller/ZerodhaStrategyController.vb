@@ -775,15 +775,27 @@ Namespace Controller
             If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
         End Function
         Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
-            'TO DO: To write
+            'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
             Await Task.Delay(0).ConfigureAwait(False)
-            Console.WriteLine(String.Format("Received: {0}", instrumentIdentifier))
+            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
+                    If historicalCandlesJSONDict.ContainsKey("data") Then
+                        Dim a As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
+                        If a.ContainsKey("candles") Then
+                            Dim b As ArrayList = a("candles")
+                            Console.WriteLine("")
+                        End If
+                        Console.WriteLine("")
+                    End If
+                    'runningStrategyInstrument.TradableInstrument.RawPayloads
+                    Exit For
+                Next
+            End If
         End Sub
 
         Public Overrides Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
-            logger.Debug("OnFetcherError, errorMessage:{0}", errorMessage)
-            Console.WriteLine(String.Format("Error: {0}", instrumentIdentifier))
-            MyBase.OnTickerError(errorMessage)
+            logger.Debug("OnFetcherError, errorMessage:{0} ,instrumentIdentifier:{1}", errorMessage, instrumentIdentifier)
+            MyBase.OnFetcherError(instrumentIdentifier, errorMessage)
             'If errorMessage.Contains("403") Then OnSessionExpireAsync()
         End Sub
 #End Region

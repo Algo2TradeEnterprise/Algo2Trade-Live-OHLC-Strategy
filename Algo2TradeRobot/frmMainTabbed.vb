@@ -270,7 +270,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerError, AddressOf OnTickerError
                 RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
-
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -286,6 +286,8 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+
 #Region "Login"
                 Dim loginMessage As String = Nothing
                 While True
@@ -328,6 +330,7 @@ Public Class frmMainTabbed
                     End If
                 End If
 #End Region
+
                 OnHeartbeat("Completing all pre-automation requirements")
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
@@ -421,6 +424,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerError, AddressOf OnTickerError
                 RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -436,6 +440,8 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+
 #Region "Login"
                 Dim loginMessage As String = Nothing
                 While True
@@ -729,6 +735,10 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Yellow)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
+    End Sub
+    Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
+        'Nothing to do
+        OnHeartbeat(String.Format("Historical Data Fetcher: Error:{0}, InstrumentIdentifier:{1}", errorMsg, instrumentIdentifier))
     End Sub
     Public Sub ProgressStatus(ByVal msg As String)
         If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)

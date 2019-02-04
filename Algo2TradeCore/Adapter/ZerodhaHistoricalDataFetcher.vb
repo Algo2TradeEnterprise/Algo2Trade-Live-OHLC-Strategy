@@ -83,6 +83,8 @@ Namespace Adapter
                         OnHeartbeat("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
                         'Cleanup
+                        If Me.ParentController.APIConnection Is Nothing Then Exit While
+
                         For Each subscribedInstrument In _subscribedInstruments
                             _cts.Token.ThrowIfCancellationRequested()
                             subscribedInstrument = Nothing
@@ -166,16 +168,6 @@ Namespace Adapter
                     AddHandler browser.Heartbeat, AddressOf OnHeartbeat
                     AddHandler browser.WaitingFor, AddressOf OnWaitingFor
 
-                    'Start Indibar
-                    'While Me.ParentController.APIConnection Is Nothing
-                    '    _cts.Token.ThrowIfCancellationRequested()
-                    '    logger.Debug("Token exception. Will close fetcher")
-                    '    Await Me.ParentController.CloseFetcherIfConnectedAsync()
-                    '    Exit Function
-                    'End While
-                    'If _stopPollRunning Then Exit Function
-                    'End Indibar
-
                     'Keep the below headers constant for all login browser operations
                     browser.UserAgent = GetRandomUserAgent()
                     browser.KeepAlive = True
@@ -198,7 +190,7 @@ Namespace Adapter
                                                                                           Nothing,
                                                                                           True,
                                                                                           headers,
-                                                                                          True).ConfigureAwait(False)
+                                                                                          False).ConfigureAwait(False)
 
                     _cts.Token.ThrowIfCancellationRequested()
                     If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
