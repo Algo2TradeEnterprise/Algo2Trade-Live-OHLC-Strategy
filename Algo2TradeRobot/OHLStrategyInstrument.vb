@@ -136,8 +136,7 @@ Public Class OHLStrategyInstrument
             If Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.High AndAlso
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
-                'quantity = Math.Floor(2000 * 13 / entryPrice)
-                quantity = 1
+                quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(TradableInstrument.LastTick.Open - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(TradableInstrument.LastTick.Open - entryPrice))
                 Dim parameters As New PlaceOrderParameters With
@@ -152,8 +151,7 @@ Public Class OHLStrategyInstrument
             ElseIf Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.Low AndAlso
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
                 entryPrice = OHLTradePrice + buffer
-                'quantity = Math.Floor(2000 * 13 / entryPrice)
-                quantity = 1
+                quantity = Math.Floor(2000 * 13 / entryPrice)
                 target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(entryPrice - TradableInstrument.LastTick.Open) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - TradableInstrument.LastTick.Open))
                 Dim parameters As New PlaceOrderParameters With
