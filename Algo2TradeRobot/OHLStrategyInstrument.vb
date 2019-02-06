@@ -180,7 +180,7 @@ Public Class OHLStrategyInstrument
                     Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
                     Dim potentialStoplossPrice As Decimal = Nothing
                     For Each slOrder In parentBusinessOrder.SLOrder
-                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso slOrder.TriggerPrice <> triggerPrice Then
+                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
                             If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                                 triggerPrice -= buffer
                                 potentialStoplossPrice = parentOrderPrice - Math.Round(ConvertFloorCeling(parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
@@ -194,8 +194,10 @@ Public Class OHLStrategyInstrument
                                     triggerPrice = potentialStoplossPrice
                                 End If
                             End If
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
-                            ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
+                            If slOrder.TriggerPrice <> triggerPrice Then
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
+                                ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
+                            End If
                         End If
                     Next
                     'End If
