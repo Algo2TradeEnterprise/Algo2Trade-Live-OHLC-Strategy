@@ -777,21 +777,39 @@ Namespace Controller
         Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
             'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
             Await Task.Delay(0).ConfigureAwait(False)
-            'If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-            '    For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
-            '        If historicalCandlesJSONDict.ContainsKey("data") Then
-            '            Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
-            '            If historicalCandlesDict.ContainsKey("candles") Then
-            '                Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
-            '                For Each historicalCandle In historicalCandles
-            '                    'TO DO: Candle creation
-            '                Next
-            '            End If
-            '        End If
-            '        'runningStrategyInstrument.TradableInstrument.RawPayloads
-            '        Exit For
-            '    Next
-            'End If
+            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
+                    If historicalCandlesJSONDict.ContainsKey("data") Then
+                        Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
+                        If historicalCandlesDict.ContainsKey("candles") Then
+                            Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
+                            Dim previousCandlePayload As OHLCPayload = Nothing
+                            For Each historicalCandle In historicalCandles
+                                Dim runningPayload As OHLCPayload = New OHLCPayload
+                                With runningPayload
+                                    .SnapshotDateTime = Time.GetDateTimeTillMinutes(historicalCandle(0))
+                                    .TradingSymbol = runningStrategyInstrument.TradingSymbol
+                                    .OpenPrice = historicalCandle(1)
+                                    .HighPrice = historicalCandle(2)
+                                    .LowPrice = historicalCandle(3)
+                                    .ClosePrice = historicalCandle(4)
+                                    .Volume = historicalCandle(5)
+                                    If previousCandlePayload IsNot Nothing AndAlso
+                                        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                                        .DailyVolume = .Volume + previousCandlePayload.DailyVolume
+                                    Else
+                                        .DailyVolume = .Volume
+                                    End If
+                                    .PreviousPayload = previousCandlePayload
+                                End With
+                                previousCandlePayload = runningPayload
+                                runningStrategyInstrument.TradableInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
+                            Next
+                        End If
+                    End If
+                    Exit For
+                Next
+            End If
         End Sub
 
         Public Overrides Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
@@ -855,7 +873,7 @@ Namespace Controller
             End If
         End Sub
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
-            logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
+            'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
             If orderData.Status = "COMPLETE" OrElse orderData.Status = "MODIFIED" OrElse orderData.Status = "CANCELLED" Then
                 For Each runningStrategy In _AllStrategies
                     If orderData.Tag IsNot Nothing AndAlso orderData.Tag.Contains(runningStrategy.ToString) Then

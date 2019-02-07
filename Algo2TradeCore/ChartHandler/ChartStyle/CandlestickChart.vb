@@ -147,7 +147,10 @@ Namespace ChartHandler.ChartStyle
                         .PreviousPayload = lastExistingPayload
                     End With
                 End If
-                If runningPayload IsNot Nothing Then existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
+                'Start Indibar
+                'If runningPayload IsNot Nothing Then existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
+                If runningPayload IsNot Nothing Then existingPayloads(runningPayload.SnapshotDateTime) = runningPayload
+                'End Indibar
             End SyncLock
         End Sub
         Public Overrides Function ToString() As String

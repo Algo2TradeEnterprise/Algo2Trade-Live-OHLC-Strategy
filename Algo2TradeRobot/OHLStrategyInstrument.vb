@@ -93,7 +93,7 @@ Public Class OHLStrategyInstrument
                     Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
                     If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                         Try
-                            Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                            'Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                         Catch ex As Exception
                             logger.Error(ex)
                             Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
@@ -180,16 +180,16 @@ Public Class OHLStrategyInstrument
                     Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
                     Dim potentialStoplossPrice As Decimal = Nothing
                     For Each slOrder In parentBusinessOrder.SLOrder
-                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "REJECTED" Then
                             If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                                 triggerPrice -= buffer
-                                potentialStoplossPrice = parentOrderPrice - Math.Round(ConvertFloorCeling(parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                                potentialStoplossPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                                 If slOrder.TriggerPrice < potentialStoplossPrice Then
                                     triggerPrice = potentialStoplossPrice
                                 End If
                             ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                                 triggerPrice += buffer
-                                potentialStoplossPrice = parentOrderPrice + Math.Round(ConvertFloorCeling(parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                                potentialStoplossPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                                 If slOrder.TriggerPrice > potentialStoplossPrice Then
                                     triggerPrice = potentialStoplossPrice
                                 End If

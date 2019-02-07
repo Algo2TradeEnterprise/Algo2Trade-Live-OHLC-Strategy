@@ -179,6 +179,9 @@ Public Class MomentumReversalStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
+            'Task to run order update periodically
+            tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
+            'tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex

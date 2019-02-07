@@ -65,10 +65,11 @@ Public Class MomentumReversalStrategyInstrument
                 Await Task.Delay(1000)
             End While
         Catch ex As Exception
+            'To log exceptions getting created from this function as the bubble up of the exception
+            'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
         End Try
-
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
