@@ -76,19 +76,19 @@ Namespace ChartHandler.ChartStyle
                     'Now insert the tickpayload newly created into the main payload
                     Dim removedTickPayload As OHLCPayload = Nothing
                     Dim tickPayloadCtr As Integer = 0
-                    For Each runningTickPayload In _parentInstrument.RawTickPayloads
-                        tickPayloadCtr += 1
-                        If _parentInstrument.RawPayloads.ContainsKey( IsNot Nothing Then
-                            If _parentInstrument.
-                            _parentInstrument.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Then
+                    'For Each runningTickPayload In _parentInstrument.RawTickPayloads
+                    '    tickPayloadCtr += 1
+                    '    If _parentInstrument.RawPayloads.ContainsKey( IsNot Nothing Then
+                    '        If _parentInstrument.
+                    '        _parentInstrument.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Then
 
-                            ElseIf _parentInstrument.RawPayloads IsNot Nothing Then
-                            End If
-                        If tickPayloadCtr < _parentInstrument.RawTickPayloads.Count Then
-                            _parentInstrument.RawTickPayloads.TryRemove(runningTickPayload.Key, removedTickPayload)
-                        End If
-                    Next
-                    Dim toBeAddedToMainPayload As OHLCPayload = existingPayloads.LastOrDefault.Value
+                    '        ElseIf _parentInstrument.RawPayloads IsNot Nothing Then
+                    '        End If
+                    '    If tickPayloadCtr < _parentInstrument.RawTickPayloads.Count Then
+                    '        _parentInstrument.RawTickPayloads.TryRemove(runningTickPayload.Key, removedTickPayload)
+                    '    End If
+                    'Next
+                    'Dim toBeAddedToMainPayload As OHLCPayload = existingPayloads.LastOrDefault.Value
 
                 End If
             Catch ex As Exception
