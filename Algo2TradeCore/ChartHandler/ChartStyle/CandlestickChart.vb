@@ -51,49 +51,49 @@ Namespace ChartHandler.ChartStyle
         Public Property ParentController As APIStrategyController
         Private _parentInstrument As IInstrument
         Private _cts As New CancellationTokenSource
+        Private _lock As Integer
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal assoicatedParentInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
             _parentInstrument = assoicatedParentInstrument
             _cts = canceller
         End Sub
-
+        Public Async Function ProcessHistoricalJSONToCandleStickAsync() As Task
+            Try
+                While _lock > 0
+                    Await Task.Delay(10).ConfigureAwait(False)
+                End While
+                Interlocked.Increment(_lock)
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Me.ParentController.OrphanException = ex
+            Finally
+                Interlocked.Decrement(_lock)
+            End Try
+        End Function
         Public Async Function FIFOProcessTickToCandleStickAsync() As Task
             Try
-                Await Task.Delay(0).ConfigureAwait(False)
-                If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
-                    Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
-                                                                                                                         Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
-                                                                                                                                                                           Return x.Key
-                                                                                                                                                                       End Function)
-                                                                                                                     End Function)
-                    Dim removedTick As ITick = Nothing
-                    For Each runningFIFOTick In FIFOTicks
-                        CalculateCandleStickFromTick(_parentInstrument.RawTickPayloads, runningFIFOTick.Value)
-                        'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
-                        _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
-                    Next
-
-                    'Now insert the tickpayload newly created into the main payload
-                    Dim removedTickPayload As OHLCPayload = Nothing
-                    Dim tickPayloadCtr As Integer = 0
-                    For Each runningTickPayload In _parentInstrument.RawTickPayloads
-                        tickPayloadCtr += 1
-                        If _parentInstrument.RawPayloads.ContainsKey( IsNot Nothing Then
-                            If _parentInstrument.
-                            _parentInstrument.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Then
-
-                            ElseIf _parentInstrument.RawPayloads IsNot Nothing Then
-                            End If
-                        If tickPayloadCtr < _parentInstrument.RawTickPayloads.Count Then
-                            _parentInstrument.RawTickPayloads.TryRemove(runningTickPayload.Key, removedTickPayload)
-                        End If
-                    Next
-                    Dim toBeAddedToMainPayload As OHLCPayload = existingPayloads.LastOrDefault.Value
-
+                If _lock = 0 Then
+                    Interlocked.Increment(_lock)
+                    Await Task.Delay(0).ConfigureAwait(False)
+                    If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
+                        Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
+                                                                                                                             Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
+                                                                                                                                                                               Return x.Key
+                                                                                                                                                                           End Function)
+                                                                                                                         End Function)
+                        Dim removedTick As ITick = Nothing
+                        For Each runningFIFOTick In FIFOTicks
+                            CalculateCandleStickFromTick(_parentInstrument.RawTickPayloads, runningFIFOTick.Value)
+                            'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
+                            _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
+                        Next
+                    End If
                 End If
             Catch ex As Exception
                 logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
+            Finally
+                Interlocked.Decrement(_lock)
             End Try
         End Function
 
