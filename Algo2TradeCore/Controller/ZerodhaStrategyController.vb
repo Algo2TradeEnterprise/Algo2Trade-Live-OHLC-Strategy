@@ -803,7 +803,8 @@ Namespace Controller
                                     .PreviousPayload = previousCandlePayload
                                 End With
                                 previousCandlePayload = runningPayload
-                                runningStrategyInstrument.TradableInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
+                                'The below will add or update items inside the dictionary
+                                runningStrategyInstrument.TradableInstrument.RawTicks(runningPayload.SnapshotDateTime) = runningPayload
                             Next
                         End If
                     End If

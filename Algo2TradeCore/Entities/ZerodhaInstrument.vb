@@ -8,13 +8,15 @@ Namespace Entities
         Implements IInstrument
 
         Private _RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick)
-        Private _RawPayloads As Dictionary(Of Date, OHLCPayload)
+        Private _RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+        Private _RawTickPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
         Private _candleStickCreator As Candlestick
         Private _ParentController As APIStrategyController
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal associatedIdentifer As String)
             InstrumentIdentifier = associatedIdentifer
             _RawTicks = New Concurrent.ConcurrentDictionary(Of Date, ITick)
-            _RawPayloads = New Dictionary(Of Date, OHLCPayload)
+            _RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+            _RawTickPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
             _ParentController = associatedParentController
             _candleStickCreator = New Candlestick(Me.ParentController, Me, New Threading.CancellationTokenSource)
             'Intentionally created a new token since we dont want to cancel this process via the global cancellationtoken
@@ -89,15 +91,20 @@ Namespace Entities
                 End If
             End Set
         End Property
-        Public ReadOnly Property RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick) Implements IInstrument.RawTicks
+        Public ReadOnly Property RawTickPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Implements IInstrument.RawTickPayloads
             Get
-                Return _RawTicks
+                Return _RawTickPayloads
             End Get
         End Property
 
-        Public ReadOnly Property RawPayloads As Dictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
+        Public ReadOnly Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
             Get
                 Return _RawPayloads
+            End Get
+        End Property
+        Public ReadOnly Property RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick) Implements IInstrument.RawTicks
+            Get
+                Return _RawTicks
             End Get
         End Property
 

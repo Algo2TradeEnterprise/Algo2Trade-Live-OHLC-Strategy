@@ -402,6 +402,10 @@ Public Class frmMainTabbed
         If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
         _cts.Cancel()
     End Sub
+    Private Sub btnMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalSettings.Click
+        Dim newForm As New frmMomentumReversalSettings
+        newForm.ShowDialog()
+    End Sub
 #End Region
 
 #Region "OHL"
@@ -798,6 +802,7 @@ Public Class frmMainTabbed
     End Sub
     Private Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
     End Sub
+
 #End Region
 
 #End Region

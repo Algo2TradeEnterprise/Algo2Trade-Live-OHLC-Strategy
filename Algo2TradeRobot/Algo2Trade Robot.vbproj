@@ -112,6 +112,12 @@
     <Compile Include="frmMainTabbed.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="frmMomentumReversalSettings.Designer.vb">
+      <DependentUpon>frmMomentumReversalSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmMomentumReversalSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmUserDetails.Designer.vb">
       <DependentUpon>frmUserDetails.vb</DependentUpon>
     </Compile>
@@ -141,6 +147,9 @@
   <ItemGroup>
     <EmbeddedResource Include="frmMainTabbed.resx">
       <DependentUpon>frmMainTabbed.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmMomentumReversalSettings.resx">
+      <DependentUpon>frmMomentumReversalSettings.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmUserDetails.resx">
       <DependentUpon>frmUserDetails.vb</DependentUpon>

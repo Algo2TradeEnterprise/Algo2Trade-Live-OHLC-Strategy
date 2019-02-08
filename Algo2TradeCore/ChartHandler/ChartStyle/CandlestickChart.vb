@@ -68,10 +68,28 @@ Namespace ChartHandler.ChartStyle
                                                                                                                      End Function)
                     Dim removedTick As ITick = Nothing
                     For Each runningFIFOTick In FIFOTicks
-                        CalculateCandleStickFromTick(_parentInstrument.RawPayloads, runningFIFOTick.Value)
+                        CalculateCandleStickFromTick(_parentInstrument.RawTickPayloads, runningFIFOTick.Value)
                         'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
                         _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
                     Next
+
+                    'Now insert the tickpayload newly created into the main payload
+                    Dim removedTickPayload As OHLCPayload = Nothing
+                    Dim tickPayloadCtr As Integer = 0
+                    For Each runningTickPayload In _parentInstrument.RawTickPayloads
+                        tickPayloadCtr += 1
+                        If _parentInstrument.RawPayloads.ContainsKey( IsNot Nothing Then
+                            If _parentInstrument.
+                            _parentInstrument.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Then
+
+                            ElseIf _parentInstrument.RawPayloads IsNot Nothing Then
+                            End If
+                        If tickPayloadCtr < _parentInstrument.RawTickPayloads.Count Then
+                            _parentInstrument.RawTickPayloads.TryRemove(runningTickPayload.Key, removedTickPayload)
+                        End If
+                    Next
+                    Dim toBeAddedToMainPayload As OHLCPayload = existingPayloads.LastOrDefault.Value
+
                 End If
             Catch ex As Exception
                 logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
@@ -79,7 +97,7 @@ Namespace ChartHandler.ChartStyle
             End Try
         End Function
 
-        Private Sub CalculateCandleStickFromTick(ByVal existingPayloads As Dictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick)
+        Private Sub CalculateCandleStickFromTick(ByVal existingPayloads As Concurrent.ConcurrentDictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick)
             SyncLock Me
                 If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
                     Exit Sub
@@ -147,10 +165,8 @@ Namespace ChartHandler.ChartStyle
                         .PreviousPayload = lastExistingPayload
                     End With
                 End If
-                'Start Indibar
-                'If runningPayload IsNot Nothing Then existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
-                If runningPayload IsNot Nothing Then existingPayloads(runningPayload.SnapshotDateTime) = runningPayload
-                'End Indibar
+                If runningPayload IsNot Nothing Then existingPayloads.TryAdd(runningPayload.SnapshotDateTime, runningPayload)
+
             End SyncLock
         End Sub
         Public Overrides Function ToString() As String

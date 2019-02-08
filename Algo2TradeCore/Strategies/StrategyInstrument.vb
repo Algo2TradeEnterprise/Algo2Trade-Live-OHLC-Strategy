@@ -195,8 +195,8 @@ Namespace Strategies
         <Display(Name:="Last Candle Time", Order:=14)>
         Public ReadOnly Property LastCandleTime As String
             Get
-                If TradableInstrument.RawPayloads IsNot Nothing AndAlso TradableInstrument.RawPayloads.Count > 0 Then
-                    Return TradableInstrument.RawPayloads.Keys.LastOrDefault.ToString("HH:mm:ss")
+                If TradableInstrument.RawTicks IsNot Nothing AndAlso TradableInstrument.RawTicks.Count > 0 Then
+                    Return TradableInstrument.RawTicks.Keys.LastOrDefault.ToString("HH:mm:ss")
                 Else
                     Return "00:00:00"
                 End If

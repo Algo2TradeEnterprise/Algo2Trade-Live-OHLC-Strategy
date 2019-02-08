@@ -12,8 +12,9 @@ Namespace Entities
         ReadOnly Property TradingSymbol As String
         ReadOnly Property Broker As APISource
         Property LastTick As ITick
+        ReadOnly Property RawTickPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+        ReadOnly Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
         ReadOnly Property RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick)
-        ReadOnly Property RawPayloads As Dictionary(Of Date, OHLCPayload)
         ReadOnly Property ParentController As APIStrategyController
     End Interface
 End Namespace
