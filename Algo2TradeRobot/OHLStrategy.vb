@@ -186,6 +186,7 @@ Public Class OHLStrategy
             Next
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
+            tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
             'tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
@@ -197,6 +198,37 @@ Public Class OHLStrategy
             Await ParentController.CloseFetcherIfConnectedAsync()
             Throw lastException
         End If
+    End Function
+    Public Async Function MonitorAmiBrokerAsync() As Task
+        Try
+            If Me.ParentController.OrphanException IsNot Nothing Then
+                Throw Me.ParentController.OrphanException
+            End If
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim serverIP As Net.IPAddress = Net.IPAddress.Loopback
+            Dim serverPort As Integer = 64555
+            Dim server As Net.Sockets.TcpListener = New Net.Sockets.TcpListener(serverIP, serverPort)
+            Dim client As Net.Sockets.TcpClient = Nothing
+            Dim clientData As IO.StreamReader = Nothing
+            server.Start()
+            While True
+                If Me.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentController.OrphanException
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                If server.Pending Then
+                    client = server.AcceptTcpClient
+                    clientData = New IO.StreamReader(client.GetStream)
+                    Console.WriteLine(clientData.ReadLine())
+                End If
+                Await Task.Delay(100).ConfigureAwait(False)
+            End While
+        Catch ex As Exception
+            'To log exceptions getting created from this function as the bubble up of the exception
+            'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
+            logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
+            Throw ex
+        End Try
     End Function
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
