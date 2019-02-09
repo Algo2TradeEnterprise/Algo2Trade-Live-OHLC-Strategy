@@ -193,12 +193,12 @@ Namespace Strategies
         End Property
 
         <Display(Name:="Last Candle Time", Order:=14)>
-        Public ReadOnly Property LastCandleTime As String
+        Public ReadOnly Property LastCandleTime As Date
             Get
-                If TradableInstrument.RawTicks IsNot Nothing AndAlso TradableInstrument.RawTicks.Count > 0 Then
-                    Return TradableInstrument.RawTicks.Keys.LastOrDefault.ToString("HH:mm:ss")
+                If TradableInstrument.RawPayloads IsNot Nothing AndAlso TradableInstrument.RawPayloads.Count > 0 Then
+                    Return TradableInstrument.RawPayloads.Keys.LastOrDefault
                 Else
-                    Return "00:00:00"
+                    Return New Date
                 End If
             End Get
         End Property
@@ -344,7 +344,7 @@ Namespace Strategies
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastCandleTime")
+                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp.HasValue AndAlso Utilities.Time.IsDateTimeEqualTillMinutes(TradableInstrument.LastTick.Timestamp.Value, Me.LastCandleTime) Then NotifyPropertyChanged("LastCandleTime")
             Catch cex As OperationCanceledException
                 logger.Error(cex)
                 Me.ParentStrategy.ParentController.OrphanException = cex
