@@ -141,7 +141,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
-            logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            logger.Debug("GetAllOrdersAsync, parameters:Nothing1")
             Dim ret As List(Of ZerodhaOrder) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
             _cts.Token.ThrowIfCancellationRequested()
