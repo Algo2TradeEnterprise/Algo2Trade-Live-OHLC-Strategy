@@ -403,7 +403,8 @@ Public Class frmMainTabbed
         _cts.Cancel()
     End Sub
     Private Sub btnMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalSettings.Click
-        Dim newForm As New frmMomentumReversalSettings
+        Dim MRUserInputs As MomentumReversalUserInputs = Nothing
+        Dim newForm As New frmMomentumReversalSettings(MRUserInputs)
         newForm.ShowDialog()
     End Sub
 #End Region
