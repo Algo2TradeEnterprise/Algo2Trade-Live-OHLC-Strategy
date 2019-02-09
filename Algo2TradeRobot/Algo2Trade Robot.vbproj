@@ -126,6 +126,7 @@
     </Compile>
     <Compile Include="MomentumReversalStrategy.vb" />
     <Compile Include="MomentumReversalStrategyInstrument.vb" />
+    <Compile Include="MomentumReversalUserInputs.vb" />
     <Compile Include="OHLStrategyInstrument.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
