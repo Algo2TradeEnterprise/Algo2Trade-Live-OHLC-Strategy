@@ -424,11 +424,14 @@ Namespace Strategies
             Using Waiter As New Waiter(_cts)
                 AddHandler Waiter.Heartbeat, AddressOf OnHeartbeat
                 AddHandler Waiter.WaitingFor, AddressOf OnWaitingFor
-
+                Dim apiConnectionBeingUsed As IConnection = Me.ParentStrategy.ParentController.APIConnection
                 For retryCtr = 1 To _MaxReTries
                     _cts.Token.ThrowIfCancellationRequested()
                     lastException = Nothing
-                    While Me.ParentStrategy.ParentController.APIConnection Is Nothing
+                    While Me.ParentStrategy.ParentController.APIConnection Is Nothing OrElse apiConnectionBeingUsed Is Nothing OrElse
+                        (Me.ParentStrategy.ParentController.APIConnection IsNot Nothing AndAlso apiConnectionBeingUsed IsNot Nothing AndAlso
+                        Not Me.ParentStrategy.ParentController.APIConnection.Equals(apiConnectionBeingUsed))
+                        apiConnectionBeingUsed = Me.ParentStrategy.ParentController.APIConnection
                         _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Waiting for fresh token before running command:{0}", command.ToString)
                         Await Task.Delay(500).ConfigureAwait(False)

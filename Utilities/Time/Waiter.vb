@@ -49,7 +49,8 @@ Public Class Waiter
         logger.Debug("Waiting on internet failure")
         Dim ret As Boolean = False
         OnHeartbeat("Checking internet availability")
-        While Not HttpBrowser.IsNetworkAvailable(_canceller)
+        While Not HttpBrowser.IsNetworkAvailableAsync(_canceller)
+            GC.AddMemoryPressure(1024 * 1024)
             GC.Collect()
             ret = True
             _canceller.Token.ThrowIfCancellationRequested()

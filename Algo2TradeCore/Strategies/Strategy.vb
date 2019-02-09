@@ -133,8 +133,6 @@ Namespace Strategies
             Dim ret As Tuple(Of String, ExceptionResponse) = Nothing
             If ex.GetType = GetType(KiteConnect.GeneralException) Then
                 ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            ElseIf ex.GetType = GetType(KiteConnect.GeneralException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
             ElseIf ex.GetType = GetType(KiteConnect.PermissionException) Then
                 ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
             ElseIf ex.GetType = GetType(KiteConnect.OrderException) Then

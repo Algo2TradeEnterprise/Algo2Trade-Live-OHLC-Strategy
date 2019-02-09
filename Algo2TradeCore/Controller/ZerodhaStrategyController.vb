@@ -91,7 +91,8 @@ Namespace Controller
                                                                                               Nothing,
                                                                                               False,
                                                                                               headers,
-                                                                                              False).ConfigureAwait(False)
+                                                                                              False,
+                                                                                              Nothing).ConfigureAwait(False)
 
                         _cts.Token.ThrowIfCancellationRequested()
                         'Should be getting back the redirected URL in Item1 and the htmldocument response in Item2
@@ -195,7 +196,8 @@ Namespace Controller
                                                                         finalURLToCall.ToString,
                                                                         False,
                                                                         headers,
-                                                                        True).ConfigureAwait(False)
+                                                                        True,
+                                                                        Nothing).ConfigureAwait(False)
                                         _cts.Token.ThrowIfCancellationRequested()
                                         If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("request_token") Then
                                             redirectedURI = tempRet.Item1
@@ -779,35 +781,7 @@ Namespace Controller
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
-                    If historicalCandlesJSONDict.ContainsKey("data") Then
-                        Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
-                        If historicalCandlesDict.ContainsKey("candles") Then
-                            Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
-                            Dim previousCandlePayload As OHLCPayload = Nothing
-                            For Each historicalCandle In historicalCandles
-                                Dim runningPayload As OHLCPayload = New OHLCPayload
-                                With runningPayload
-                                    .SnapshotDateTime = Time.GetDateTimeTillMinutes(historicalCandle(0))
-                                    .TradingSymbol = runningStrategyInstrument.TradingSymbol
-                                    .OpenPrice = historicalCandle(1)
-                                    .HighPrice = historicalCandle(2)
-                                    .LowPrice = historicalCandle(3)
-                                    .ClosePrice = historicalCandle(4)
-                                    .Volume = historicalCandle(5)
-                                    If previousCandlePayload IsNot Nothing AndAlso
-                                        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
-                                        .DailyVolume = .Volume + previousCandlePayload.DailyVolume
-                                    Else
-                                        .DailyVolume = .Volume
-                                    End If
-                                    .PreviousPayload = previousCandlePayload
-                                End With
-                                previousCandlePayload = runningPayload
-                                'The below will add or update items inside the dictionary
-                                runningStrategyInstrument.TradableInstrument.RawTicks(runningPayload.SnapshotDateTime) = runningPayload
-                            Next
-                        End If
-                    End If
+                    runningStrategyInstrument.TradableInstrument.CandleStickCreator.ProcessHistoricalJSONToCandleStickAsync(historicalCandlesJSONDict)
                     Exit For
                 Next
             End If

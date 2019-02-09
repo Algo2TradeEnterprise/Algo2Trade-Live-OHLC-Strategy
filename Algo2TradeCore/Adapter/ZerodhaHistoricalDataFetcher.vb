@@ -4,7 +4,7 @@ Imports Algo2TradeCore.Controller
 Imports KiteConnect
 Imports NLog
 Imports Utilities.Network
-
+Imports Algo2TradeCore.Entities
 Namespace Adapter
     Public Class ZerodhaHistoricalDataFetcher
         Inherits APIHistoricalDataFetcher
@@ -60,6 +60,7 @@ Namespace Adapter
                 ServicePointManager.DefaultConnectionLimit = 10
                 Dim lastTimeWhenDone As Date = Date.MinValue
                 Dim nextTimeToDo As Date = Date.MinValue
+                Dim apiConnectionBeingUsed As ZerodhaConnection = Me.ParentController.APIConnection
                 While True
                     If _stopPollRunning Then
                         _isPollRunning = False
@@ -83,7 +84,12 @@ Namespace Adapter
                         OnHeartbeat("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
                         'Cleanup
-                        If Me.ParentController.APIConnection Is Nothing Then Exit While
+                        If Me.ParentController.APIConnection Is Nothing OrElse apiConnectionBeingUsed Is Nothing OrElse
+                        (Me.ParentController.APIConnection IsNot Nothing AndAlso apiConnectionBeingUsed IsNot Nothing AndAlso
+                        Not Me.ParentController.APIConnection.Equals(apiConnectionBeingUsed)) Then
+                            Debug.WriteLine("Exiting start polling")
+                            Exit While
+                        End If
 
                         For Each subscribedInstrument In _subscribedInstruments
                             _cts.Token.ThrowIfCancellationRequested()
@@ -190,7 +196,8 @@ Namespace Adapter
                                                                                           Nothing,
                                                                                           True,
                                                                                           headers,
-                                                                                          False).ConfigureAwait(False)
+                                                                                          False,
+                                                                                          "application/json").ConfigureAwait(False)
 
                     _cts.Token.ThrowIfCancellationRequested()
                     If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
@@ -201,6 +208,7 @@ Namespace Adapter
                             OnFetcherCandlesAsync(_instrumentIdentifer, tempRet.Item2)
                         End If
                     Else
+                        'TO DO: Uncomment this
                         Throw New ApplicationException("Fetching of historical data failed as no return detected")
                     End If
                     RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete

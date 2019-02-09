@@ -34,43 +34,44 @@ Public Class OHLStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             'Get all the futures instruments
-            'Dim futureAllInstruments = allInstruments.Where(Function(x)
-            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
-            '                                                End Function)
-            '_cts.Token.ThrowIfCancellationRequested()
-            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-            '    For Each runningFutureAllInstrument In futureAllInstruments
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        ret = True
-            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '        retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
-            '    Next
-            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            'End If
-
-            'Get OHL Strategy Instruments
-            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
-            Dim dt As DataTable = Nothing
-            Using readCSV As New CSVHelper(filePath, ",", _cts)
-                dt = readCSV.GetDataTableFromCSV(0)
-            End Using
-            If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
-                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                For i As Integer = 0 To dt.Rows.Count - 1
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim rowNumber As Integer = i
-                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = dt.Rows(rowNumber).Item(0)
-                                                                                            End Function)
+            Dim futureAllInstruments = allInstruments.Where(Function(x)
+                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
+                                                            End Function)
+            _cts.Token.ThrowIfCancellationRequested()
+            If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
+                For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-
-                    'If i = 0 Then Exit For
+                    retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
+
+            'Get OHL Strategy Instruments
+            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
+            ''Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
+            'Dim dt As DataTable = Nothing
+            'Using readCSV As New CSVHelper(filePath, ",", _cts)
+            '    dt = readCSV.GetDataTableFromCSV(0)
+            'End Using
+            'If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+            '    Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+            '    For i As Integer = 0 To dt.Rows.Count - 1
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        Dim rowNumber As Integer = i
+            '        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+            '                                                                                    Return x.TradingSymbol = dt.Rows(rowNumber).Item(0)
+            '                                                                                End Function)
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        ret = True
+            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+            '        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+
+            '        'If i = 0 Then Exit For
+            '    Next
+            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+            'End If
         End If
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList

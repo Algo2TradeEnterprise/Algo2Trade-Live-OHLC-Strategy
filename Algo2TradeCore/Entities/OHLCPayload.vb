@@ -11,5 +11,16 @@
         Public Property DailyVolume As Long Implements IPayload.DailyVolume
         Public Property SnapshotDateTime As Date Implements IPayload.SnapshotDateTime
         Public Property PreviousPayload As IPayload Implements IPayload.PreviousPayload
+        Public Property NumberOfTicks As Integer Implements IPayload.NumberOfTicks
+        Private _PayloadGeneratedBy As IPayload.PayloadSource
+        Public ReadOnly Property PayloadGeneratedBy As IPayload.PayloadSource Implements IPayload.PayloadGeneratedBy
+            Get
+                Return _PayloadGeneratedBy
+            End Get
+        End Property
+
+        Public Sub New(ByVal payloadGeneratedBy As IPayload.PayloadSource)
+            Me._PayloadGeneratedBy = payloadGeneratedBy
+        End Sub
     End Class
 End Namespace

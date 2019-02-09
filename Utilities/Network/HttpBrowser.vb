@@ -117,9 +117,12 @@ Namespace Network
 #End Region
 
 #Region "Private Methods"
-        Private Async Function GenerateResponseOutputAsync(ByVal response As HttpResponseMessage) As Task(Of Object)
+        Private Async Function GenerateResponseOutputAsync(ByVal response As HttpResponseMessage, ByVal responseType As String) As Task(Of Object)
             logger.Debug("Generating response output")
             If response IsNot Nothing AndAlso response.Content IsNot Nothing Then
+                If responseType IsNot Nothing AndAlso Not response.Content.Headers.ContentType.MediaType = responseType Then
+                    Throw New ApplicationException("Error in expected response type, probably a server block message instead of json")
+                End If
                 If response.Content.Headers.ContentType.MediaType = "text/html" Then
                     logger.Debug("Inside text/html output conversion")
                     Dim retDoc As HtmlDocument = Nothing
@@ -201,7 +204,7 @@ Namespace Network
             _AllCookies = Nothing
         End Sub
 
-        Public Shared Function IsNetworkAvailable(ByVal cts As CancellationTokenSource) As Boolean
+        Public Shared Function IsNetworkAvailableAsync(ByVal cts As CancellationTokenSource) As Boolean
             logger.Debug("Checking if network available")
             Dim ret As Boolean = False
             Using ping = New System.Net.NetworkInformation.Ping()
@@ -217,6 +220,8 @@ Namespace Network
                     logger.Debug("Supressed exception")
                     logger.Error(ex)
                     ret = False
+                Finally
+                    ping.Dispose()
                 End Try
             End Using
             Return ret
@@ -349,7 +354,8 @@ Namespace Network
                                                   ByVal referalURL As String,
                                                   ByVal useRandomUserAgent As Boolean,
                                                   ByVal headers As Dictionary(Of String, String),
-                                                  ByVal checkSuccessCode As Boolean) As Task(Of Tuple(Of Uri, Object))
+                                                  ByVal checkSuccessCode As Boolean,
+                                                  ByVal responseType As String) As Task(Of Tuple(Of Uri, Object))
             logger.Debug("Placing non POST request asynchronously")
             Dim retTuple As Tuple(Of Uri, Object) = Nothing
 
@@ -380,12 +386,15 @@ Namespace Network
                         AddHeaders(request, referalURL, useRandomUserAgent, headers)
 
                         _canceller.Token.ThrowIfCancellationRequested()
+
                         response = Await _httpInstance.SendAsync(request, _canceller.Token).ConfigureAwait(False)
+
                         If checkSuccessCode Then response.EnsureSuccessStatusCode()
                         _canceller.Token.ThrowIfCancellationRequested()
 
                         logger.Debug("Processing response")
-                        Dim tempRet = Await GenerateResponseOutputAsync(response).ConfigureAwait(False)
+                        Dim tempRet = Await GenerateResponseOutputAsync(response, responseType).ConfigureAwait(False)
+
                         If tempRet IsNot Nothing Then
                             logger.Debug("Processing object to be returned (Response URL:{0})", response.RequestMessage.RequestUri)
                             lastException = Nothing
@@ -397,6 +406,7 @@ Namespace Network
                         End If
                         _canceller.Token.ThrowIfCancellationRequested()
                     Catch opx As OperationCanceledException
+                        'Exit Function
                         logger.Error(opx)
                         lastException = opx
                         If URLToBrowse = _internetConnectionCheckerURL Then
@@ -521,12 +531,13 @@ Namespace Network
 
                         '    Next
                         'End If
+                        GC.AddMemoryPressure(1024 * 1024)
+                        GC.Collect()
                     End Try
                     _canceller.Token.ThrowIfCancellationRequested()
                     If retTuple IsNot Nothing Then
                         Exit For
                     End If
-                    GC.Collect()
                 Next
                 RemoveHandler Waiter.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler Waiter.WaitingFor, AddressOf OnWaitingFor
@@ -578,7 +589,7 @@ Namespace Network
                         _canceller.Token.ThrowIfCancellationRequested()
 
                         logger.Debug("Processing response")
-                        Dim tempRet = Await GenerateResponseOutputAsync(response).ConfigureAwait(False)
+                        Dim tempRet = Await GenerateResponseOutputAsync(response, Nothing).ConfigureAwait(False)
                         If tempRet IsNot Nothing Then
                             logger.Debug("Processing object to be returned (Response URL:{0})", response.RequestMessage.RequestUri)
                             lastException = Nothing
