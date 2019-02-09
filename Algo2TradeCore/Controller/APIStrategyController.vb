@@ -187,6 +187,10 @@ Namespace Controller
                         logger.Error(tex)
                         lastException = tex
                         Continue For
+                    Catch tex As KiteConnect.DataException
+                        logger.Error(tex)
+                        lastException = tex
+                        Continue For
                     Catch kex As KiteConnect.KiteException
                         logger.Error(kex)
                         lastException = kex

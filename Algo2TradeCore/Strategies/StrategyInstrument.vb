@@ -572,6 +572,10 @@ Namespace Strategies
                         logger.Error(tex)
                         lastException = tex
                         Continue For
+                    Catch dex As KiteConnect.DataException
+                        logger.Error(dex)
+                        lastException = dex
+                        Continue For
                     Catch kex As KiteConnect.KiteException
                         logger.Error(kex)
                         lastException = kex
