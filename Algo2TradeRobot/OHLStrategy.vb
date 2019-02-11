@@ -186,7 +186,7 @@ Public Class OHLStrategy
             Next
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
-            tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
+            'tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
             'tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception

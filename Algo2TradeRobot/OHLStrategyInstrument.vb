@@ -127,7 +127,7 @@ Public Class OHLStrategyInstrument
         If TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 10 Then
             Dim OHLTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
-            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
+            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.01, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
             Dim entryPrice As Decimal = Nothing
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing

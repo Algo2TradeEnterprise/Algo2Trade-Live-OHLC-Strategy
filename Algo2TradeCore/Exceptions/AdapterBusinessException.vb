@@ -4,13 +4,14 @@ Namespace Exceptions
     ''' Custom class for handling business exceptions
     ''' </summary>
     <Serializable()>
-    Public Class AdapterBusinessException
+    Public MustInherit Class AdapterBusinessException
         Inherits ApplicationException
         Implements IDisposable
 
 #Region "Enums"
         Public Enum TypeOfException
             RMSError = 1
+
         End Enum
 #End Region
 
