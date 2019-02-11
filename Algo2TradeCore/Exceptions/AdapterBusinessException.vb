@@ -11,7 +11,14 @@ Namespace Exceptions
 #Region "Enums"
         Public Enum TypeOfException
             RMSError = 1
-
+            GeneralException
+            TokenException
+            PermissionException
+            OrderException
+            InputException
+            DataException
+            NetworkException
+            None
         End Enum
 #End Region
 

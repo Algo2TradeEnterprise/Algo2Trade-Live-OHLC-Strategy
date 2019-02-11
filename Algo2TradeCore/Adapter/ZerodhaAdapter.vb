@@ -3,6 +3,7 @@ Imports Algo2TradeCore.Entities
 Imports KiteConnect
 Imports NLog
 Imports Algo2TradeCore.Controller
+Imports Algo2TradeCore.Exceptions
 
 Namespace Adapter
     Public Class ZerodhaAdapter
@@ -31,7 +32,26 @@ Namespace Adapter
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetInstruments
 
             _cts.Token.ThrowIfCancellationRequested()
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -68,7 +88,26 @@ Namespace Adapter
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
 
             _cts.Token.ThrowIfCancellationRequested()
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, New Dictionary(Of String, Object) From {{"instruments", instruments}}).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, New Dictionary(Of String, Object) From {{"instruments", instruments}}).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -104,7 +143,26 @@ Namespace Adapter
             Dim ret As List(Of ZerodhaTrade) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrderTrades
             _cts.Token.ThrowIfCancellationRequested()
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -145,7 +203,26 @@ Namespace Adapter
             Dim ret As List(Of ZerodhaOrder) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
             _cts.Token.ThrowIfCancellationRequested()
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -186,7 +263,26 @@ Namespace Adapter
             Dim execCommand As ExecutionCommands = ExecutionCommands.ModifySLOrderPrice
             _cts.Token.ThrowIfCancellationRequested()
             Dim tradeParameters As New Dictionary(Of String, Object) From {{"OrderId", orderId}, {"TriggerPrice", triggerPrice}}
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -222,7 +318,26 @@ Namespace Adapter
                 {"ParentOrderId", parentOrderID},
                 {"Variety", Constants.VARIETY_BO}
             }
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -298,7 +413,26 @@ Namespace Adapter
                 {"Variety", Constants.VARIETY_BO},
                 {"Tag", tag}
             }
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing
@@ -375,7 +509,26 @@ Namespace Adapter
                 {"Variety", Constants.VARIETY_BO},
                 {"Tag", tag}
             }
-            Dim tempAllRet As Dictionary(Of String, Object) = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim tempRet As Object = Nothing

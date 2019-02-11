@@ -129,29 +129,29 @@ Namespace Strategies
             End Try
         End Function
         Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
-        Public Overridable Function GetKiteExceptionResponse(ByVal ex As Exception) As Tuple(Of String, ExceptionResponse)
-            Dim ret As Tuple(Of String, ExceptionResponse) = Nothing
-            If ex.GetType = GetType(KiteConnect.GeneralException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            ElseIf ex.GetType = GetType(KiteConnect.PermissionException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            ElseIf ex.GetType = GetType(KiteConnect.OrderException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            ElseIf ex.GetType = GetType(KiteConnect.InputException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            ElseIf ex.GetType = GetType(KiteConnect.DataException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            ElseIf ex.GetType = GetType(KiteConnect.NetworkException) Then
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-            Else
-                ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.NotKiteException)
-            End If
-            Return ret
-        End Function
-        Public Enum ExceptionResponse
-            Retry = 1
-            Ignore
-            NotKiteException
-        End Enum
+        'Public Overridable Function GetKiteExceptionResponse(ByVal ex As Exception) As Tuple(Of String, ExceptionResponse)
+        '    Dim ret As Tuple(Of String, ExceptionResponse) = Nothing
+        '    If ex.GetType = GetType(KiteConnect.GeneralException) Then
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+        '    ElseIf ex.GetType = GetType(KiteConnect.PermissionException) Then
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+        '    ElseIf ex.GetType = GetType(KiteConnect.OrderException) Then
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+        '    ElseIf ex.GetType = GetType(KiteConnect.InputException) Then
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+        '    ElseIf ex.GetType = GetType(KiteConnect.DataException) Then
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+        '    ElseIf ex.GetType = GetType(KiteConnect.NetworkException) Then
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
+        '    Else
+        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.NotKiteException)
+        '    End If
+        '    Return ret
+        'End Function
+        'Public Enum ExceptionResponse
+        '    Retry = 1
+        '    Ignore
+        '    NotKiteException
+        'End Enum
     End Class
 End Namespace

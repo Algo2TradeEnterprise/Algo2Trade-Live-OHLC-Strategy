@@ -4,6 +4,7 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Adapter.APIAdapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.Exceptions
 Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
@@ -183,18 +184,17 @@ Namespace Controller
                                 _cts.Token.ThrowIfCancellationRequested()
                                 Exit For
                         End Select
-                    Catch tex As KiteConnect.TokenException
-                        logger.Error(tex)
-                        lastException = tex
-                        Continue For
-                    Catch tex As KiteConnect.DataException
-                        logger.Error(tex)
-                        lastException = tex
-                        Continue For
-                    Catch kex As KiteConnect.KiteException
-                        logger.Error(kex)
-                        lastException = kex
-                        Exit For
+                    Catch aex As AdapterBusinessException
+                        logger.Error(aex)
+                        lastException = aex
+                        Select Case aex.ExceptionType
+                            Case AdapterBusinessException.TypeOfException.TokenException
+                                Continue For
+                            Case AdapterBusinessException.TypeOfException.DataException
+                                Continue For
+                            Case Else
+                                Exit For
+                        End Select
                     Catch opx As OperationCanceledException
                         logger.Error(opx)
                         lastException = opx

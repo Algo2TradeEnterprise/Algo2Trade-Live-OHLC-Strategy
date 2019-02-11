@@ -133,8 +133,8 @@ Namespace Controller
                             Dim q2 As String = Nothing
 
                             If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) AndAlso
-                    tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" AndAlso
-                    tempRet.Item2.containskey("data") AndAlso tempRet.Item2("data").containskey("question_ids") AndAlso tempRet.Item2("data")("question_ids").count >= 2 Then
+                                tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" AndAlso
+                                tempRet.Item2.containskey("data") AndAlso tempRet.Item2("data").containskey("question_ids") AndAlso tempRet.Item2("data")("question_ids").count >= 2 Then
                                 q1 = tempRet.Item2("data")("question_ids")(0)
                                 q2 = tempRet.Item2("data")("question_ids")(1)
                                 If q1 IsNot Nothing AndAlso q2 IsNot Nothing Then
@@ -177,7 +177,7 @@ Namespace Controller
                                         logger.Debug("2FA submission returned, requestToken:{0}", requestToken)
                                         logger.Debug("Authentication complete, requestToken:{0}", requestToken)
                                     ElseIf tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) AndAlso
-                                tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" Then
+                                        tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" Then
                                         logger.Debug("2FA submission returned, redirection:true")
 
                                         headers = New Dictionary(Of String, String)
@@ -766,7 +766,7 @@ Namespace Controller
                 logger.Error(cex)
                 OrphanException = cex
             Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                logger.Error("Controller:{0}, error:{1}", Me.ToString, ex.ToString)
                 Throw ex
             End Try
         End Function

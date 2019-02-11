@@ -4,6 +4,7 @@ Imports System.Net.Http
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
+Imports Algo2TradeCore.Exceptions
 Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
@@ -370,18 +371,12 @@ Namespace Strategies
             If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
                 Try
                     Await ExecuteCommandAsync(ExecuteCommands.CancelOrder, Nothing).ConfigureAwait(False)
+                Catch cex As OperationCanceledException
+                    logger.Error(cex)
+                    Me.ParentStrategy.ParentController.OrphanException = cex
                 Catch ex As Exception
-                    Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
-                    If exceptionResponse IsNot Nothing Then
-                        Select Case exceptionResponse.Item2
-                            Case Strategy.ExceptionResponse.Ignore
-                                OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
-                            Case Strategy.ExceptionResponse.Retry
-                                OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
-                            Case Strategy.ExceptionResponse.NotKiteException
-                                Throw ex
-                        End Select
-                    End If
+                    logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                    Throw ex
                 End Try
             End If
         End Function
@@ -568,18 +563,17 @@ Namespace Strategies
                                     Exit For
                                 End If
                         End Select
-                    Catch tex As KiteConnect.TokenException
-                        logger.Error(tex)
-                        lastException = tex
-                        Continue For
-                    Catch dex As KiteConnect.DataException
-                        logger.Error(dex)
-                        lastException = dex
-                        Continue For
-                    Catch kex As KiteConnect.KiteException
-                        logger.Error(kex)
-                        lastException = kex
-                        Exit For
+                    Catch aex As AdapterBusinessException
+                        logger.Error(aex)
+                        lastException = aex
+                        Select Case aex.ExceptionType
+                            Case AdapterBusinessException.TypeOfException.TokenException
+                                Continue For
+                            Case AdapterBusinessException.TypeOfException.DataException
+                                Continue For
+                            Case Else
+                                Exit For
+                        End Select
                     Catch opx As OperationCanceledException
                         logger.Error(opx)
                         lastException = opx
