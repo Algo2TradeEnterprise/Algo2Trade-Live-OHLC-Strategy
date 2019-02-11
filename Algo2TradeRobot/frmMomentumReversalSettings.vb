@@ -26,7 +26,7 @@ Public Class frmMomentumReversalSettings
             If _MRSettings Is Nothing Then _MRSettings = New MomentumReversalUserInputs
             _MRSettings.InstrumentsData = Nothing
             ValidateInputs()
-            'SaveSettings()
+            SaveSettings()
             Me.Close()
         Catch ex As Exception
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
@@ -71,10 +71,10 @@ Public Class frmMomentumReversalSettings
         _MRSettings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        'ValidateNumbers(0, 999, txtCandleWickSizePercentage)
-        'ValidateNumbers(0, 999, txtMaxSLPercentage)
-        'ValidateNumbers(0, 999, txtTargetMultiplier)
-        'ValidateNumbers(1, 60, txtSignalTimeFrame)
+        ValidateNumbers(0, 999, txtCandleWickSizePercentage)
+        ValidateNumbers(0, 999, txtMaxSLPercentage)
+        ValidateNumbers(0, 999, txtTargetMultiplier)
+        ValidateNumbers(1, 60, txtSignalTimeFrame)
         ValidateFile()
     End Sub
 

@@ -7,6 +7,9 @@ Imports Syncfusion.WinForms.DataGrid
 Imports Syncfusion.WinForms.DataGrid.Events
 Imports Syncfusion.WinForms.Input.Enums
 Imports Utilities.Time
+Imports System.IO
+Imports System.Runtime.Serialization.Formatters.Binary
+
 Public Class frmMainTabbed
 
 #Region "Logging and Status Progress"
@@ -249,6 +252,7 @@ Public Class frmMainTabbed
 
 
 #Region "Momentum Reversal"
+    Private _MRUserInputs As MomentumReversalUserInputs = Nothing
 
     Private Sub sfdgvMomentumReversalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMomentumReversalMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
@@ -266,6 +270,18 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
+            OnHeartbeat("Validating user settings")
+            If File.Exists("MomentumReversalSettings.a2t") Then
+                Dim fs As Stream = New FileStream("MomentumReversalSettings.a2t", FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _MRUserInputs = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
+                fs.Close()
+                _MRUserInputs.InstrumentsData = Nothing
+                _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
+            End If
+
             EnableDisableUIEx(UIMode.Active, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
             EnableDisableUIEx(UIMode.BlockOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
 
@@ -360,7 +376,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
 
-            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, _cts, 2)
+            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, _cts, 2, _MRUserInputs)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -403,8 +419,7 @@ Public Class frmMainTabbed
         _cts.Cancel()
     End Sub
     Private Sub btnMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalSettings.Click
-        Dim MRUserInputs As MomentumReversalUserInputs = Nothing
-        Dim newForm As New frmMomentumReversalSettings(MRUserInputs)
+        Dim newForm As New frmMomentumReversalSettings(_MRUserInputs)
         newForm.ShowDialog()
     End Sub
 #End Region

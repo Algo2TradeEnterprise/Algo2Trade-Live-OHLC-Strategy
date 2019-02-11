@@ -41,28 +41,29 @@ Public Class MomentumReversalStrategyInstrument
         _cts.Token.ThrowIfCancellationRequested()
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        Dim lastException As Exception = Nothing
         Try
+            Dim slDelayCtr As Integer = 0
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
-                Dim r As Random = New Random()
-                Dim x = r.Next(0, 11)
                 _cts.Token.ThrowIfCancellationRequested()
-                If x = 7 Then
-                    While Me.ParentStrategy.ParentController.APIConnection Is Nothing
-                        _cts.Token.ThrowIfCancellationRequested()
-                        logger.Debug("Waiting for fresh token:{0}", TradableInstrument.InstrumentIdentifier)
-                        Await Task.Delay(500).ConfigureAwait(False)
-                    End While
-
-                    _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentController.APIConnection.AccessToken)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim allTrades As IEnumerable(Of ITrade) = Await _APIAdapter.GetAllTradesAsync().ConfigureAwait(False)
+                Dim orderDetails As Object = Nothing
+                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
+                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                If slDelayCtr = 3 Then
+                    slDelayCtr = 0
+                    Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                    If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                        Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                    End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000)
+                slDelayCtr += 1
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception

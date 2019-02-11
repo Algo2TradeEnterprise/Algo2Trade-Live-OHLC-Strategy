@@ -100,7 +100,6 @@ Partial Class frmMomentumReversalSettings
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(222, 22)
         Me.txtInstrumentDetalis.TabIndex = 9
-        Me.txtInstrumentDetalis.Text = "G:\algo2trade\GitHub\Algo2Trade Live\Momentum Reversal Instrument Details.xlsx"
         '
         'lblInstrumentDetails
         '
