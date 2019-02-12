@@ -2,6 +2,7 @@
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
+Imports Algo2TradeCore.UserSettings
 Imports NLog
 
 Namespace Strategies
@@ -54,6 +55,18 @@ Namespace Strategies
         Public ReadOnly Property StrategyIdentifier As String
         Public Property TradableInstrumentsAsPerStrategy As IEnumerable(Of IInstrument)
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
+        Public Property UserSettings As UserInputs = Nothing
+        Public Property ParentController As APIStrategyController
+        Protected _cts As CancellationTokenSource
+        Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal canceller As CancellationTokenSource,
+                       ByVal associatedStrategyIdentifier As String,
+                       ByVal userSettings As UserInputs)
+            Me.ParentController = associatedParentController
+            _cts = canceller
+            Me.StrategyIdentifier = associatedStrategyIdentifier
+            Me.UserSettings = userSettings
+        End Sub
         Public ReadOnly Property ActiveInstruments As Integer
             Get
                 Dim instrumentCount As Integer = 0
@@ -78,13 +91,6 @@ Namespace Strategies
                 Return plOfDay
             End Get
         End Property
-        Public Property ParentController As APIStrategyController
-        Protected _cts As CancellationTokenSource
-        Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource, ByVal associatedStrategyIdentifier As String)
-            Me.ParentController = associatedParentController
-            _cts = canceller
-            Me.StrategyIdentifier = associatedStrategyIdentifier
-        End Sub
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         Public MustOverride Overrides Function ToString() As String

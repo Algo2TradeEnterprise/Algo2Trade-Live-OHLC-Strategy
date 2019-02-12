@@ -36,6 +36,7 @@ Namespace ChartHandler.ChartTimeframe
                         Else
                             .Volume = payload.DailyVolume - .PreviousPayload.DailyVolume
                         End If
+                        .DailyVolume = payload.DailyVolume
                     End With
                 Else
                     Dim runninPayload As New OHLCPayload(IPayload.PayloadSource.Calculated)
@@ -60,7 +61,7 @@ Namespace ChartHandler.ChartTimeframe
                         End If
                     End With
                     ChartPayloads.Add(runninPayload.SnapshotDateTime, runninPayload)
-                    Debug.WriteLine(Utilities.Strings.JsonSerialize(runninPayload.PreviousPayload))
+                    Debug.WriteLine(runninPayload.PreviousPayload.ToString)
                 End If
             End If
         End Function

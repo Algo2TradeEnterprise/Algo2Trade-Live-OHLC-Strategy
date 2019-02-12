@@ -74,11 +74,13 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
-        Throw New NotImplementedException("IsTriggerReceivedForPlaceOrderAsync-MR")
+
+        Return ret
     End Function
     Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
         Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
-        Throw New NotImplementedException("IsTriggerReceivedForModifyStoplossOrder-MR")
+
+        Return ret
     End Function
 
 #Region "IDisposable Support"

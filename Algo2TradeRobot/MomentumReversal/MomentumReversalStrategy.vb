@@ -4,6 +4,7 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.UserSettings
 Imports NLog
 
 Public Class MomentumReversalStrategy
@@ -12,17 +13,24 @@ Public Class MomentumReversalStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Property MomentumReversalUserSettings As MomentumReversalUserInputs = Nothing
-    Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource, ByVal strategyIdentifier As String)
-        MyBase.New(associatedParentController, canceller, strategyIdentifier)
+    Public Sub New(ByVal associatedParentController As APIStrategyController,
+                   ByVal canceller As CancellationTokenSource,
+                   ByVal strategyIdentifier As String,
+                   ByVal userSettings As MomentumReversalUserInputs)
+        MyBase.New(associatedParentController, canceller, strategyIdentifier, userSettings)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
-    Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource, ByVal strategyIdentifier As String, ByVal userSettings As MomentumReversalUserInputs)
-        Me.New(associatedParentController, canceller, strategyIdentifier)
-        MomentumReversalUserSettings = userSettings
+    Public Sub New(ByVal associatedParentController As APIStrategyController,
+                   ByVal canceller As CancellationTokenSource,
+                   ByVal strategyIdentifier As String)
+        Me.New(associatedParentController, canceller, strategyIdentifier, Nothing)
+        'Though the TradableStrategyInstruments is being populated from inside by newing it,
+        'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
+        'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
+        'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
@@ -69,19 +77,20 @@ Public Class MomentumReversalStrategy
             '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             'End If
 
-            'Get OHL Strategy Instruments
-            If MomentumReversalUserSettings.InstrumentsData IsNot Nothing AndAlso MomentumReversalUserSettings.InstrumentsData.Count > 0 Then
+            'Get MR Strategy Instruments
+            Dim mrUserInputs As MomentumReversalUserInputs = CType(UserSettings, MomentumReversalUserInputs)
+            If mrUserInputs.InstrumentsData IsNot Nothing AndAlso mrUserInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 Dim cashInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
-                    MomentumReversalUserSettings.InstrumentsData.Where(Function(x)
-                                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Cash OrElse
+                    mrUserInputs.InstrumentsData.Where(Function(x)
+                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Cash OrElse
                                                                                  x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
-                                                                       End Function)
+                                                       End Function)
                 Dim futureInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
-                    MomentumReversalUserSettings.InstrumentsData.Where(Function(x)
-                                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Futures OrElse
+                    mrUserInputs.InstrumentsData.Where(Function(x)
+                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Futures OrElse
                                                                                  x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
-                                                                       End Function)
+                                                       End Function)
                 For Each instrument In cashInstrumentList.ToList
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)

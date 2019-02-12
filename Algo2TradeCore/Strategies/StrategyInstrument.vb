@@ -330,7 +330,7 @@ Namespace Strategies
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
-            StrategyXMinutePayloadsSource = New ChartHandler.ChartTimeframe.ChartTimeframeConsumer(5, _cts)
+            StrategyXMinutePayloadsSource = New ChartHandler.ChartTimeframe.ChartTimeframeConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame, _cts)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Function GenerateTag() As String

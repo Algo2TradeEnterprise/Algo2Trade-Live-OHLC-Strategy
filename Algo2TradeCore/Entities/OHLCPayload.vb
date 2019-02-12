@@ -22,5 +22,9 @@
         Public Sub New(ByVal payloadGeneratedBy As IPayload.PayloadSource)
             Me._PayloadGeneratedBy = payloadGeneratedBy
         End Sub
+        Public Overrides Function ToString() As String
+            Return String.Format("TradingSymbol:{0}, Open:{1}, High:{2}, Low:{3}, Close:{4}, Volume:{5}, Timestamp:{6}",
+                                 Me.TradingSymbol, Me.OpenPrice, Me.HighPrice, Me.LowPrice, Me.ClosePrice, Me.Volume, Me.SnapshotDateTime.ToString())
+        End Function
     End Class
 End Namespace

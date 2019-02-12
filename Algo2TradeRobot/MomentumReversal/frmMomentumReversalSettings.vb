@@ -8,7 +8,6 @@ Public Class frmMomentumReversalSettings
     Private _cts As CancellationTokenSource = Nothing
     Private _MRSettings As MomentumReversalUserInputs = Nothing
     Private _MRSettingsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, "MomentumReversalSettings.a2t")
-    'Private _InstrumentsData As Dictionary(Of String, MomentumReversalUserInputs.InstrumentDetails) = Nothing
 
     Public Sub New(ByRef MRUserInputs As MomentumReversalUserInputs)
         ' This call is required by the designer.
@@ -18,15 +17,18 @@ Public Class frmMomentumReversalSettings
     End Sub
 
     Private Sub frmMomentumReversalSettings_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        lblStatus.Visible = False
         LoadSettings()
     End Sub
-    Private Sub btnSaveMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnSaveMomentumReversalSettings.Click
+    Private Async Sub btnSaveMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnSaveMomentumReversalSettings.Click
         Try
             _cts = New CancellationTokenSource
             If _MRSettings Is Nothing Then _MRSettings = New MomentumReversalUserInputs
             _MRSettings.InstrumentsData = Nothing
-            ValidateInputs()
+            lblStatus.Visible = True
+            Await ValidateInputs().ConfigureAwait(False)
             SaveSettings()
+            lblStatus.Visible = False
             Me.Close()
         Catch ex As Exception
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
@@ -67,16 +69,16 @@ Public Class frmMomentumReversalSettings
         If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
         Return ret
     End Function
-    Private Sub ValidateFile()
-        _MRSettings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
-    End Sub
-    Private Sub ValidateInputs()
+    Private Async Function ValidateFile() As Task
+        Await _MRSettings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts).ConfigureAwait(False)
+    End Function
+    Private Async Function ValidateInputs() As Task
         ValidateNumbers(0, 999, txtCandleWickSizePercentage)
         ValidateNumbers(0, 999, txtMaxSLPercentage)
         ValidateNumbers(0, 999, txtTargetMultiplier)
         ValidateNumbers(1, 60, txtSignalTimeFrame)
-        ValidateFile()
-    End Sub
+        Await ValidateFile().ConfigureAwait(False)
+    End Function
 
     Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
         opnFileMRSettings.ShowDialog()

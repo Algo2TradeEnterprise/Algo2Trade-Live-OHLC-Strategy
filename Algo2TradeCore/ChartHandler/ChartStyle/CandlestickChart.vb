@@ -58,12 +58,13 @@ Namespace ChartHandler.ChartStyle
             _cts = canceller
         End Sub
         Public Async Function ProcessHistoricalJSONToCandleStickAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
+            'Exit Function
             Try
-                Exit Function
                 While _lock > 0
                     Await Task.Delay(10).ConfigureAwait(False)
                 End While
                 Interlocked.Increment(_lock)
+                'Debug.WriteLine(String.Format("Process Historical before. Time:{0}, Lock:{1}", Now, _lock))
                 If historicalCandlesJSONDict.ContainsKey("data") Then
                     Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
                     If historicalCandlesDict.ContainsKey("candles") Then
@@ -98,12 +99,14 @@ Namespace ChartHandler.ChartStyle
                 Me.ParentController.OrphanException = ex
             Finally
                 Interlocked.Decrement(_lock)
+                'Debug.WriteLine(String.Format("Process Historical after. Time:{0}, Lock:{1}", Now, _lock))
             End Try
         End Function
         Public Async Function FIFOProcessTickToCandleStickAsync() As Task
-            Try
-                If _lock = 0 Then
+            If _lock = 0 Then
+                Try
                     Interlocked.Increment(_lock)
+                    'Debug.WriteLine(String.Format("Process Tick before. Time:{0}, Lock:{1}", Now, _lock))
                     Await Task.Delay(0).ConfigureAwait(False)
                     If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
                         Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
@@ -149,13 +152,14 @@ Namespace ChartHandler.ChartStyle
                             Next
                         End If
                     End If
-                End If
-            Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                Me.ParentController.OrphanException = ex
-            Finally
-                Interlocked.Decrement(_lock)
-            End Try
+                Catch ex As Exception
+                    logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                    Me.ParentController.OrphanException = ex
+                Finally
+                    Interlocked.Decrement(_lock)
+                    'Debug.WriteLine(String.Format("Process Tick after. Time:{0}, Lock:{1}", Now, _lock))
+                End Try
+            End If
         End Function
 
         Private Sub CalculateCandleStickFromTick(ByVal existingPayloads As Concurrent.ConcurrentDictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick)

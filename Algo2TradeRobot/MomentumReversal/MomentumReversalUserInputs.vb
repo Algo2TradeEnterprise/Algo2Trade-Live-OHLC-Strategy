@@ -1,13 +1,13 @@
 ﻿Imports System.IO
 Imports System.Threading
+Imports Algo2TradeCore.UserSettings
 Imports Utilities.DAL
 
 <Serializable>
 Public Class MomentumReversalUserInputs
+    Inherits UserInputs
     Public CandleWickSizePercentage As Decimal
     Public MaxStoplossPercentage As Decimal
-    Public TargetMultiplier As Decimal
-    Public SignalTimeFrame As Integer
     Public InstrumentDetailsFilePath As String
     Public InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
@@ -23,7 +23,8 @@ Public Class MomentumReversalUserInputs
         Futures
         Both
     End Enum
-    Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
+    Public Async Function FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource) As Task
+        Await Task.Delay(0).ConfigureAwait(False)
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
                 Dim extension As String = Path.GetExtension(filePath)
@@ -133,5 +134,5 @@ Public Class MomentumReversalUserInputs
         Else
             Throw New ApplicationException("No valid file path exists")
         End If
-    End Sub
+    End Function
 End Class

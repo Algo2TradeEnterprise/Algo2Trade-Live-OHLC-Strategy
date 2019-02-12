@@ -124,6 +124,7 @@
     <Compile Include="Strategies\Strategy.vb" />
     <Compile Include="Strategies\StrategyInstrument.vb" />
     <Compile Include="Strategies\Trigger.vb" />
+    <Compile Include="UserSettings\UserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

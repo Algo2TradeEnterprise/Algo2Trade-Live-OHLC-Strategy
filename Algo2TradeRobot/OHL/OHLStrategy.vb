@@ -13,8 +13,10 @@ Public Class OHLStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal canceller As CancellationTokenSource, ByVal strategyIdentifier As String)
-        MyBase.New(associatedParentController, canceller, strategyIdentifier)
+    Public Sub New(ByVal associatedParentController As APIStrategyController,
+                   ByVal canceller As CancellationTokenSource,
+                   ByVal strategyIdentifier As String)
+        MyBase.New(associatedParentController, canceller, strategyIdentifier, Nothing)
     End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
@@ -49,8 +51,8 @@ Public Class OHLStrategy
             'End If
 
             'Get OHL Strategy Instruments
-            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
-            ' Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
+            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
+            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
                 dt = readCSV.GetDataTableFromCSV(0)

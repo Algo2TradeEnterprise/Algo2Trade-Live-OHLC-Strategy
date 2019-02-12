@@ -277,7 +277,7 @@ Public Class frmMainTabbed
                 _MRUserInputs = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
                 fs.Close()
                 _MRUserInputs.InstrumentsData = Nothing
-                _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts)
+                Await _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts).ConfigureAwait(False)
             Else
                 Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
             End If
@@ -398,6 +398,7 @@ Public Class frmMainTabbed
             ProgressStatus("No pending actions")
             EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
             EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+            SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
         End Try
         'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -408,6 +409,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
+        SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
         Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick

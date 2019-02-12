@@ -1,7 +1,9 @@
-﻿Public Module Enums
-    Public Enum APISource
-        Zerodha = 1
-        Upstox
-        None
-    End Enum
-End Module
+﻿Namespace Entities
+    Public Module Enums
+        Public Enum APISource
+            Zerodha = 1
+            Upstox
+            None
+        End Enum
+    End Module
+End Namespace
