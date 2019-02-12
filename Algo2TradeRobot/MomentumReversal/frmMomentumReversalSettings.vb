@@ -86,7 +86,7 @@ Public Class frmMomentumReversalSettings
 
     Private Sub opnFileMRSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileMRSettings.FileOk
         Dim extension As String = Path.GetExtension(opnFileMRSettings.FileName)
-        If extension = ".xlsx" OrElse extension = ".xls" Then
+        If extension = ".csv" Then
             txtInstrumentDetalis.Text = opnFileMRSettings.FileName
         Else
             MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)

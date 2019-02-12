@@ -28,31 +28,31 @@ Public Class MomentumReversalUserInputs
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
                 Dim extension As String = Path.GetExtension(filePath)
-                If extension = ".xlsx" OrElse extension = ".xls" Then
+                If extension = ".csv" Then
                     Dim instrumentDetails(,) As Object = Nothing
-                    Using excelReader As New ExcelHelper(filePath, ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, ExcelHelper.ExcelSaveType.XLS_XLSX, canceller)
-                        instrumentDetails = excelReader.GetExcelInMemory()
+                    Using csvReader As New CSVHelper(filePath, ",", canceller)
+                        instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
                         Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL"}
 
-                        For colCtr = 1 To 5
-                            If instrumentDetails(1, colCtr) Is Nothing OrElse Trim(instrumentDetails(1, colCtr).ToString) = "" Then
+                        For colCtr = 0 To 4
+                            If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
-                                If Not excelColumnList.Contains(Trim(instrumentDetails(1, colCtr).ToString.ToUpper)) Then
+                                If Not excelColumnList.Contains(Trim(instrumentDetails(0, colCtr).ToString.ToUpper)) Then
                                     Throw New ApplicationException(String.Format("Invalid format or invalid column at ColumnNumber: {0}", colCtr))
                                 End If
                             End If
                         Next
-                        For rowCtr = 2 To instrumentDetails.GetLength(0)
+                        For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
                             Dim marketCash As Boolean = False
                             Dim marketFuture As Boolean = False
                             Dim quantity As Integer = Integer.MinValue
                             Dim capital As Decimal = Decimal.MinValue
-                            For columnCtr = 1 To instrumentDetails.GetLength(1)
-                                If columnCtr = 1 Then
+                            For columnCtr = 0 To instrumentDetails.GetLength(1)
+                                If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         instrumentName = instrumentDetails(rowCtr, columnCtr)
@@ -61,33 +61,35 @@ Public Class MomentumReversalUserInputs
                                             Throw New ApplicationException(String.Format("Instrument Name Missing or Blank Row RowNumber: {0}", rowCtr))
                                         End If
                                     End If
-                                ElseIf columnCtr = 2 Then
+                                ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                     instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "TRUE" Then
                                         marketCash = True
                                     ElseIf instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                     Not instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "FALSE" Then
+                                     Not instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "FALSE" AndAlso
+                                     Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         Throw New ApplicationException(String.Format("Cash Instrument Type is not valid for {0}", instrumentName))
                                     End If
-                                ElseIf columnCtr = 3 Then
+                                ElseIf columnCtr = 2 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                     instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "TRUE" Then
                                         marketFuture = True
                                     ElseIf instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                     Not instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "FALSE" Then
+                                     Not instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "FALSE" AndAlso
+                                     Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         Throw New ApplicationException(String.Format("Future Instrument Type is not valid for {0}", instrumentName))
                                     End If
-                                ElseIf columnCtr = 4 Then
+                                ElseIf columnCtr = 3 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                     Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                        Math.Round(instrumentDetails(rowCtr, columnCtr), 0) = instrumentDetails(rowCtr, columnCtr) Then
+                                        Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
                                             quantity = instrumentDetails(rowCtr, columnCtr)
                                         Else
                                             Throw New ApplicationException(String.Format("Quantity cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If
                                     End If
-                                ElseIf columnCtr = 5 Then
+                                ElseIf columnCtr = 4 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
