@@ -99,6 +99,7 @@ Namespace Strategies
         <System.ComponentModel.Browsable(False)>
         Public Property TradableInstrument As IInstrument
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+        Public Property StrategyXMinutePayloadsSource As ChartHandler.ChartTimeframe.ChartTimeframeConsumer
 
 #Region "UI Properties"
         <Display(Name:="Total Trades", Order:=11)>
@@ -329,6 +330,7 @@ Namespace Strategies
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+            StrategyXMinutePayloadsSource = New ChartHandler.ChartTimeframe.ChartTimeframeConsumer(5, _cts)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Function GenerateTag() As String

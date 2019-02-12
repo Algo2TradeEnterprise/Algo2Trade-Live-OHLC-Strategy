@@ -1,6 +1,7 @@
 ﻿Imports KiteConnect
 Imports Algo2TradeCore.ChartHandler.ChartStyle
 Imports Algo2TradeCore.Controller
+Imports Algo2TradeCore.Strategies
 
 Namespace Entities
     <Serializable>
@@ -108,6 +109,7 @@ Namespace Entities
                 _RawPayloads = value
             End Set
         End Property
+
         Public Property RawTicks As Concurrent.ConcurrentDictionary(Of Date, ITick) Implements IInstrument.RawTicks
             Get
                 Return _RawTicks
@@ -128,5 +130,7 @@ Namespace Entities
                 Return _CandleStickCreator
             End Get
         End Property
+        Public Property FirstLevelConsumers As List(Of StrategyInstrument) Implements IInstrument.FirstLevelConsumers
+
     End Class
 End Namespace

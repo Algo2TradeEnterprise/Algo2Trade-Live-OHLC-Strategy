@@ -14,6 +14,7 @@
         Enum PayloadSource
             Tick
             Historical
+            Calculated
         End Enum
     End Interface
 End Namespace

@@ -89,7 +89,7 @@ Namespace ChartHandler.ChartStyle
                             End With
                             previousCandlePayload = runningPayload
                             'The below will add or update items inside the dictionary
-                            _parentInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
+                            '_parentInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
                         Next
                     End If
                 End If
@@ -127,9 +127,15 @@ Namespace ChartHandler.ChartStyle
                                     End If
                                 Else
                                     _parentInstrument.RawPayloads.Add(runningRawTickPayload.Key, runningRawTickPayload.Value)
-
                                 End If
                             Next
+                            'Push to all consumers
+                            If _parentInstrument.FirstLevelConsumers IsNot Nothing AndAlso _parentInstrument.FirstLevelConsumers.Count > 0 Then
+                                For Each runningFirstLevelConsumer In _parentInstrument.FirstLevelConsumers
+                                    Await runningFirstLevelConsumer.StrategyXMinutePayloadsSource.PopulateFromOHLCAsync(_parentInstrument.RawPayloads(_parentInstrument.RawTickPayloads.LastOrDefault.Key)).ConfigureAwait(False)
+                                Next
+                            End If
+
                             'Remove all items except the last one
                             Dim removableRawTickPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                                 _parentInstrument.RawTickPayloads.Where(Function(y)
@@ -160,11 +166,12 @@ Namespace ChartHandler.ChartStyle
 
                 Dim lastExistingPayload As OHLCPayload = Nothing
                 If existingPayloads IsNot Nothing AndAlso existingPayloads.Count > 0 Then
-                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = _parentInstrument.RawTickPayloads.Where(Function(y)
-                                                                                                                                                 Return y.Key = _parentInstrument.RawTickPayloads.Max(Function(x)
-                                                                                                                                                                                                          Return x.Key
-                                                                                                                                                                                                      End Function)
-                                                                                                                                             End Function)
+                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                        _parentInstrument.RawTickPayloads.Where(Function(y)
+                                                                    Return y.Key = _parentInstrument.RawTickPayloads.Max(Function(x)
+                                                                                                                             Return x.Key
+                                                                                                                         End Function)
+                                                                End Function)
                     If lastExistingPayloads IsNot Nothing Then lastExistingPayload = lastExistingPayloads.LastOrDefault.Value
                 End If
                 '3 condition exist

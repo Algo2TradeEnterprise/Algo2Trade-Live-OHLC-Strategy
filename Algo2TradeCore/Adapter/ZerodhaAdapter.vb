@@ -83,7 +83,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function GetAllQuotes(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
-            logger.Debug("GetAllQuotes, instruments:{0}", Utils.JsonSerialize(instruments))
+            'logger.Debug("GetAllQuotes, instruments:{0}", Utils.JsonSerialize(instruments))
             Dim ret As List(Of ZerodhaQuote) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
 
@@ -558,7 +558,7 @@ Namespace Adapter
 
 #Region "Zerodha Commands"
         Private Async Function ExecuteCommandAsync(ByVal command As ExecutionCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
+            'logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As Dictionary(Of String, Object) = Nothing
 

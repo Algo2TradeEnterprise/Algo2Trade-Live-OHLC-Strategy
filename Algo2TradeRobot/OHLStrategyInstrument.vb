@@ -70,44 +70,15 @@ Public Class OHLStrategyInstrument
                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
                     Interlocked.Increment(_OHLStrategyProtector)
-                    'Try
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
-                    'Catch ex As Exception
-                    '    logger.Error(ex)
-                    '    Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
-                    '    If exceptionResponse IsNot Nothing Then
-                    '        Select Case exceptionResponse.Item2
-                    '            Case Strategy.ExceptionResponse.Ignore
-                    '                OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
-                    '            Case Strategy.ExceptionResponse.Retry
-                    '                OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
-                    '            Case Strategy.ExceptionResponse.NotKiteException
-                    '                Throw ex
-                    '        End Select
-                    '    End If
-                    'End Try
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 3 Then
                     slDelayCtr = 0
                     Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
-                    If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
-                        'Try
+                    If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 AndAlso _OHLStrategyProtector = 1 Then
+                        Interlocked.Increment(_OHLStrategyProtector)
                         Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                        'Catch ex As Exception
-                        '    logger.Error(ex)
-                        '    Dim exceptionResponse As Tuple(Of String, Strategy.ExceptionResponse) = Me.ParentStrategy.GetKiteExceptionResponse(ex)
-                        '    If exceptionResponse IsNot Nothing Then
-                        '        Select Case exceptionResponse.Item2
-                        '            Case Strategy.ExceptionResponse.Ignore
-                        '                OnHeartbeat(String.Format("{0}. Will not retry.", exceptionResponse.Item1))
-                        '            Case Strategy.ExceptionResponse.Retry
-                        '                OnHeartbeat(String.Format("{0}. Will retry.", exceptionResponse.Item1))
-                        '            Case Strategy.ExceptionResponse.NotKiteException
-                        '                Throw ex
-                        '        End Select
-                        '    End If
-                        'End Try
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
@@ -127,7 +98,7 @@ Public Class OHLStrategyInstrument
         If TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 10 Then
             Dim OHLTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
-            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.01, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
+            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.004, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
             Dim entryPrice As Decimal = Nothing
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing

@@ -50,7 +50,7 @@ Public Class OHLStrategy
 
             'Get OHL Strategy Instruments
             Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
-            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
+            ' Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
                 dt = readCSV.GetDataTableFromCSV(0)
@@ -100,6 +100,8 @@ Public Class OHLStrategy
                 AddHandler runningTradableStrategyInstrument.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
 
                 retTradableStrategyInstruments.Add(runningTradableStrategyInstrument)
+                If runningTradableInstrument.FirstLevelConsumers Is Nothing Then runningTradableInstrument.FirstLevelConsumers = New List(Of StrategyInstrument)
+                runningTradableInstrument.FirstLevelConsumers.Add(runningTradableStrategyInstrument)
             Next
             TradableStrategyInstruments = retTradableStrategyInstruments
         Else
