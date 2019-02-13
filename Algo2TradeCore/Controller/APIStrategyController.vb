@@ -8,6 +8,7 @@ Imports Algo2TradeCore.Exceptions
 Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
+Imports Algo2TradeCore.ChartHandler.ChartStyle
 
 Namespace Controller
     Public MustInherit Class APIStrategyController
@@ -96,8 +97,10 @@ Namespace Controller
         Protected _APITicker As APITicker
         Protected _APIHistoricalDataFetcher As APIHistoricalDataFetcher
         Protected _AllInstruments As IEnumerable(Of IInstrument)
+        Protected _AllStrategyUniqueInstruments As IEnumerable(Of IInstrument)
         Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, List(Of StrategyInstrument))
+        Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal canceller As CancellationTokenSource)
             _currentUser = validatedUser
@@ -315,8 +318,18 @@ Namespace Controller
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
         Public MustOverride Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
         Public MustOverride Async Function FillOrderDetailsAsyc(ByVal strategyToRun As Strategy) As Task
-
-        'Public MustOverride Async Function MonitorAsync(ByVal strategyToRun As Strategy) As Task
+        Public Sub FillCandlestickCreator()
+            If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 0 Then
+                For Each runningStrategyUniqueInstruments In _AllStrategyUniqueInstruments
+                    If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(runningStrategyUniqueInstruments.InstrumentIdentifier) Then
+                        Continue For
+                    End If
+                    If _rawPayloadCreators Is Nothing Then _rawPayloadCreators = New Dictionary(Of String, CandleStickChart)
+                    _rawPayloadCreators.Add(runningStrategyUniqueInstruments.InstrumentIdentifier, New CandleStickChart(Me, runningStrategyUniqueInstruments, _cts))
+                    If runningStrategyUniqueInstruments.RawPayloads Is Nothing Then runningStrategyUniqueInstruments.RawPayloads = New SortedDictionary(Of Date, OHLCPayload)
+                Next
+            End If
+        End Sub
 #End Region
 
     End Class

@@ -572,6 +572,8 @@ Namespace Controller
             Dim ret As Boolean = False
             _AllStrategies = Nothing
             _AllInstruments = Nothing
+            _AllStrategyUniqueInstruments = Nothing
+            _rawPayloadCreators = Nothing
             If _APIAdapter IsNot Nothing Then
                 RemoveHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
@@ -621,6 +623,27 @@ Namespace Controller
                 OnHeartbeatEx(String.Format("As per the strategy logic, tradable instruments being fetched, strategy:{0}", strategyToRun.ToString), New List(Of Object) From {strategyToRun})
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim ret As Boolean = Await strategyToRun.CreateTradableStrategyInstrumentsAsync(_AllInstruments).ConfigureAwait(False)
+
+                'Now store the unique instruments across strategies into the local collection
+                If strategyToRun.TradableStrategyInstruments IsNot Nothing AndAlso strategyToRun.TradableStrategyInstruments.Count > 0 Then
+                    Dim tempList As List(Of IInstrument) = Nothing
+                    For Each runningTradableStrategyInstrument In strategyToRun.TradableStrategyInstruments
+                        If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Where(Function(x)
+                                                                                                                       Return x.InstrumentIdentifier = runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier
+                                                                                                                   End Function).Count > 0 Then
+                            Continue For
+                        End If
+                        If tempList Is Nothing Then tempList = New List(Of IInstrument)
+                        tempList.Add(runningTradableStrategyInstrument.TradableInstrument)
+                    Next
+                    If _AllStrategyUniqueInstruments IsNot Nothing Then
+                        _AllStrategyUniqueInstruments = _AllStrategyUniqueInstruments.Union(tempList)
+                    Else
+                        _AllStrategyUniqueInstruments = tempList
+                    End If
+                End If
+                'Create the candlecreator object - one each for each unique instrument
+                FillCandlestickCreator()
                 _cts.Token.ThrowIfCancellationRequested()
                 'Now we know what are the instruments as per the strategy and their corresponding workers
                 If Not ret Then Throw New ApplicationException(String.Format("No instruments fetched that can be traded, strategy:{0}", strategyToRun.ToString))
@@ -781,7 +804,8 @@ Namespace Controller
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
-                    runningStrategyInstrument.TradableInstrument.CandleStickCreator.ProcessHistoricalJSONToCandleStickAsync(historicalCandlesJSONDict)
+                    'TO DO: Bring back the relvant call so as to store the JSON into memory
+                    'runningStrategyInstrument.TradableInstrument.CandleStickCreator.ProcessHistoricalJSONToCandleStickAsync(historicalCandlesJSONDict)
                     Exit For
                 Next
             End If
@@ -837,6 +861,7 @@ Namespace Controller
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
                     runningStrategyInstrument.TradableInstrument.LastTick = runningTick
+                    _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).CalculateCandleStickFromTickAsync(runningStrategyInstrument.TradableInstrument.RawPayloads, runningTick)
                     'Since tick is supposed to be processed once for each tradableinstrument, hence we exit the loop so that it 
                     'is not processed twice
                     Exit For

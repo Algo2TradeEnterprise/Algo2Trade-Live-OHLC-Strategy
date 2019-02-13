@@ -154,8 +154,8 @@ Public Class MomentumReversalStrategy
                 AddHandler runningTradableStrategyInstrument.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
 
                 retTradableStrategyInstruments.Add(runningTradableStrategyInstrument)
-                If runningTradableInstrument.FirstLevelConsumers Is Nothing Then runningTradableInstrument.FirstLevelConsumers = New List(Of StrategyInstrument)
-                runningTradableInstrument.FirstLevelConsumers.Add(runningTradableStrategyInstrument)
+                'If runningTradableInstrument.FirstLevelConsumers Is Nothing Then runningTradableInstrument.FirstLevelConsumers = New List(Of StrategyInstrument)
+                'runningTradableInstrument.FirstLevelConsumers.Add(runningTradableStrategyInstrument)
             Next
             TradableStrategyInstruments = retTradableStrategyInstruments
         Else

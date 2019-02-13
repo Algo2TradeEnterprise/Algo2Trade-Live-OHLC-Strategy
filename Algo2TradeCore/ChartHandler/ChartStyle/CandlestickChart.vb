@@ -52,6 +52,7 @@ Namespace ChartHandler.ChartStyle
         Private _parentInstrument As IInstrument
         Private _cts As New CancellationTokenSource
         Private _lock As Integer
+        Private _tickLock As Integer
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal assoicatedParentInstrument As IInstrument, ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
             _parentInstrument = assoicatedParentInstrument
@@ -102,129 +103,115 @@ Namespace ChartHandler.ChartStyle
                 'Debug.WriteLine(String.Format("Process Historical after. Time:{0}, Lock:{1}", Now, _lock))
             End Try
         End Function
-        Public Async Function FIFOProcessTickToCandleStickAsync() As Task
-            If _lock = 0 Then
-                Try
-                    Interlocked.Increment(_lock)
-                    'Debug.WriteLine(String.Format("Process Tick before. Time:{0}, Lock:{1}", Now, _lock))
-                    Await Task.Delay(0).ConfigureAwait(False)
-                    If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
-                        Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
-                                                                                                                             Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
-                                                                                                                                                                               Return x.Key
-                                                                                                                                                                           End Function)
-                                                                                                                         End Function)
-                        Dim removedTick As ITick = Nothing
-                        For Each runningFIFOTick In FIFOTicks
-                            CalculateCandleStickFromTick(_parentInstrument.RawTickPayloads, runningFIFOTick.Value)
-                            'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
-                            _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
-                        Next
+        'Public Async Function FIFOProcessTickToCandleStickAsync() As Task
+        '    If _lock = 0 Then
+        '        Try
+        '            Interlocked.Increment(_lock)
+        '            'Debug.WriteLine(String.Format("Process Tick before. Time:{0}, Lock:{1}", Now, _lock))
+        '            Await Task.Delay(0).ConfigureAwait(False)
+        '            If _parentInstrument.RawTicks IsNot Nothing AndAlso _parentInstrument.RawTicks.Count > 0 Then
+        '                Dim FIFOTicks As IEnumerable(Of KeyValuePair(Of Date, ITick)) = _parentInstrument.RawTicks.Where(Function(y)
+        '                                                                                                                     Return y.Key = _parentInstrument.RawTicks.Min(Function(x)
+        '                                                                                                                                                                       Return x.Key
+        '                                                                                                                                                                   End Function)
+        '                                                                                                                 End Function)
+        '                Dim removedTick As ITick = Nothing
+        '                For Each runningFIFOTick In FIFOTicks
+        '                    CalculateCandleStickFromTick(_parentInstrument.RawTickPayloads, runningFIFOTick.Value)
+        '                    'Console.WriteLine(Utilities.Strings.JsonSerialize(z1))
+        '                    _parentInstrument.RawTicks.TryRemove(runningFIFOTick.Key, removedTick)
+        '                Next
 
-                        'Now insert this candle into the main payload
-                        If _parentInstrument.RawTickPayloads IsNot Nothing AndAlso _parentInstrument.RawTickPayloads.Count > 0 Then
-                            For Each runningRawTickPayload In _parentInstrument.RawTickPayloads
-                                If _parentInstrument.RawPayloads.ContainsKey(runningRawTickPayload.Key) Then
-                                    If _parentInstrument.RawPayloads(runningRawTickPayload.Key).PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
-                                        _parentInstrument.RawPayloads(runningRawTickPayload.Key) = runningRawTickPayload.Value
-                                    End If
-                                Else
-                                    _parentInstrument.RawPayloads.Add(runningRawTickPayload.Key, runningRawTickPayload.Value)
-                                End If
-                            Next
-                            'Push to all consumers
-                            If _parentInstrument.FirstLevelConsumers IsNot Nothing AndAlso _parentInstrument.FirstLevelConsumers.Count > 0 Then
-                                For Each runningFirstLevelConsumer In _parentInstrument.FirstLevelConsumers
-                                    Await runningFirstLevelConsumer.StrategyXMinutePayloadsSource.PopulateFromOHLCAsync(_parentInstrument.RawPayloads(_parentInstrument.RawTickPayloads.LastOrDefault.Key)).ConfigureAwait(False)
-                                Next
-                            End If
+        '                'Now insert this candle into the main payload
+        '                If _parentInstrument.RawTickPayloads IsNot Nothing AndAlso _parentInstrument.RawTickPayloads.Count > 0 Then
+        '                    For Each runningRawTickPayload In _parentInstrument.RawTickPayloads
+        '                        If _parentInstrument.RawPayloads.ContainsKey(runningRawTickPayload.Key) Then
+        '                            If _parentInstrument.RawPayloads(runningRawTickPayload.Key).PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
+        '                                _parentInstrument.RawPayloads(runningRawTickPayload.Key) = runningRawTickPayload.Value
+        '                            End If
+        '                        Else
+        '                            _parentInstrument.RawPayloads.Add(runningRawTickPayload.Key, runningRawTickPayload.Value)
+        '                        End If
+        '                    Next
+        '                    'Push to all consumers
+        '                    If _parentInstrument.FirstLevelConsumers IsNot Nothing AndAlso _parentInstrument.FirstLevelConsumers.Count > 0 Then
+        '                        For Each runningFirstLevelConsumer In _parentInstrument.FirstLevelConsumers
+        '                            Await runningFirstLevelConsumer.StrategyXMinutePayloadsSource.PopulateFromOHLCAsync(_parentInstrument.RawPayloads(_parentInstrument.RawTickPayloads.LastOrDefault.Key)).ConfigureAwait(False)
+        '                        Next
+        '                    End If
 
-                            'Remove all items except the last one
-                            Dim removableRawTickPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                                _parentInstrument.RawTickPayloads.Where(Function(y)
-                                                                            Return y.Key < _parentInstrument.RawTickPayloads.Max(Function(x)
-                                                                                                                                     Return x.Key
-                                                                                                                                 End Function)
-                                                                        End Function)
-                            Dim removedRawTickPayload As OHLCPayload = Nothing
-                            For Each removableRawTickPayload In removableRawTickPayloads
-                                _parentInstrument.RawTickPayloads.TryRemove(removableRawTickPayload.Key, removedRawTickPayload)
-                            Next
-                        End If
-                    End If
-                Catch ex As Exception
-                    logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                    Me.ParentController.OrphanException = ex
-                Finally
-                    Interlocked.Decrement(_lock)
-                    'Debug.WriteLine(String.Format("Process Tick after. Time:{0}, Lock:{1}", Now, _lock))
-                End Try
+        '                    'Remove all items except the last one
+        '                    Dim removableRawTickPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+        '                        _parentInstrument.RawTickPayloads.Where(Function(y)
+        '                                                                    Return y.Key < _parentInstrument.RawTickPayloads.Max(Function(x)
+        '                                                                                                                             Return x.Key
+        '                                                                                                                         End Function)
+        '                                                                End Function)
+        '                    Dim removedRawTickPayload As OHLCPayload = Nothing
+        '                    For Each removableRawTickPayload In removableRawTickPayloads
+        '                        _parentInstrument.RawTickPayloads.TryRemove(removableRawTickPayload.Key, removedRawTickPayload)
+        '                    Next
+        '                End If
+        '            End If
+        '        Catch ex As Exception
+        '            logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+        '            Me.ParentController.OrphanException = ex
+        '        Finally
+        '            Interlocked.Decrement(_lock)
+        '            'Debug.WriteLine(String.Format("Process Tick after. Time:{0}, Lock:{1}", Now, _lock))
+        '        End Try
+        '    End If
+        'End Function
+
+        Public Async Function CalculateCandleStickFromTickAsync(ByVal existingPayloads As SortedDictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick) As Task
+            If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
+                Exit Function
             End If
-        End Function
 
-        Private Sub CalculateCandleStickFromTick(ByVal existingPayloads As Concurrent.ConcurrentDictionary(Of DateTime, OHLCPayload), ByVal tickData As ITick)
-            SyncLock Me
-                If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
-                    Exit Sub
-                End If
+            Try
+                While Interlocked.Read(_tickLock) > 0
+                    Await Task.Delay(10).ConfigureAwait(False)
+                End While
+                Interlocked.Increment(_tickLock)
 
                 Dim lastExistingPayload As OHLCPayload = Nothing
                 If existingPayloads IsNot Nothing AndAlso existingPayloads.Count > 0 Then
                     Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                        _parentInstrument.RawTickPayloads.Where(Function(y)
-                                                                    Return y.Key = _parentInstrument.RawTickPayloads.Max(Function(x)
-                                                                                                                             Return x.Key
-                                                                                                                         End Function)
-                                                                End Function)
-                    If lastExistingPayloads IsNot Nothing Then lastExistingPayload = lastExistingPayloads.LastOrDefault.Value
+                        _parentInstrument.RawPayloads.Where(Function(y)
+                                                                Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, tickData.Timestamp.Value)
+                                                            End Function)
+                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then lastExistingPayload = lastExistingPayloads.LastOrDefault.Value
                 End If
-                '3 condition exist
                 Dim runningPayload As OHLCPayload = Nothing
                 If lastExistingPayload IsNot Nothing Then
-                    If Not Utilities.Time.IsDateTimeEqualTillMinutes(lastExistingPayload.SnapshotDateTime, tickData.Timestamp.Value) Then
-                        'Fresh candle needs to be created
-                        'Print previous candle
-                        'Console.WriteLine(Utilities.Strings.JsonSerialize(lastExistingPayload))
-                        runningPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
-                        With runningPayload
-                            .TradingSymbol = _parentInstrument.TradingSymbol
-                            .OpenPrice = tickData.LastPrice
-                            .HighPrice = tickData.LastPrice
-                            .LowPrice = tickData.LastPrice
-                            .ClosePrice = tickData.LastPrice
-                            If lastExistingPayload.SnapshotDateTime.Date = tickData.Timestamp.Value.Date Then
-                                .Volume = tickData.Volume - lastExistingPayload.DailyVolume
+                    With lastExistingPayload
+                        .HighPrice = Math.Max(lastExistingPayload.HighPrice, tickData.LastPrice)
+                        .LowPrice = Math.Min(lastExistingPayload.LowPrice, tickData.LastPrice)
+                        .ClosePrice = tickData.LastPrice
+                        If .PreviousPayload IsNot Nothing Then
+                            If .PreviousPayload.SnapshotDateTime.Date = tickData.Timestamp.Value.Date Then
+                                .Volume = tickData.Volume - .PreviousPayload.DailyVolume
                             Else
                                 .Volume = tickData.Volume
                             End If
-                            .DailyVolume = tickData.Volume
-                            .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(tickData.Timestamp.Value)
-                            .PreviousPayload = lastExistingPayload
-                            .NumberOfTicks = 1
-                        End With
-                    ElseIf Utilities.Time.IsDateTimeEqualTillMinutes(lastExistingPayload.SnapshotDateTime, tickData.Timestamp.Value) Then
-                        'Existing candle needs to be altered
-                        With lastExistingPayload
-                            .HighPrice = Math.Max(lastExistingPayload.HighPrice, tickData.LastPrice)
-                            .LowPrice = Math.Min(lastExistingPayload.LowPrice, tickData.LastPrice)
-                            .ClosePrice = tickData.LastPrice
-                            If .PreviousPayload IsNot Nothing Then
-                                If .PreviousPayload.SnapshotDateTime.Date = tickData.Timestamp.Value.Date Then
-                                    .Volume = tickData.Volume - .PreviousPayload.DailyVolume
-                                Else
-                                    .Volume = tickData.Volume
-                                End If
-                            Else
-                                .Volume = tickData.Volume
-                            End If
-                            .DailyVolume = tickData.Volume
-                            .NumberOfTicks += 1
-                        End With
-                    Else
-                        'SHould not come here
-                        Throw New NotImplementedException("Why have you come here")
-                    End If
+                        Else
+                            .Volume = tickData.Volume
+                        End If
+                        .DailyVolume = tickData.Volume
+                        .NumberOfTicks += 1
+                    End With
                 Else
+                    'Fresh candle needs to be created
+                    Dim previousCandle As OHLCPayload = Nothing
+                    Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                        _parentInstrument.RawPayloads.Where(Function(y)
+                                                                Return y.Key < tickData.Timestamp.Value
+                                                            End Function)
+                    If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
+                        previousCandle = previousCandles.LastOrDefault.Value
+                        'Print previous candle
+                        Debug.WriteLine(previousCandle)
+                    End If
                     runningPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
                     With runningPayload
                         .TradingSymbol = _parentInstrument.TradingSymbol
@@ -235,14 +222,20 @@ Namespace ChartHandler.ChartStyle
                         .Volume = tickData.Volume
                         .DailyVolume = tickData.Volume
                         .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(tickData.Timestamp.Value)
-                        .PreviousPayload = lastExistingPayload
+                        .PreviousPayload = previousCandle
                         .NumberOfTicks = 1
                     End With
                 End If
-                If runningPayload IsNot Nothing Then existingPayloads.TryAdd(runningPayload.SnapshotDateTime, runningPayload)
-
-            End SyncLock
-        End Sub
+                If runningPayload IsNot Nothing Then existingPayloads.Add(runningPayload.SnapshotDateTime, runningPayload)
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Me.ParentController.OrphanException = ex
+            Finally
+                Interlocked.Decrement(_tickLock)
+                If _tickLock <> 0 Then Throw New ApplicationException("Check why lock is not released")
+                'Debug.WriteLine(String.Format("Process Historical after. Time:{0}, Lock:{1}", Now, _lock))
+            End Try
+        End Function
         Public Overrides Function ToString() As String
             Return Me.GetType.ToString
         End Function
