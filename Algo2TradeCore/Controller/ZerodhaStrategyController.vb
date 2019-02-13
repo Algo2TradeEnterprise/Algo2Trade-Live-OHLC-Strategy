@@ -642,8 +642,7 @@ Namespace Controller
                         _AllStrategyUniqueInstruments = tempList
                     End If
                 End If
-                'Create the candlecreator object - one each for each unique instrument
-                FillCandlestickCreator()
+
                 _cts.Token.ThrowIfCancellationRequested()
                 'Now we know what are the instruments as per the strategy and their corresponding workers
                 If Not ret Then Throw New ApplicationException(String.Format("No instruments fetched that can be traded, strategy:{0}", strategyToRun.ToString))
@@ -667,6 +666,9 @@ Namespace Controller
                                                                         End Function)
                     strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
                 Next
+
+                'Create the candlecreator object - one each for each unique instrument
+                FillCandlestickCreator()
 
                 'Create dummy tick so as to trigger an UI response
                 Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
@@ -804,8 +806,7 @@ Namespace Controller
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
-                    'TO DO: Bring back the relvant call so as to store the JSON into memory
-                    'runningStrategyInstrument.TradableInstrument.CandleStickCreator.ProcessHistoricalJSONToCandleStickAsync(historicalCandlesJSONDict)
+                    _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).GetChartFromHistoricalAsync(historicalCandlesJSONDict)
                     Exit For
                 Next
             End If
@@ -861,7 +862,7 @@ Namespace Controller
                 Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
                     runningStrategyInstrument.TradableInstrument.LastTick = runningTick
-                    _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).CalculateCandleStickFromTickAsync(runningStrategyInstrument.TradableInstrument.RawPayloads, runningTick)
+                    _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).GetChartFromTickAsync(runningTick)
                     'Since tick is supposed to be processed once for each tradableinstrument, hence we exit the loop so that it 
                     'is not processed twice
                     Exit For
@@ -875,11 +876,13 @@ Namespace Controller
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
             'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
             If orderData.Status = "COMPLETE" OrElse orderData.Status = "MODIFIED" OrElse orderData.Status = "CANCELLED" Then
-                For Each runningStrategy In _AllStrategies
-                    If orderData.Tag IsNot Nothing AndAlso orderData.Tag.Contains(runningStrategy.ToString) Then
-                        FillOrderDetailsAsyc(runningStrategy).ConfigureAwait(False)
-                    End If
-                Next
+                If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+                    For Each runningStrategy In _AllStrategies
+                        If orderData.Tag IsNot Nothing AndAlso orderData.Tag.Contains(runningStrategy.ToString) Then
+                            FillOrderDetailsAsyc(runningStrategy).ConfigureAwait(False)
+                        End If
+                    Next
+                End If
             End If
             Await Task.Delay(0).ConfigureAwait(False)
         End Sub

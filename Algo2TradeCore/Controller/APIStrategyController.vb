@@ -325,8 +325,12 @@ Namespace Controller
                         Continue For
                     End If
                     If _rawPayloadCreators Is Nothing Then _rawPayloadCreators = New Dictionary(Of String, CandleStickChart)
-                    _rawPayloadCreators.Add(runningStrategyUniqueInstruments.InstrumentIdentifier, New CandleStickChart(Me, runningStrategyUniqueInstruments, _cts))
-                    If runningStrategyUniqueInstruments.RawPayloads Is Nothing Then runningStrategyUniqueInstruments.RawPayloads = New SortedDictionary(Of Date, OHLCPayload)
+                    _rawPayloadCreators.Add(runningStrategyUniqueInstruments.InstrumentIdentifier,
+                                            New CandleStickChart(Me,
+                                                                 runningStrategyUniqueInstruments,
+                                                                 _subscribedStrategyInstruments(runningStrategyUniqueInstruments.InstrumentIdentifier),
+                                                                 _cts))
+                    If runningStrategyUniqueInstruments.RawPayloads Is Nothing Then runningStrategyUniqueInstruments.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
                 Next
             End If
         End Sub

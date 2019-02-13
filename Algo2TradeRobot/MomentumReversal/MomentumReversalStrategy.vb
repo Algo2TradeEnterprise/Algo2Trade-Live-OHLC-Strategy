@@ -77,54 +77,74 @@ Public Class MomentumReversalStrategy
             '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             'End If
 
-            'Get MR Strategy Instruments
-            Dim mrUserInputs As MomentumReversalUserInputs = CType(UserSettings, MomentumReversalUserInputs)
-            If mrUserInputs.InstrumentsData IsNot Nothing AndAlso mrUserInputs.InstrumentsData.Count > 0 Then
-                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                Dim cashInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
-                    mrUserInputs.InstrumentsData.Where(Function(x)
-                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Cash OrElse
-                                                                                 x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
-                                                       End Function)
-                Dim futureInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
-                    mrUserInputs.InstrumentsData.Where(Function(x)
-                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Futures OrElse
-                                                                                 x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
-                                                       End Function)
-                For Each instrument In cashInstrumentList.ToList
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = instrument.Key
-                                                                                            End Function)
+            Dim futureAllInstruments = allInstruments.Where(Function(x)
+                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
+                                                            End Function)
+            _cts.Token.ThrowIfCancellationRequested()
+            If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
+                For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                Next
-                For Each instrument In futureInstrumentList.ToList
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = Nothing
-                    Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                         Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
-                                                                                                     End Function)
-                    Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
-                                                                           If Not x.Expiry.Value.Date = Now.Date Then
-                                                                               Return x.Expiry.Value
-                                                                           Else
-                                                                               Return Date.MaxValue
-                                                                           End If
-                                                                       End Function)
-                    runningTradableInstrument = allTradableInstruments.Find(Function(x)
-                                                                                Return x.Expiry = minExpiry
-                                                                            End Function)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    ret = True
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                    retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
+
+            'Get MR Strategy Instruments
+            'Dim mrUserInputs As MomentumReversalUserInputs = CType(UserSettings, MomentumReversalUserInputs)
+            'If mrUserInputs.InstrumentsData IsNot Nothing AndAlso mrUserInputs.InstrumentsData.Count > 0 Then
+            '    Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+            '    Dim cashInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
+            '        mrUserInputs.InstrumentsData.Where(Function(x)
+            '                                               Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Cash OrElse
+            '                                                                     x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
+            '                                           End Function)
+            '    Dim futureInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
+            '        mrUserInputs.InstrumentsData.Where(Function(x)
+            '                                               Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Futures OrElse
+            '                                                                     x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
+            '                                           End Function)
+            '    For Each instrument In cashInstrumentList.ToList
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+            '                                                                                    Return x.TradingSymbol = instrument.Key
+            '                                                                                End Function)
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        ret = True
+            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+            '        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+            '    Next
+            '    For Each instrument In futureInstrumentList.ToList
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        Dim runningTradableInstrument As IInstrument = Nothing
+            '        'Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+            '        '                                                                                     Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
+            '        '                                                                                         x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
+            '        '                                                                                 End Function)
+
+            '        Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+            '                                                                                             Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
+            '                                                                                                 x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX"
+            '                                                                                         End Function)
+
+            '        Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
+            '                                                               If Not x.Expiry.Value.Date = Now.Date Then
+            '                                                                   Return x.Expiry.Value
+            '                                                               Else
+            '                                                                   Return Date.MaxValue
+            '                                                               End If
+            '                                                           End Function)
+            '        runningTradableInstrument = allTradableInstruments.Find(Function(x)
+            '                                                                    Return x.Expiry = minExpiry
+            '                                                                End Function)
+            '        _cts.Token.ThrowIfCancellationRequested()
+            '        ret = True
+            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+            '        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+            '    Next
+            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+            'End If
         End If
 
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then

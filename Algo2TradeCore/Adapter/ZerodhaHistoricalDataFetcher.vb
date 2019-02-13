@@ -156,7 +156,7 @@ Namespace Adapter
                 logger.Error("No tokens to subscribe for historical")
             Else
                 OnHeartbeat(String.Format("Subscribed:{0} instruments for historical", _subscribedInstruments.Count))
-                'StartPollingAsync()
+                StartPollingAsync()
             End If
         End Function
 
@@ -184,6 +184,7 @@ Namespace Adapter
                     headers.Add("Accept-Encoding", "*")
                     headers.Add("Accept-Language", "en-US,en;q=0.8")
                     headers.Add("Cookie", "session=c")
+
 
                     Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
                                                                     _instrumentIdentifer,

@@ -15,6 +15,6 @@ Namespace Entities
         ReadOnly Property TradingSymbol As String
         ReadOnly Property Broker As APISource
         Property LastTick As ITick
-        Property RawPayloads As SortedDictionary(Of Date, OHLCPayload)
+        Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
     End Interface
 End Namespace

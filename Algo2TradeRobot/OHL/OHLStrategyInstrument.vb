@@ -18,7 +18,7 @@ Public Class OHLStrategyInstrument
 
     Private _OHLStrategyProtector As Integer = 0
 
-    <Display(Name:="OHL", Order:=10)>
+    <Display(Name:="OHL", Order:=14)>
     Public ReadOnly Property OHL As String
         Get
             If Me.OpenPrice = Me.LowPrice Then
@@ -38,6 +38,7 @@ Public Class OHLStrategyInstrument
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+        RawPayloadConsumers = New List(Of IPayloadConsumer)
     End Sub
     Public Overrides Function ToString() As String
         Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
@@ -73,11 +74,11 @@ Public Class OHLStrategyInstrument
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                If slDelayCtr = 3 Then
+                If slDelayCtr = 10 Then
                     slDelayCtr = 0
                     Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
-                    If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 AndAlso _OHLStrategyProtector = 1 Then
-                        Interlocked.Increment(_OHLStrategyProtector)
+                    If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                        'Interlocked.Increment(_OHLStrategyProtector)
                         Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                     End If
                 End If
@@ -98,7 +99,7 @@ Public Class OHLStrategyInstrument
         If TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 10 Then
             Dim OHLTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
-            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.004, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
+            Dim buffer As Decimal = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.003, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
             Dim entryPrice As Decimal = Nothing
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
@@ -108,7 +109,7 @@ Public Class OHLStrategyInstrument
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
-                target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.015, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(TradableInstrument.LastTick.Open - entryPrice) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(TradableInstrument.LastTick.Open - entryPrice))
                 Dim parameters As New PlaceOrderParameters With
                 {.EntryDirection = APIAdapter.TransactionType.Sell,
@@ -123,7 +124,7 @@ Public Class OHLStrategyInstrument
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
                 entryPrice = OHLTradePrice + buffer
                 quantity = Math.Floor(2000 * 13 / entryPrice)
-                target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                target = Math.Round(ConvertFloorCeling(OHLTradePrice * 0.015, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                 stoploss = If(Math.Abs(entryPrice - TradableInstrument.LastTick.Open) = 0, Convert.ToDouble(TradableInstrument.TickSize) * 2, Math.Abs(entryPrice - TradableInstrument.LastTick.Open))
                 Dim parameters As New PlaceOrderParameters With
                     {.EntryDirection = APIAdapter.TransactionType.Buy,
@@ -168,6 +169,8 @@ Public Class OHLStrategyInstrument
                             If slOrder.TriggerPrice <> triggerPrice Then
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
                                 ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
+                            Else
+                                Debug.WriteLine(String.Format("Stoploss modified {0}", Me.GenerateTag()))
                             End If
                         End If
                     Next

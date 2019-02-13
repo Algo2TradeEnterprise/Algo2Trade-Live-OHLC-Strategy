@@ -23,8 +23,19 @@
             Me._PayloadGeneratedBy = payloadGeneratedBy
         End Sub
         Public Overrides Function ToString() As String
-            Return String.Format("TradingSymbol:{0}, Open:{1}, High:{2}, Low:{3}, Close:{4}, Volume:{5}, Timestamp:{6}",
-                                 Me.TradingSymbol, Me.OpenPrice, Me.HighPrice, Me.LowPrice, Me.ClosePrice, Me.Volume, Me.SnapshotDateTime.ToString())
+            Return String.Format("TradingSymbol:{0}, Open:{1}, High:{2}, Low:{3}, Close:{4}, Volume:{5}, Timestamp:{6}, Source:{7}",
+                                 Me.TradingSymbol, Me.OpenPrice, Me.HighPrice, Me.LowPrice, Me.ClosePrice, Me.Volume, Me.SnapshotDateTime.ToString(), Me.PayloadGeneratedBy.ToString)
+        End Function
+        Public Overrides Function Equals(obj As Object) As Boolean
+            Dim compareWith As OHLCPayload = obj
+            With Me
+                Return .OpenPrice = compareWith.OpenPrice And
+                .HighPrice = compareWith.HighPrice And
+                .LowPrice = compareWith.LowPrice And
+                .ClosePrice = compareWith.ClosePrice And
+                .Volume = compareWith.Volume And
+                Utilities.Time.IsTimeEqualTillSeconds(.SnapshotDateTime, compareWith.SnapshotDateTime)
+            End With
         End Function
     End Class
 End Namespace

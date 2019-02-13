@@ -81,8 +81,11 @@
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
     <Compile Include="ChartHandler\ChartStyle\CandleStickChart.vb" />
+    <Compile Include="ChartHandler\ChartStyle\Chart.vb" />
     <Compile Include="ChartHandler\ChartTimeframe\ChartTimeframeConsumer.vb" />
-    <Compile Include="ChartHandler\PayloadConsumer.vb" />
+    <Compile Include="Entities\PayloadToChartConsumer.vb" />
+    <Compile Include="Entities\PayloadToIndicatorConsumer.vb" />
+    <Compile Include="Entities\IPayloadConsumer.vb" />
     <Compile Include="Controller\APIStrategyController.vb" />
     <Compile Include="Controller\ZerodhaStrategyController.vb" />
     <Compile Include="Entities\OHLCPayload.vb" />

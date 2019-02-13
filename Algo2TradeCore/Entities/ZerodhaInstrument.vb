@@ -81,7 +81,7 @@ Namespace Entities
             End Set
         End Property
 
-        Public Property RawPayloads As SortedDictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
+        Public Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
 
     End Class
 End Namespace

@@ -9,6 +9,7 @@ Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
 Imports Utilities.Numbers.NumberManipulation
+Imports Algo2TradeCore.ChartHandler.ChartStyle
 
 Namespace Strategies
     Public MustInherit Class StrategyInstrument
@@ -99,25 +100,115 @@ Namespace Strategies
         <System.ComponentModel.Browsable(False)>
         Public Property TradableInstrument As IInstrument
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
-        Public Property StrategyXMinutePayloadsSource As ChartHandler.ChartTimeframe.ChartTimeframeConsumer
+        Public Property RawPayloadConsumers As List(Of IPayloadConsumer)
 
 #Region "UI Properties"
-        <Display(Name:="Total Trades", Order:=11)>
-        Public ReadOnly Property TotalTrades As Integer
+        <Display(Name:="Symbol", Order:=0)>
+        Public Overridable ReadOnly Property TradingSymbol As String
             Get
-                Dim tradeCount As Integer = 0
-                If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-                    For Each parentOrderId In OrderDetails.Keys
-                        Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
-                            tradeCount += 1
-                        End If
-                    Next
+                If TradableInstrument IsNot Nothing Then
+                    Return TradableInstrument.TradingSymbol
+                Else
+                    Return Nothing
                 End If
-                Return tradeCount
             End Get
         End Property
-        <Display(Name:="Active Instrument", Order:=12)>
+        Private _OpenPrice As Decimal
+        <Display(Name:="Open", Order:=1)>
+        Public Overridable ReadOnly Property OpenPrice As Decimal
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _OpenPrice = TradableInstrument.LastTick.Open
+                    Return _OpenPrice
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+        Private _HighPrice As Decimal
+        <Display(Name:="High", Order:=2)>
+        Public Overridable ReadOnly Property HighPrice As Decimal
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _HighPrice = TradableInstrument.LastTick.High
+                    Return _HighPrice
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+        Private _LowPrice As Decimal
+        <Display(Name:="Low", Order:=3)>
+        Public Overridable ReadOnly Property LowPrice As Decimal
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _LowPrice = TradableInstrument.LastTick.Low
+                    Return _LowPrice
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+        Private _Volume As Long
+        <Display(Name:="Volume", Order:=4)>
+        Public Overridable ReadOnly Property Volume As Long
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _Volume = TradableInstrument.LastTick.Volume
+                    Return _Volume
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+        Private _AveragePrice As Decimal
+        <Display(Name:="Average Price", Order:=5)>
+        Public Overridable ReadOnly Property AveragePrice As Decimal
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _AveragePrice = TradableInstrument.LastTick.AveragePrice
+                    Return _AveragePrice
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+        Private _LastPrice As Decimal
+        <Display(Name:="Last Price", Order:=6)>
+        Public Overridable ReadOnly Property LastPrice As Decimal
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _LastPrice = TradableInstrument.LastTick.LastPrice
+                    Return _LastPrice
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+        Private _Timestamp As Date?
+        <Display(Name:="Timestamp", Order:=7)>
+        Public Overridable ReadOnly Property Timestamp As Date?
+            Get
+                If TradableInstrument.LastTick IsNot Nothing Then
+                    _Timestamp = TradableInstrument.LastTick.Timestamp
+                    Return _Timestamp
+                Else
+                    Return Nothing
+                End If
+            End Get
+        End Property
+
+        <Display(Name:="Last Candle Time", Order:=8)>
+        Public ReadOnly Property LastCandleTime As Date
+            Get
+                If TradableInstrument.RawPayloads IsNot Nothing AndAlso TradableInstrument.RawPayloads.Count > 0 Then
+                    Return TradableInstrument.RawPayloads.Keys.Max
+                Else
+                    Return New Date
+                End If
+            End Get
+        End Property
+        <Display(Name:="Active Instrument", Order:=9)>
         Public ReadOnly Property ActiveInstrument As Boolean
             Get
                 Dim ret As Boolean = False
@@ -142,81 +233,33 @@ Namespace Strategies
                 Return ret
             End Get
         End Property
-        <Display(Name:="Profit & Loss", Order:=13)>
-        Public ReadOnly Property PL As Decimal
+        <Display(Name:="Total Trades", Order:=10)>
+        Public ReadOnly Property TotalTrades As Integer
             Get
-                Dim plOfDay As Decimal = 0
+                Dim tradeCount As Integer = 0
                 If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                     For Each parentOrderId In OrderDetails.Keys
                         Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        Dim calculateWithLTP As Boolean = False
-                        If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                            For Each slOrder In parentBusinessOrder.SLOrder
-                                If slOrder.Status = "CANCELLED" OrElse slOrder.Status = "COMPLETE" Then
-                                    If slOrder.TransactionType = "BUY" Then
-                                        plOfDay += slOrder.AveragePrice * slOrder.Quantity * -1
-                                    ElseIf slOrder.TransactionType = "SELL" Then
-                                        plOfDay += slOrder.AveragePrice * slOrder.Quantity
-                                    End If
-                                ElseIf Not slOrder.Status = "REJECTED" Then
-                                    calculateWithLTP = True
-                                End If
-                            Next
-                        Else
-                            calculateWithLTP = True
-                        End If
-                        If parentBusinessOrder.TargetOrder IsNot Nothing AndAlso parentBusinessOrder.TargetOrder.Count > 0 Then
-                            For Each targetOrder In parentBusinessOrder.TargetOrder
-                                If targetOrder.Status = "CANCELLED" OrElse targetOrder.Status = "COMPLETE" Then
-                                    If targetOrder.TransactionType = "BUY" Then
-                                        plOfDay += targetOrder.AveragePrice * targetOrder.Quantity * -1
-                                    ElseIf targetOrder.TransactionType = "SELL" Then
-                                        plOfDay += targetOrder.AveragePrice * targetOrder.Quantity
-                                    End If
-                                ElseIf Not targetOrder.Status = "REJECTED" Then
-                                    calculateWithLTP = True
-                                End If
-                            Next
-                        Else
-                            calculateWithLTP = True
-                        End If
-                        If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                            plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity * -1
-                        ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                            plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity
-                        End If
-                        If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
-                            plOfDay += Me._LastPrice * parentBusinessOrder.ParentOrder.Quantity
+                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                            tradeCount += 1
                         End If
                     Next
                 End If
-                Return plOfDay
+                Return tradeCount
             End Get
         End Property
 
-        <Display(Name:="Last Candle Time", Order:=14)>
-        Public ReadOnly Property LastCandleTime As Date
+        Private _PL As Decimal
+        <Display(Name:="Profit & Loss", Order:=11)>
+        Public ReadOnly Property PL As Decimal
             Get
-                If TradableInstrument.RawPayloads IsNot Nothing AndAlso TradableInstrument.RawPayloads.Count > 0 Then
-                    Return TradableInstrument.RawPayloads.Keys.LastOrDefault
-                Else
-                    Return New Date
-                End If
+                _PL = CalculatePL()
+                Return _PL
             End Get
         End Property
 
-        <Display(Name:="Symbol", Order:=0)>
-        Public Overridable ReadOnly Property TradingSymbol As String
-            Get
-                If TradableInstrument IsNot Nothing Then
-                    Return TradableInstrument.TradingSymbol
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
         Private _Tradabale As Boolean
-        <Display(Name:="Tradable", Order:=1)>
+        <Display(Name:="Tradable", Order:=12)>
         Public Overridable ReadOnly Property Tradabale As Boolean
             Get
                 If TradableInstrument.LastTick IsNot Nothing Then
@@ -227,44 +270,9 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        Private _OpenPrice As Decimal
-        <Display(Name:="Open", Order:=2)>
-        Public Overridable ReadOnly Property OpenPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _OpenPrice = TradableInstrument.LastTick.Open
-                    Return _OpenPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _HighPrice As Decimal
-        <Display(Name:="High", Order:=3)>
-        Public Overridable ReadOnly Property HighPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _HighPrice = TradableInstrument.LastTick.High
-                    Return _HighPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _LowPrice As Decimal
-        <Display(Name:="Low", Order:=4)>
-        Public Overridable ReadOnly Property LowPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _LowPrice = TradableInstrument.LastTick.Low
-                    Return _LowPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
+
         Private _ClosePrice As Decimal
-        <Display(Name:="Previous Close", Order:=5)>
+        <Display(Name:="Previous Close", Order:=13)>
         Public Overridable ReadOnly Property ClosePrice As Decimal
             Get
                 If TradableInstrument.LastTick IsNot Nothing Then
@@ -275,68 +283,74 @@ Namespace Strategies
                 End If
             End Get
         End Property
-        Private _Volume As Long
-        <Display(Name:="Volume", Order:=6)>
-        Public Overridable ReadOnly Property Volume As Long
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _Volume = TradableInstrument.LastTick.Volume
-                    Return _Volume
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _AveragePrice As Decimal
-        <Display(Name:="Average Price", Order:=7)>
-        Public Overridable ReadOnly Property AveragePrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _AveragePrice = TradableInstrument.LastTick.AveragePrice
-                    Return _AveragePrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _LastPrice As Decimal
-        <Display(Name:="Last Price", Order:=8)>
-        Public Overridable ReadOnly Property LastPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _LastPrice = TradableInstrument.LastTick.LastPrice
-                    Return _LastPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _Timestamp As Date?
-        <Display(Name:="Timestamp", Order:=9)>
-        Public Overridable ReadOnly Property Timestamp As Date?
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _Timestamp = TradableInstrument.LastTick.Timestamp
-                    Return _Timestamp
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-#End Region
 
+#End Region
+        Private Function CalculatePL() As Decimal
+            Dim plOfDay As Decimal = 0
+            If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+                For Each parentOrderId In OrderDetails.Keys
+                    Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                    Dim calculateWithLTP As Boolean = False
+                    If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                        For Each slOrder In parentBusinessOrder.SLOrder
+                            If slOrder.Status = "CANCELLED" OrElse slOrder.Status = "COMPLETE" Then
+                                If slOrder.TransactionType = "BUY" Then
+                                    plOfDay += slOrder.AveragePrice * slOrder.Quantity * -1
+                                ElseIf slOrder.TransactionType = "SELL" Then
+                                    plOfDay += slOrder.AveragePrice * slOrder.Quantity
+                                End If
+                            ElseIf Not slOrder.Status = "REJECTED" Then
+                                calculateWithLTP = True
+                            End If
+                        Next
+                    Else
+                        calculateWithLTP = True
+                    End If
+                    If parentBusinessOrder.TargetOrder IsNot Nothing AndAlso parentBusinessOrder.TargetOrder.Count > 0 Then
+                        For Each targetOrder In parentBusinessOrder.TargetOrder
+                            If targetOrder.Status = "CANCELLED" OrElse targetOrder.Status = "COMPLETE" Then
+                                If targetOrder.TransactionType = "BUY" Then
+                                    plOfDay += targetOrder.AveragePrice * targetOrder.Quantity * -1
+                                ElseIf targetOrder.TransactionType = "SELL" Then
+                                    plOfDay += targetOrder.AveragePrice * targetOrder.Quantity
+                                End If
+                            ElseIf Not targetOrder.Status = "REJECTED" Then
+                                calculateWithLTP = True
+                            End If
+                        Next
+                    Else
+                        calculateWithLTP = True
+                    End If
+                    If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                        plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity * -1
+                    ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                        plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity
+                    End If
+                    If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                        If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                            plOfDay += Me.LastPrice * parentBusinessOrder.ParentOrder.Quantity
+                        ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                            plOfDay += Me.LastPrice * parentBusinessOrder.ParentOrder.Quantity * -1
+                        End If
+                    End If
+                Next
+                Return plOfDay
+            Else
+                Return Nothing
+            End If
+        End Function
         Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
             TradableInstrument = associatedInstrument
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
-            StrategyXMinutePayloadsSource = New ChartHandler.ChartTimeframe.ChartTimeframeConsumer(5, _cts)
         End Sub
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Function GenerateTag() As String
         Public Overridable Async Function HandleTickTriggerToUIETCAsync() As Task
             Try
                 Await Task.Delay(0).ConfigureAwait(False)
+
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
                 If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
@@ -356,6 +370,18 @@ Namespace Strategies
                 Throw ex
             End Try
         End Function
+        Public Overridable Async Function PopulateChartAndIndicatorsAsync(ByVal candleCreator As Chart, ByVal currentCandle As OHLCPayload) As Task
+            If RawPayloadConsumers IsNot Nothing AndAlso RawPayloadConsumers.Count > 0 Then
+                For Each runningRawPayloadConsumer In RawPayloadConsumers
+                    If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart Then
+                        Await candleCreator.ConvertTimeframeAsync(CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe,
+                                                                    currentCandle,
+                                                                    runningRawPayloadConsumer).ConfigureAwait(False)
+                    End If
+                Next
+            End If
+        End Function
+
         Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
             Await Task.Delay(0).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()

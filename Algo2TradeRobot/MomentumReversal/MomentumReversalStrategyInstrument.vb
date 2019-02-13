@@ -21,6 +21,8 @@ Public Class MomentumReversalStrategyInstrument
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+        RawPayloadConsumers = New List(Of IPayloadConsumer)
+        RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
     End Sub
     Public Overrides Function ToString() As String
         Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
