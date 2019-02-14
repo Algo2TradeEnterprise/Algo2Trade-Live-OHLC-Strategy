@@ -70,13 +70,6 @@ Namespace Entities
             Set(value As ITick)
                 If value.InstrumentToken = Me.InstrumentIdentifier Then
                     _LastTick = value
-                    'If _LastTick IsNot Nothing AndAlso
-                    '     _LastTick.Timestamp IsNot Nothing AndAlso
-                    '    _RawTicks.TryAdd(_LastTick.Timestamp, _LastTick) Then
-                    '    CandleStickCreator.FIFOProcessTickToCandleStickAsync()
-                    'Else
-                    '    'Console.WriteLine(String.Format("Could not store:{0},{1},{2}", TradingSymbol, tickData.LastPrice, tickData.Timestamp.Value.ToLongTimeString))
-                    'End If
                 End If
             End Set
         End Property
