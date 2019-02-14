@@ -293,7 +293,7 @@ Namespace Controller
                             RemoveHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                             RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                         Else
-                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, _cts)
+                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 27, _cts)
                         End If
 
                         AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat

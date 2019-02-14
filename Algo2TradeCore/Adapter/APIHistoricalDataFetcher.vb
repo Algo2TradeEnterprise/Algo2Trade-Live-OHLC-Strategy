@@ -31,19 +31,23 @@ Namespace Adapter
 
         Protected _cts As CancellationTokenSource
         Public Property ParentController As APIStrategyController
+        Protected _daysToGoBack As Integer
         Protected _subscribedInstruments As List(Of String) 'The unique tokens/instrument identifier
         Protected _instrumentIdentifer As String 'To allow this to process each instrument seperately
         Protected _isPollRunning As Boolean
         Protected _stopPollRunning As Boolean
         Public Sub New(ByVal associatedParentcontroller As APIStrategyController,
+                       ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentcontroller
+            _daysToGoBack = daysToGoBack
             _cts = canceller
         End Sub
         Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal daysToGoback As Integer,
                        ByVal instrumentIdentifier As String,
                        ByVal canceller As CancellationTokenSource)
-            Me.New(associatedParentController, canceller)
+            Me.New(associatedParentController, daysToGoback, canceller)
             Me._instrumentIdentifer = instrumentIdentifier
         End Sub
         Public MustOverride Async Function ConnectFetcherAsync() As Task

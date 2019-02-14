@@ -27,15 +27,16 @@ Namespace Adapter
 #End Region
 
         Private ZERODHA_HISTORICAL_URL = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
-
         Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(associatedParentController, canceller)
+            MyBase.New(associatedParentController, daysToGoBack, canceller)
         End Sub
         Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal daysToGoBack As Integer,
                        ByVal instrumentIdentifier As String,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(associatedParentController, instrumentIdentifier, canceller)
+            MyBase.New(associatedParentController, daysToGoBack, instrumentIdentifier, canceller)
             Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
             AddHandler Me.FetcherCandlesAsync, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
             AddHandler Me.FetcherError, AddressOf currentZerodhaStrategyController.OnFetcherError
@@ -75,7 +76,17 @@ Namespace Adapter
                         For Each subscribedInstrument In _subscribedInstruments
                             _cts.Token.ThrowIfCancellationRequested()
                             If specificInstrumentsHistoricalDataFetcher Is Nothing Then specificInstrumentsHistoricalDataFetcher = New List(Of ZerodhaHistoricalDataFetcher)
-                            specificInstrumentsHistoricalDataFetcher.Add(New ZerodhaHistoricalDataFetcher(Me.ParentController, subscribedInstrument, Me._cts))
+                            If nextTimeToDo = Date.MinValue Then 'First time
+                                specificInstrumentsHistoricalDataFetcher.Add(New ZerodhaHistoricalDataFetcher(Me.ParentController,
+                                                                                                              _daysToGoBack,
+                                                                                                              subscribedInstrument,
+                                                                                                              Me._cts))
+                            Else
+                                specificInstrumentsHistoricalDataFetcher.Add(New ZerodhaHistoricalDataFetcher(Me.ParentController,
+                                                                                                              1,
+                                                                                                              subscribedInstrument,
+                                                                                                              Me._cts))
+                            End If
                         Next
                         For Each specificInstrumentHistoricalDataFetcher In specificInstrumentsHistoricalDataFetcher
                             _cts.Token.ThrowIfCancellationRequested()
@@ -188,7 +199,7 @@ Namespace Adapter
 
                     Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
                                                                     _instrumentIdentifer,
-                                                                    Now.AddDays(-27).ToString("yyyy-MM-dd"),
+                                                                    Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
                                                                     Now.ToString("yyyy-MM-dd"))
                     logger.Debug("Opening historical candle page, GetHistoricalDataURL:{0}, headers:{1}", historicalDataURL, Utils.JsonSerialize(headers))
                     _cts.Token.ThrowIfCancellationRequested()

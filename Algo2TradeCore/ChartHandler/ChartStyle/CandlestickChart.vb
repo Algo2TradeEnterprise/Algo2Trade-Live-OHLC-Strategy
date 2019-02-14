@@ -18,6 +18,7 @@ Namespace ChartHandler.ChartStyle
             MyBase.New(associatedParentController, assoicatedParentInstrument, associatedStrategyInstruments, canceller)
         End Sub
         Public Overrides Async Function GetChartFromHistoricalAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
+            Exit Function
             Try
                 While _historicalLock > 0
                     Await Task.Delay(10).ConfigureAwait(False)
@@ -50,23 +51,20 @@ Namespace ChartHandler.ChartStyle
                             previousCandlePayload = runningPayload
 
                             If runningPayload IsNot Nothing Then
-                                Dim existingPayload As OHLCPayload = Nothing
+                                Dim existingOrAddedPayload As OHLCPayload = Nothing
                                 If _parentInstrument.RawPayloads IsNot Nothing AndAlso _parentInstrument.RawPayloads.Count > 0 Then
-                                    Dim existingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                                        _parentInstrument.RawPayloads.Where(Function(y)
-                                                                                Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, runningPayload.SnapshotDateTime)
-                                                                            End Function)
-                                    If existingPayloads IsNot Nothing AndAlso existingPayloads.Count > 0 Then existingPayload = existingPayloads.LastOrDefault.Value
+                                    existingOrAddedPayload = _parentInstrument.RawPayloads.GetOrAdd(runningPayload.SnapshotDateTime, runningPayload)
                                 End If
-                                Dim candleWasProcessed As Boolean = False
-                                If existingPayload IsNot Nothing Then
-                                    candleWasProcessed = Not runningPayload.Equals(existingPayload)
-                                    _parentInstrument.RawPayloads.TryUpdate(runningPayload.SnapshotDateTime, runningPayload, existingPayload)
-                                Else
-                                    _parentInstrument.RawPayloads.TryAdd(runningPayload.SnapshotDateTime, runningPayload)
-                                    candleWasProcessed = True
+                                Dim candleNeedsUpdate As Boolean = False
+                                If existingOrAddedPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
+                                    candleNeedsUpdate = Not runningPayload.Equals(existingOrAddedPayload)
+                                    '_parentInstrument.RawPayloads.TryUpdate(runningPayload.SnapshotDateTime, runningPayload, existingOrAddedPayload)
+                                ElseIf Not runningPayload.Equals(existingOrAddedPayload) Then
+                                    candleNeedsUpdate = True
+                                    '_parentInstrument.RawPayloads.TryUpdate(runningPayload.SnapshotDateTime, runningPayload, existingOrAddedPayload)
                                 End If
-                                If candleWasProcessed Then
+                                If candleNeedsUpdate Then
+                                    existingOrAddedPayload = runningPayload
                                     If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                                         For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
                                             Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayload).ConfigureAwait(False)
@@ -157,7 +155,7 @@ Namespace ChartHandler.ChartStyle
                 End If
                 If tickWasProcessed Then 'If not processed would mean that the tick was for a historical candle that was already processed and not for a live candle
                     If runningPayload IsNot Nothing Then
-                        _parentInstrument.RawPayloads.TryAdd(runningPayload.SnapshotDateTime, runningPayload)
+                        _parentInstrument.RawPayloads.GetOrAdd(runningPayload.SnapshotDateTime, runningPayload)
                     Else
                         runningPayload = lastExistingPayload
                     End If
@@ -200,7 +198,7 @@ Namespace ChartHandler.ChartStyle
                     .TradingSymbol = currentPayload.TradingSymbol
                     .Volume = currentPayload.DailyVolume
                 End With
-                outputConsumer.ChartPayloads.TryAdd(blockDateInThisTimeframe, runninPayload)
+                outputConsumer.ChartPayloads.GetOrAdd(blockDateInThisTimeframe, runninPayload)
             Else
                 Dim lastExistingPayload As OHLCPayload = Nothing
                 If outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
@@ -254,7 +252,7 @@ Namespace ChartHandler.ChartStyle
                             .Volume = currentPayload.DailyVolume
                         End If
                     End With
-                    outputConsumer.ChartPayloads.TryAdd(runninPayload.SnapshotDateTime, runninPayload)
+                    outputConsumer.ChartPayloads.GetOrAdd(runninPayload.SnapshotDateTime, runninPayload)
 
                     'Debug.WriteLine(runninPayload)
 
