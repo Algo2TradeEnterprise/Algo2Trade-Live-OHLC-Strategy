@@ -599,6 +599,8 @@ Namespace Strategies
                                 Continue For
                             Case AdapterBusinessException.TypeOfException.DataException
                                 Continue For
+                            Case AdapterBusinessException.TypeOfException.NetworkException
+                                Continue For
                             Case Else
                                 Exit For
                         End Select
