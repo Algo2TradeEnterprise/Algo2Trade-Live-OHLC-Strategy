@@ -54,6 +54,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -80,6 +81,10 @@
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
+    <Compile Include="Calculator\IBrokerageAttributes.vb" />
+    <Compile Include="Calculator\APIBrokerageCalculator.vb" />
+    <Compile Include="Calculator\ZerodhaBrokerageAttributes.vb" />
+    <Compile Include="Calculator\ZerodhaBrokerageCalculator.vb" />
     <Compile Include="ChartHandler\ChartStyle\CandleStickChart.vb" />
     <Compile Include="ChartHandler\ChartStyle\Chart.vb" />
     <Compile Include="ChartHandler\ChartTimeframe\ChartTimeframeConsumer.vb" />

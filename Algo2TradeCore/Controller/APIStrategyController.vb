@@ -92,6 +92,7 @@ Namespace Controller
         Protected _LoginURL As String
         Protected _LoginThreads As Integer
         Public Property APIConnection As IConnection
+        Public ReadOnly Property BrokerSource As APISource
         Public Property OrphanException As Exception
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
@@ -102,8 +103,10 @@ Namespace Controller
         Protected _subscribedStrategyInstruments As Dictionary(Of String, List(Of StrategyInstrument))
         Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
         Public Sub New(ByVal validatedUser As IUser,
+                       ByVal associatedBrokerSource As APISource,
                        ByVal canceller As CancellationTokenSource)
             _currentUser = validatedUser
+            Me.BrokerSource = associatedBrokerSource
             _cts = canceller
             _LoginThreads = 0
         End Sub

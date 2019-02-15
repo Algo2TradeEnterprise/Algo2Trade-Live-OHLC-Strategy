@@ -57,15 +57,16 @@ Namespace Strategies
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
         Public Property UserSettings As UserInputs = Nothing
         Public Property ParentController As APIStrategyController
+
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
-                       ByVal canceller As CancellationTokenSource,
                        ByVal associatedStrategyIdentifier As String,
-                       ByVal userSettings As UserInputs)
+                       ByVal userSettings As UserInputs,
+                       ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
-            _cts = canceller
             Me.StrategyIdentifier = associatedStrategyIdentifier
             Me.UserSettings = userSettings
+            _cts = canceller
         End Sub
         Public ReadOnly Property ActiveInstruments As Integer
             Get

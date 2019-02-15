@@ -33,7 +33,14 @@ Public Class OHLStrategyInstrument
 
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
-        _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
+        Select Case Me.ParentStrategy.ParentController.BrokerSource
+            Case APISource.Zerodha
+                _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
+            Case APISource.Upstox
+                Throw New NotImplementedException
+            Case APISource.None
+                Throw New NotImplementedException
+        End Select
         AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
@@ -156,13 +163,13 @@ Public Class OHLStrategyInstrument
                             If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                                 triggerPrice -= buffer
                                 potentialStoplossPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                If slOrder.TriggerPrice < potentialStoplossPrice Then
+                                If triggerPrice < potentialStoplossPrice Then
                                     triggerPrice = potentialStoplossPrice
                                 End If
                             ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                                 triggerPrice += buffer
                                 potentialStoplossPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                If slOrder.TriggerPrice > potentialStoplossPrice Then
+                                If triggerPrice > potentialStoplossPrice Then
                                     triggerPrice = potentialStoplossPrice
                                 End If
                             End If
@@ -170,7 +177,7 @@ Public Class OHLStrategyInstrument
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
                                 ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
                             Else
-                                Debug.WriteLine(String.Format("Stoploss modified {0}", Me.GenerateTag()))
+                                Debug.WriteLine(String.Format("Stoploss modified {0} Quantity:{1}, ID:{2}", Me.GenerateTag(), slOrder.Quantity, slOrder.OrderIdentifier))
                             End If
                         End If
                     Next

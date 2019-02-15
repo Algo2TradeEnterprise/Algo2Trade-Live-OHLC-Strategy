@@ -39,7 +39,10 @@ Partial Class frmMomentumReversalSettings
         Me.lblMaxSLPercentage = New System.Windows.Forms.Label()
         Me.lblCandleWickSizePercentage = New System.Windows.Forms.Label()
         Me.opnFileMRSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.lblStatus = New System.Windows.Forms.Label()
+        Me.txtMinCandleRangePercentage = New System.Windows.Forms.TextBox()
+        Me.lblMinCandleRangePercentage = New System.Windows.Forms.Label()
+        Me.txtNumberOfTrade = New System.Windows.Forms.TextBox()
+        Me.lblNumberOfTrade = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -48,10 +51,11 @@ Partial Class frmMomentumReversalSettings
         Me.btnSaveMomentumReversalSettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSaveMomentumReversalSettings.ImageKey = "save-icon-36533.png"
         Me.btnSaveMomentumReversalSettings.ImageList = Me.ImageList1
-        Me.btnSaveMomentumReversalSettings.Location = New System.Drawing.Point(342, 11)
+        Me.btnSaveMomentumReversalSettings.Location = New System.Drawing.Point(456, 14)
+        Me.btnSaveMomentumReversalSettings.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnSaveMomentumReversalSettings.Name = "btnSaveMomentumReversalSettings"
-        Me.btnSaveMomentumReversalSettings.Size = New System.Drawing.Size(84, 47)
-        Me.btnSaveMomentumReversalSettings.TabIndex = 2
+        Me.btnSaveMomentumReversalSettings.Size = New System.Drawing.Size(112, 58)
+        Me.btnSaveMomentumReversalSettings.TabIndex = 8
         Me.btnSaveMomentumReversalSettings.Text = "&Save"
         Me.btnSaveMomentumReversalSettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSaveMomentumReversalSettings.UseVisualStyleBackColor = True
@@ -64,6 +68,10 @@ Partial Class frmMomentumReversalSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtNumberOfTrade)
+        Me.GroupBox1.Controls.Add(Me.lblNumberOfTrade)
+        Me.GroupBox1.Controls.Add(Me.txtMinCandleRangePercentage)
+        Me.GroupBox1.Controls.Add(Me.lblMinCandleRangePercentage)
         Me.GroupBox1.Controls.Add(Me.btnBrowse)
         Me.GroupBox1.Controls.Add(Me.txtInstrumentDetalis)
         Me.GroupBox1.Controls.Add(Me.lblInstrumentDetails)
@@ -75,124 +83,164 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Controls.Add(Me.lblTargetMultiplier)
         Me.GroupBox1.Controls.Add(Me.lblMaxSLPercentage)
         Me.GroupBox1.Controls.Add(Me.lblCandleWickSizePercentage)
-        Me.GroupBox1.Location = New System.Drawing.Point(3, 3)
+        Me.GroupBox1.Location = New System.Drawing.Point(4, 4)
+        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(338, 184)
-        Me.GroupBox1.TabIndex = 3
+        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 286)
+        Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
         '
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(303, 153)
-        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 248)
+        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
-        Me.btnBrowse.Size = New System.Drawing.Size(30, 19)
-        Me.btnBrowse.TabIndex = 10
+        Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
+        Me.btnBrowse.TabIndex = 7
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(131, 153)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(175, 248)
+        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
-        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(168, 20)
-        Me.txtInstrumentDetalis.TabIndex = 9
+        Me.txtInstrumentDetalis.ReadOnly = True
+        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(223, 22)
+        Me.txtInstrumentDetalis.TabIndex = 15
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(7, 155)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 251)
+        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
-        Me.lblInstrumentDetails.Size = New System.Drawing.Size(91, 13)
+        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
         Me.lblInstrumentDetails.TabIndex = 8
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
         'txtSignalTimeFrame
         '
-        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(131, 119)
+        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(175, 210)
+        Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
-        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(192, 20)
-        Me.txtSignalTimeFrame.TabIndex = 7
+        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(255, 22)
+        Me.txtSignalTimeFrame.TabIndex = 6
         '
         'txtTargetMultiplier
         '
-        Me.txtTargetMultiplier.Location = New System.Drawing.Point(131, 87)
+        Me.txtTargetMultiplier.Location = New System.Drawing.Point(175, 138)
+        Me.txtTargetMultiplier.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtTargetMultiplier.Name = "txtTargetMultiplier"
-        Me.txtTargetMultiplier.Size = New System.Drawing.Size(193, 20)
-        Me.txtTargetMultiplier.TabIndex = 6
+        Me.txtTargetMultiplier.Size = New System.Drawing.Size(256, 22)
+        Me.txtTargetMultiplier.TabIndex = 4
         '
         'txtMaxSLPercentage
         '
-        Me.txtMaxSLPercentage.Location = New System.Drawing.Point(131, 52)
+        Me.txtMaxSLPercentage.Location = New System.Drawing.Point(175, 100)
+        Me.txtMaxSLPercentage.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtMaxSLPercentage.Name = "txtMaxSLPercentage"
-        Me.txtMaxSLPercentage.Size = New System.Drawing.Size(193, 20)
-        Me.txtMaxSLPercentage.TabIndex = 5
+        Me.txtMaxSLPercentage.Size = New System.Drawing.Size(256, 22)
+        Me.txtMaxSLPercentage.TabIndex = 3
         '
         'txtCandleWickSizePercentage
         '
-        Me.txtCandleWickSizePercentage.Location = New System.Drawing.Point(131, 17)
+        Me.txtCandleWickSizePercentage.Location = New System.Drawing.Point(175, 21)
+        Me.txtCandleWickSizePercentage.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.txtCandleWickSizePercentage.Name = "txtCandleWickSizePercentage"
-        Me.txtCandleWickSizePercentage.Size = New System.Drawing.Size(192, 20)
-        Me.txtCandleWickSizePercentage.TabIndex = 4
+        Me.txtCandleWickSizePercentage.Size = New System.Drawing.Size(255, 22)
+        Me.txtCandleWickSizePercentage.TabIndex = 1
         '
         'lblSignalTimeFrame
         '
         Me.lblSignalTimeFrame.AutoSize = True
-        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(7, 122)
+        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(9, 214)
+        Me.lblSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblSignalTimeFrame.Name = "lblSignalTimeFrame"
-        Me.lblSignalTimeFrame.Size = New System.Drawing.Size(116, 13)
+        Me.lblSignalTimeFrame.Size = New System.Drawing.Size(158, 17)
         Me.lblSignalTimeFrame.TabIndex = 3
         Me.lblSignalTimeFrame.Text = "Signal Time Frame(min)"
         '
         'lblTargetMultiplier
         '
         Me.lblTargetMultiplier.AutoSize = True
-        Me.lblTargetMultiplier.Location = New System.Drawing.Point(7, 90)
+        Me.lblTargetMultiplier.Location = New System.Drawing.Point(9, 142)
+        Me.lblTargetMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblTargetMultiplier.Name = "lblTargetMultiplier"
-        Me.lblTargetMultiplier.Size = New System.Drawing.Size(82, 13)
+        Me.lblTargetMultiplier.Size = New System.Drawing.Size(110, 17)
         Me.lblTargetMultiplier.TabIndex = 2
         Me.lblTargetMultiplier.Text = "Target Multiplier"
         '
         'lblMaxSLPercentage
         '
         Me.lblMaxSLPercentage.AutoSize = True
-        Me.lblMaxSLPercentage.Location = New System.Drawing.Point(7, 55)
+        Me.lblMaxSLPercentage.Location = New System.Drawing.Point(8, 103)
+        Me.lblMaxSLPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMaxSLPercentage.Name = "lblMaxSLPercentage"
-        Me.lblMaxSLPercentage.Size = New System.Drawing.Size(81, 13)
+        Me.lblMaxSLPercentage.Size = New System.Drawing.Size(107, 17)
         Me.lblMaxSLPercentage.TabIndex = 1
         Me.lblMaxSLPercentage.Text = "Max Stoploss %"
         '
         'lblCandleWickSizePercentage
         '
         Me.lblCandleWickSizePercentage.AutoSize = True
-        Me.lblCandleWickSizePercentage.Location = New System.Drawing.Point(7, 20)
+        Me.lblCandleWickSizePercentage.Location = New System.Drawing.Point(9, 24)
+        Me.lblCandleWickSizePercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblCandleWickSizePercentage.Name = "lblCandleWickSizePercentage"
-        Me.lblCandleWickSizePercentage.Size = New System.Drawing.Size(102, 13)
+        Me.lblCandleWickSizePercentage.Size = New System.Drawing.Size(133, 17)
         Me.lblCandleWickSizePercentage.TabIndex = 0
         Me.lblCandleWickSizePercentage.Text = "Candle Wick Size %"
         '
         'opnFileMRSettings
         '
         '
-        'lblStatus
+        'txtMinCandleRangePercentage
         '
-        Me.lblStatus.AutoSize = True
-        Me.lblStatus.Location = New System.Drawing.Point(3, 194)
-        Me.lblStatus.Name = "lblStatus"
-        Me.lblStatus.Size = New System.Drawing.Size(180, 13)
-        Me.lblStatus.TabIndex = 4
-        Me.lblStatus.Text = "Please Wait... Validating settings file."
+        Me.txtMinCandleRangePercentage.Location = New System.Drawing.Point(175, 62)
+        Me.txtMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinCandleRangePercentage.Name = "txtMinCandleRangePercentage"
+        Me.txtMinCandleRangePercentage.Size = New System.Drawing.Size(256, 22)
+        Me.txtMinCandleRangePercentage.TabIndex = 2
+        '
+        'lblMinCandleRangePercentage
+        '
+        Me.lblMinCandleRangePercentage.AutoSize = True
+        Me.lblMinCandleRangePercentage.Location = New System.Drawing.Point(9, 65)
+        Me.lblMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinCandleRangePercentage.Name = "lblMinCandleRangePercentage"
+        Me.lblMinCandleRangePercentage.Size = New System.Drawing.Size(140, 17)
+        Me.lblMinCandleRangePercentage.TabIndex = 11
+        Me.lblMinCandleRangePercentage.Text = "Min Candle Range %"
+        '
+        'txtNumberOfTrade
+        '
+        Me.txtNumberOfTrade.Location = New System.Drawing.Point(175, 174)
+        Me.txtNumberOfTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtNumberOfTrade.Name = "txtNumberOfTrade"
+        Me.txtNumberOfTrade.Size = New System.Drawing.Size(256, 22)
+        Me.txtNumberOfTrade.TabIndex = 5
+        '
+        'lblNumberOfTrade
+        '
+        Me.lblNumberOfTrade.AutoSize = True
+        Me.lblNumberOfTrade.Location = New System.Drawing.Point(9, 178)
+        Me.lblNumberOfTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblNumberOfTrade.Name = "lblNumberOfTrade"
+        Me.lblNumberOfTrade.Size = New System.Drawing.Size(119, 17)
+        Me.lblNumberOfTrade.TabIndex = 13
+        Me.lblNumberOfTrade.Text = "Number Of Trade"
         '
         'frmMomentumReversalSettings
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(431, 212)
-        Me.Controls.Add(Me.lblStatus)
+        Me.ClientSize = New System.Drawing.Size(575, 299)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveMomentumReversalSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
+        Me.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmMomentumReversalSettings"
@@ -201,7 +249,6 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
         Me.ResumeLayout(False)
-        Me.PerformLayout()
 
     End Sub
 
@@ -220,5 +267,8 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
     Friend WithEvents opnFileMRSettings As OpenFileDialog
-    Friend WithEvents lblStatus As Label
+    Friend WithEvents txtMinCandleRangePercentage As TextBox
+    Friend WithEvents lblMinCandleRangePercentage As Label
+    Friend WithEvents txtNumberOfTrade As TextBox
+    Friend WithEvents lblNumberOfTrade As Label
 End Class

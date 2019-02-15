@@ -255,10 +255,10 @@ Public Class frmMainTabbed
     Private _MRUserInputs As MomentumReversalUserInputs = Nothing
 
     Private Sub sfdgvMomentumReversalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMomentumReversalMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Sub sfdgvMomentumReversalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMomentumReversalMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Async Function MomentumReversalWorker() As Task
         If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
@@ -282,8 +282,8 @@ Public Class frmMainTabbed
                 Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
             End If
 
-            EnableDisableUIEx(UIMode.Active, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.BlockOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Active, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.BlockOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
 
             If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
@@ -374,9 +374,9 @@ Public Class frmMainTabbed
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
 
-            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, _cts, 2, _MRUserInputs)
+            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, 2, _MRUserInputs, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -396,8 +396,8 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
             SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
         End Try
         'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
@@ -413,7 +413,7 @@ Public Class frmMainTabbed
         Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
-        FlashTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+        FlashTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Async Sub btnMomentumReversalStop_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -536,7 +536,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing))
 
-            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, _cts, 1)
+            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -751,22 +751,22 @@ Public Class frmMainTabbed
             miUserDetails_Click(sender, e)
         End If
         EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing))
-        EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing))
+        EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Pink)
-        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing), Color.Pink)
+        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Lime)
-        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing), Color.Lime)
+        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
         If Not isConnected Then
             ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Pink)
-            ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing), Color.Pink)
+            ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -778,7 +778,7 @@ Public Class frmMainTabbed
     End Sub
     Private Sub OnTickerReconnect()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Yellow)
-        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing), Color.Yellow)
+        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)

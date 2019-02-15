@@ -8,6 +8,8 @@ Public Class MomentumReversalUserInputs
     Inherits UserInputs
     Public CandleWickSizePercentage As Decimal
     Public MaxStoplossPercentage As Decimal
+    Public MinCandleRangePercentage As Decimal
+    Public NumberOfTarde As Integer
     Public InstrumentDetailsFilePath As String
     Public InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>

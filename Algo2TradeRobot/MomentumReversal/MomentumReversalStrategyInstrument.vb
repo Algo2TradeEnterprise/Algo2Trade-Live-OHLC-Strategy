@@ -16,7 +16,14 @@ Public Class MomentumReversalStrategyInstrument
 
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
-        _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
+        Select Case Me.ParentStrategy.ParentController.BrokerSource
+            Case APISource.Zerodha
+                _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
+            Case APISource.Upstox
+                Throw New NotImplementedException
+            Case APISource.None
+                Throw New NotImplementedException
+        End Select
         AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus

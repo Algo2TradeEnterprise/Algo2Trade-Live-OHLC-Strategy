@@ -23,7 +23,7 @@ Namespace Controller
 
         Public Sub New(ByVal validatedUser As ZerodhaUser,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(validatedUser, canceller)
+            MyBase.New(validatedUser, APISource.Zerodha, canceller)
             _LoginURL = "https://kite.trade/connect/login"
         End Sub
 

@@ -14,9 +14,9 @@ Public Class OHLStrategy
 #End Region
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
-                   ByVal canceller As CancellationTokenSource,
-                   ByVal strategyIdentifier As String)
-        MyBase.New(associatedParentController, canceller, strategyIdentifier, Nothing)
+                   ByVal strategyIdentifier As String,
+                   ByVal canceller As CancellationTokenSource)
+        MyBase.New(associatedParentController, strategyIdentifier, Nothing, canceller)
     End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
@@ -51,7 +51,7 @@ Public Class OHLStrategy
             'End If
 
             'Get OHL Strategy Instruments
-            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
+            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
             'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
@@ -69,8 +69,6 @@ Public Class OHLStrategy
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-
-                    'If i = 0 Then Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If

@@ -1,2 +1,3 @@
 Instrument Name,Cash,Futures,Quantity,Capital
-CRUDEOIL,,TRUE,1,
+SBIN,TRUE,,1400,
+NTPC,TRUE,,1000,

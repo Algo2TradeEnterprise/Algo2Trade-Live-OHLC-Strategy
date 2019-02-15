@@ -17,7 +17,6 @@ Public Class frmMomentumReversalSettings
     End Sub
 
     Private Sub frmMomentumReversalSettings_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        lblStatus.Visible = False
         LoadSettings()
     End Sub
     Private Async Sub btnSaveMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnSaveMomentumReversalSettings.Click
@@ -25,10 +24,8 @@ Public Class frmMomentumReversalSettings
             _cts = New CancellationTokenSource
             If _MRSettings Is Nothing Then _MRSettings = New MomentumReversalUserInputs
             _MRSettings.InstrumentsData = Nothing
-            lblStatus.Visible = True
             Await ValidateInputs().ConfigureAwait(False)
             SaveSettings()
-            lblStatus.Visible = False
             Me.Close()
         Catch ex As Exception
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
@@ -41,16 +38,20 @@ Public Class frmMomentumReversalSettings
             _MRSettings = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
             fs.Close()
             txtCandleWickSizePercentage.Text = _MRSettings.CandleWickSizePercentage
+            txtMinCandleRangePercentage.Text = _MRSettings.MinCandleRangePercentage
             txtMaxSLPercentage.Text = _MRSettings.MaxStoplossPercentage
             txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
+            txtNumberOfTrade.Text = _MRSettings.NumberOfTarde
             txtSignalTimeFrame.Text = _MRSettings.SignalTimeFrame
             txtInstrumentDetalis.Text = _MRSettings.InstrumentDetailsFilePath
         End If
     End Sub
     Private Sub SaveSettings()
         _MRSettings.CandleWickSizePercentage = txtCandleWickSizePercentage.Text
+        _MRSettings.MinCandleRangePercentage = txtMinCandleRangePercentage.Text
         _MRSettings.MaxStoplossPercentage = txtMaxSLPercentage.Text
         _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
+        _MRSettings.NumberOfTarde = txtNumberOfTrade.Text
         _MRSettings.SignalTimeFrame = txtSignalTimeFrame.Text
         _MRSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
@@ -73,8 +74,9 @@ Public Class frmMomentumReversalSettings
         Await _MRSettings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts).ConfigureAwait(False)
     End Function
     Private Async Function ValidateInputs() As Task
-        ValidateNumbers(0, 999, txtCandleWickSizePercentage)
-        ValidateNumbers(0, 999, txtMaxSLPercentage)
+        ValidateNumbers(0, 100, txtCandleWickSizePercentage)
+        ValidateNumbers(0, 100, txtMinCandleRangePercentage)
+        ValidateNumbers(0, 100, txtMaxSLPercentage)
         ValidateNumbers(0, 999, txtTargetMultiplier)
         ValidateNumbers(1, 60, txtSignalTimeFrame)
         Await ValidateFile().ConfigureAwait(False)
