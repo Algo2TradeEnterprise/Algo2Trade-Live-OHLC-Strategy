@@ -41,7 +41,7 @@ Public Class OHLStrategy
                                                             End Function)
             _cts.Token.ThrowIfCancellationRequested()
             If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-                For Each runningFutureAllInstrument In futureAllInstruments.Take(200)
+                For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)

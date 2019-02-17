@@ -61,7 +61,7 @@ Public Class AmiSignalStrategyInstrument
                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                     'Interlocked.Increment(_OHLStrategyProtector)
-                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
+                    'orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 10 Then
@@ -69,11 +69,11 @@ Public Class AmiSignalStrategyInstrument
                     Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
                     If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                         'Interlocked.Increment(_OHLStrategyProtector)
-                        Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                        'Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000)
+                Await Task.Delay(10000)
                 slDelayCtr += 1
             End While
         Catch ex As Exception
@@ -85,6 +85,8 @@ Public Class AmiSignalStrategyInstrument
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
+        Debug.WriteLine(Utilities.Strings.JsonSerialize(CType(Me.ParentStrategy, AmiSignalStrategy).EntrySignals))
+        Debug.WriteLine(Utilities.Strings.JsonSerialize(CType(Me.ParentStrategy, AmiSignalStrategy).ExitSignals))
 
         Return ret
     End Function

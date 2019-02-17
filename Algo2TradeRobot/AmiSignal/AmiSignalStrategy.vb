@@ -13,6 +13,8 @@ Public Class AmiSignalStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Public Property EntrySignals As Concurrent.ConcurrentDictionary(Of String, AmiSignal)
+    Public Property ExitSignals As Concurrent.ConcurrentDictionary(Of String, AmiSignal)
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As AmiSignalUserInputs,
@@ -51,7 +53,7 @@ Public Class AmiSignalStrategy
                                                             End Function)
             _cts.Token.ThrowIfCancellationRequested()
             If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-                For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
+                For Each runningFutureAllInstrument In futureAllInstruments.Take(1)
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
@@ -174,7 +176,7 @@ Public Class AmiSignalStrategy
             Next
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
-            'tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
+            tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
             'tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
@@ -207,7 +209,8 @@ Public Class AmiSignalStrategy
                 If server.Pending Then
                     client = server.AcceptTcpClient
                     clientData = New IO.StreamReader(client.GetStream)
-                    Console.WriteLine(clientData.ReadLine())
+                    'Console.WriteLine(clientData.ReadLine())
+                    PopulateSignalAsync(clientData.ReadLine())
                 End If
                 Await Task.Delay(100).ConfigureAwait(False)
             End While
@@ -229,4 +232,64 @@ Public Class AmiSignalStrategy
             Return False
         End If
     End Function
+    Private Async Function PopulateSignalAsync(ByVal signal As String) As Task
+        Dim signalarr() As String = signal.Trim.Split(" ")
+        'TODO: Validation of 2 items, first item buy,sell,cover,short. second should present in tradable instrument list.
+        Dim currentSignal As AmiSignal = Nothing
+        If EntrySignals Is Nothing Then EntrySignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
+        If ExitSignals Is Nothing Then ExitSignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
+
+        Select Case signalarr(0).ToUpper()
+            Case "BUY"
+                currentSignal = New AmiSignal
+                With currentSignal
+                    .Direction = APIAdapter.TransactionType.Buy
+                    .InstrumentIdentifier = signalarr(1)
+                    .SignalType = TypeOfSignal.Entry
+                    .Timestamp = Now()
+                End With
+                EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
+            Case "SELL"
+                currentSignal = New AmiSignal
+                With currentSignal
+                    .Direction = APIAdapter.TransactionType.Sell
+                    .InstrumentIdentifier = signalarr(1)
+                    .SignalType = TypeOfSignal.Exit
+                    .Timestamp = Now()
+                End With
+                ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
+            Case "SHORT"
+                currentSignal = New AmiSignal
+                With currentSignal
+                    .Direction = APIAdapter.TransactionType.Sell
+                    .InstrumentIdentifier = signalarr(1)
+                    .SignalType = TypeOfSignal.Entry
+                    .Timestamp = Now()
+                End With
+                EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
+            Case "COVER"
+                currentSignal = New AmiSignal
+                With currentSignal
+                    .Direction = APIAdapter.TransactionType.Buy
+                    .InstrumentIdentifier = signalarr(1)
+                    .SignalType = TypeOfSignal.Exit
+                    .Timestamp = Now()
+                End With
+                ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
+        End Select
+        'TODO: Need to validate get or add return to check unique entry
+    End Function
+
+    <Serializable>
+    Public Class AmiSignal
+        Public InstrumentIdentifier As String
+        Public Direction As APIAdapter.TransactionType
+        Public SignalType As TypeOfSignal
+        Public Timestamp As Date
+    End Class
+    Public Enum TypeOfSignal
+        Entry = 1
+        [Exit]
+        None
+    End Enum
 End Class
