@@ -105,6 +105,9 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AmiSignal\AmiSignalStrategy.vb" />
+    <Compile Include="AmiSignal\AmiSignalStrategyInstrument.vb" />
+    <Compile Include="AmiSignal\AmiSignalUserInputs.vb" />
     <Compile Include="Common.vb" />
     <Compile Include="frmMainTabbed.Designer.vb">
       <DependentUpon>frmMainTabbed.vb</DependentUpon>

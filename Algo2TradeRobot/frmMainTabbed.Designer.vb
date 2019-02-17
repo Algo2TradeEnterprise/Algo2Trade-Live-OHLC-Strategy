@@ -56,6 +56,19 @@ Partial Class frmMainTabbed
         Me.sfdgvOHLMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tabAmiSignal = New System.Windows.Forms.TabPage()
+        Me.pnlAmiSignalMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlAmiSignalTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnAmiSignalStop = New System.Windows.Forms.Button()
+        Me.btnAmiSignalStart = New System.Windows.Forms.Button()
+        Me.Panel3 = New System.Windows.Forms.Panel()
+        Me.blbAmiSignalTickerStatus = New Bulb.LedBulb()
+        Me.lblAmiSignalTickerStatus = New System.Windows.Forms.Label()
+        Me.pnlAmiSignalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlAmiSignalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.lstAmiSignalLog = New System.Windows.Forms.ListBox()
+        Me.sfdgvAmiSignalMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -72,6 +85,13 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyVerticalSplitter.SuspendLayout()
         Me.pnlOHLBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvOHLMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.tabAmiSignal.SuspendLayout()
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.SuspendLayout()
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.SuspendLayout()
+        Me.Panel3.SuspendLayout()
+        Me.pnlAmiSignalBodyVerticalSplitter.SuspendLayout()
+        Me.pnlAmiSignalBodyHorizontalSplitter.SuspendLayout()
+        CType(Me.sfdgvAmiSignalMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'msMainMenuStrip
@@ -108,6 +128,7 @@ Partial Class frmMainTabbed
         '
         Me.tabMain.Controls.Add(Me.tabMomentumReversal)
         Me.tabMain.Controls.Add(Me.tabOHL)
+        Me.tabMain.Controls.Add(Me.tabAmiSignal)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tabMain.Location = New System.Drawing.Point(0, 24)
         Me.tabMain.Name = "tabMain"
@@ -453,6 +474,169 @@ Partial Class frmMainTabbed
         '
         Me.tmrOHLTickerStatus.Enabled = True
         '
+        'tabAmiSignal
+        '
+        Me.tabAmiSignal.Controls.Add(Me.pnlAmiSignalMainPanelHorizontalSplitter)
+        Me.tabAmiSignal.Location = New System.Drawing.Point(4, 22)
+        Me.tabAmiSignal.Name = "tabAmiSignal"
+        Me.tabAmiSignal.Size = New System.Drawing.Size(1020, 559)
+        Me.tabAmiSignal.TabIndex = 2
+        Me.tabAmiSignal.Text = "AmiBroker Signal"
+        Me.tabAmiSignal.UseVisualStyleBackColor = True
+        '
+        'pnlAmiSignalMainPanelHorizontalSplitter
+        '
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Controls.Add(Me.pnlAmiSignalTopHeaderVerticalSplitter, 0, 0)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Controls.Add(Me.pnlAmiSignalBodyVerticalSplitter, 0, 1)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Location = New System.Drawing.Point(0, 0)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Name = "pnlAmiSignalMainPanelHorizontalSplitter"
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1020, 559)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.TabIndex = 1
+        '
+        'pnlAmiSignalTopHeaderVerticalSplitter
+        '
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnCount = 15
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.btnAmiSignalStop, 0, 0)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.btnAmiSignalStart, 0, 0)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.Panel3, 14, 0)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Name = "pnlAmiSignalTopHeaderVerticalSplitter"
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.RowCount = 1
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1014, 33)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnAmiSignalStop
+        '
+        Me.btnAmiSignalStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnAmiSignalStop.Location = New System.Drawing.Point(70, 3)
+        Me.btnAmiSignalStop.Name = "btnAmiSignalStop"
+        Me.btnAmiSignalStop.Size = New System.Drawing.Size(61, 27)
+        Me.btnAmiSignalStop.TabIndex = 10
+        Me.btnAmiSignalStop.Text = "Stop"
+        Me.btnAmiSignalStop.UseVisualStyleBackColor = True
+        '
+        'btnAmiSignalStart
+        '
+        Me.btnAmiSignalStart.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnAmiSignalStart.Location = New System.Drawing.Point(3, 3)
+        Me.btnAmiSignalStart.Name = "btnAmiSignalStart"
+        Me.btnAmiSignalStart.Size = New System.Drawing.Size(61, 27)
+        Me.btnAmiSignalStart.TabIndex = 2
+        Me.btnAmiSignalStart.Text = "Start"
+        Me.btnAmiSignalStart.UseVisualStyleBackColor = True
+        '
+        'Panel3
+        '
+        Me.Panel3.Controls.Add(Me.blbAmiSignalTickerStatus)
+        Me.Panel3.Controls.Add(Me.lblAmiSignalTickerStatus)
+        Me.Panel3.Location = New System.Drawing.Point(901, 3)
+        Me.Panel3.Name = "Panel3"
+        Me.Panel3.Size = New System.Drawing.Size(110, 26)
+        Me.Panel3.TabIndex = 9
+        '
+        'blbAmiSignalTickerStatus
+        '
+        Me.blbAmiSignalTickerStatus.Color = System.Drawing.Color.Pink
+        Me.blbAmiSignalTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
+        Me.blbAmiSignalTickerStatus.Location = New System.Drawing.Point(75, 0)
+        Me.blbAmiSignalTickerStatus.Name = "blbAmiSignalTickerStatus"
+        Me.blbAmiSignalTickerStatus.On = True
+        Me.blbAmiSignalTickerStatus.Size = New System.Drawing.Size(35, 26)
+        Me.blbAmiSignalTickerStatus.TabIndex = 7
+        Me.blbAmiSignalTickerStatus.Text = "LedBulb1"
+        '
+        'lblAmiSignalTickerStatus
+        '
+        Me.lblAmiSignalTickerStatus.AutoSize = True
+        Me.lblAmiSignalTickerStatus.Location = New System.Drawing.Point(7, 7)
+        Me.lblAmiSignalTickerStatus.Name = "lblAmiSignalTickerStatus"
+        Me.lblAmiSignalTickerStatus.Size = New System.Drawing.Size(70, 13)
+        Me.lblAmiSignalTickerStatus.TabIndex = 9
+        Me.lblAmiSignalTickerStatus.Text = "Ticker Status"
+        '
+        'pnlAmiSignalBodyVerticalSplitter
+        '
+        Me.pnlAmiSignalBodyVerticalSplitter.ColumnCount = 2
+        Me.pnlAmiSignalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlAmiSignalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlAmiSignalBodyVerticalSplitter.Controls.Add(Me.pnlAmiSignalBodyHorizontalSplitter, 0, 0)
+        Me.pnlAmiSignalBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlAmiSignalBodyVerticalSplitter.Location = New System.Drawing.Point(3, 42)
+        Me.pnlAmiSignalBodyVerticalSplitter.Name = "pnlAmiSignalBodyVerticalSplitter"
+        Me.pnlAmiSignalBodyVerticalSplitter.RowCount = 1
+        Me.pnlAmiSignalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlAmiSignalBodyVerticalSplitter.Size = New System.Drawing.Size(1014, 514)
+        Me.pnlAmiSignalBodyVerticalSplitter.TabIndex = 1
+        '
+        'pnlAmiSignalBodyHorizontalSplitter
+        '
+        Me.pnlAmiSignalBodyHorizontalSplitter.ColumnCount = 1
+        Me.pnlAmiSignalBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlAmiSignalBodyHorizontalSplitter.Controls.Add(Me.lstAmiSignalLog, 0, 1)
+        Me.pnlAmiSignalBodyHorizontalSplitter.Controls.Add(Me.sfdgvAmiSignalMainDashboard, 0, 0)
+        Me.pnlAmiSignalBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlAmiSignalBodyHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlAmiSignalBodyHorizontalSplitter.Name = "pnlAmiSignalBodyHorizontalSplitter"
+        Me.pnlAmiSignalBodyHorizontalSplitter.RowCount = 2
+        Me.pnlAmiSignalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlAmiSignalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlAmiSignalBodyHorizontalSplitter.Size = New System.Drawing.Size(703, 508)
+        Me.pnlAmiSignalBodyHorizontalSplitter.TabIndex = 0
+        '
+        'lstAmiSignalLog
+        '
+        Me.lstAmiSignalLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstAmiSignalLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
+        Me.lstAmiSignalLog.FormattingEnabled = True
+        Me.lstAmiSignalLog.Location = New System.Drawing.Point(3, 358)
+        Me.lstAmiSignalLog.Name = "lstAmiSignalLog"
+        Me.lstAmiSignalLog.Size = New System.Drawing.Size(697, 147)
+        Me.lstAmiSignalLog.TabIndex = 9
+        '
+        'sfdgvAmiSignalMainDashboard
+        '
+        Me.sfdgvAmiSignalMainDashboard.AccessibleName = "Table"
+        Me.sfdgvAmiSignalMainDashboard.AllowDraggingColumns = True
+        Me.sfdgvAmiSignalMainDashboard.AllowEditing = False
+        Me.sfdgvAmiSignalMainDashboard.AllowFiltering = True
+        Me.sfdgvAmiSignalMainDashboard.AllowResizingColumns = True
+        Me.sfdgvAmiSignalMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
+        Me.sfdgvAmiSignalMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
+        Me.sfdgvAmiSignalMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.sfdgvAmiSignalMainDashboard.Location = New System.Drawing.Point(3, 3)
+        Me.sfdgvAmiSignalMainDashboard.Name = "sfdgvAmiSignalMainDashboard"
+        Me.sfdgvAmiSignalMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
+        Me.sfdgvAmiSignalMainDashboard.Size = New System.Drawing.Size(697, 349)
+        Me.sfdgvAmiSignalMainDashboard.TabIndex = 6
+        Me.sfdgvAmiSignalMainDashboard.Text = "SfDataGrid1"
+        '
+        'tmrAmiSignalTickerStatus
+        '
+        Me.tmrAmiSignalTickerStatus.Enabled = True
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -484,6 +668,14 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyVerticalSplitter.ResumeLayout(False)
         Me.pnlOHLBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvOHLMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tabAmiSignal.ResumeLayout(False)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.Panel3.ResumeLayout(False)
+        Me.Panel3.PerformLayout()
+        Me.pnlAmiSignalBodyVerticalSplitter.ResumeLayout(False)
+        Me.pnlAmiSignalBodyHorizontalSplitter.ResumeLayout(False)
+        CType(Me.sfdgvAmiSignalMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -521,4 +713,17 @@ Partial Class frmMainTabbed
     Friend WithEvents btnMomentumReversalStop As Button
     Friend WithEvents btnOHLStop As Button
     Friend WithEvents btnMomentumReversalSettings As Button
+    Friend WithEvents tabAmiSignal As TabPage
+    Friend WithEvents pnlAmiSignalMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents pnlAmiSignalTopHeaderVerticalSplitter As TableLayoutPanel
+    Friend WithEvents btnAmiSignalStop As Button
+    Friend WithEvents btnAmiSignalStart As Button
+    Friend WithEvents Panel3 As Panel
+    Friend WithEvents blbAmiSignalTickerStatus As Bulb.LedBulb
+    Friend WithEvents lblAmiSignalTickerStatus As Label
+    Friend WithEvents pnlAmiSignalBodyVerticalSplitter As TableLayoutPanel
+    Friend WithEvents pnlAmiSignalBodyHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents lstAmiSignalLog As ListBox
+    Friend WithEvents sfdgvAmiSignalMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
+    Friend WithEvents tmrAmiSignalTickerStatus As Timer
 End Class

@@ -580,6 +580,160 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
+#Region "AmiSignal"
+    Private Sub sfdgvAmiSignalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvAmiSignalMainDashboard.FilterPopupShowing
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+    End Sub
+    Private Sub sfdgvAmiSignalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvAmiSignalMainDashboard.AutoGeneratingColumn
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+    End Sub
+    Private Async Function AmiSignalStartWorker() As Task
+        If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
+            MsgBox("Cannot start as another strategy is loggin in")
+            Exit Function
+        End If
+
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
+        _cts.Token.ThrowIfCancellationRequested()
+
+        Try
+            EnableDisableUIEx(UIMode.Active, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.BlockOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+
+            If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
+
+            If _commonController IsNot Nothing Then
+                _commonController.RefreshCancellationToken(_cts)
+            Else
+                _commonController = New ZerodhaStrategyController(currentUser, _cts)
+
+                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
+                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
+                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+
+                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
+                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                AddHandler _commonController.TickerError, AddressOf OnTickerError
+                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+
+#Region "Login"
+                Dim loginMessage As String = Nothing
+                While True
+                    _cts.Token.ThrowIfCancellationRequested()
+                    _connection = Nothing
+                    loginMessage = Nothing
+                    Try
+                        OnHeartbeat("Attempting to get connection to Zerodha API")
+                        _cts.Token.ThrowIfCancellationRequested()
+                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
+                    Catch cx As OperationCanceledException
+                        loginMessage = cx.Message
+                        logger.Error(cx)
+                        Exit While
+                    Catch ex As Exception
+                        loginMessage = ex.Message
+                        logger.Error(ex)
+                    End Try
+                    If _connection Is Nothing Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
+                            'No need to retry as its a password failure
+                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                            Exit While
+                        Else
+                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await Task.Delay(10000)
+                            _cts.Token.ThrowIfCancellationRequested()
+                        End If
+                    Else
+                        Exit While
+                    End If
+                End While
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing Then
+                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                    Else
+                        Throw New ApplicationException("No connection to Zerodha API could be established")
+                    End If
+                End If
+#End Region
+                OnHeartbeat("Completing all pre-automation requirements")
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+
+                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+            End If 'Common controller
+            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+
+            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim dashboadList As BindingList(Of AmiSignalStrategyInstrument) = New BindingList(Of AmiSignalStrategyInstrument)(AmiSignalStrategyToExecute.TradableStrategyInstruments)
+            SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, dashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
+
+            Await AmiSignalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch cx As OperationCanceledException
+            logger.Error(cx)
+            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
+        Catch ex As Exception
+            logger.Error(ex)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        Finally
+            ProgressStatus("No pending actions")
+            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+        End Try
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
+    End Function
+    Private Async Sub btnAmiSignalStart_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStart.Click
+        Await Task.Run(AddressOf AmiSignalStartWorker).ConfigureAwait(False)
+    End Sub
+    Private Sub tmrAmiSignalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrAmiSignalTickerStatus.Tick
+        FlashTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing))
+    End Sub
+    Private Async Sub btnAmiSignalStop_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStop.Click
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        _cts.Cancel()
+    End Sub
+#End Region
+
 #Region "Common to all stratgeies"
 
 #Region "EX function"
@@ -601,10 +755,18 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnMomentumReversalStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnMomentumReversalStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnMomentumReversalStart, "Start")
                         SetObjectText_ThreadSafe(btnMomentumReversalStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, "Start")
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, "Stop")
                     End If
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnOHLStart, True)
@@ -621,15 +783,51 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnOHLStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnOHLStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnOHLStart, "Start")
                         SetObjectText_ThreadSafe(btnOHLStop, "Stop")
                     End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, "Start")
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, "Stop")
+                    End If
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
+            End Select
+        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+            Select Case mode
+                Case UIMode.Active
+                    SetObjectEnableDisable_ThreadSafe(btnAmiSignalStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnAmiSignalStop, True)
+                Case UIMode.BlockOther
+                    If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnOHLStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnOHLStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnMomentumReversalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnMomentumReversalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnMomentumReversalStop, Common.LOGIN_PENDING)
+                    End If
+                Case UIMode.ReleaseOther
+                    If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnOHLStart, "Start")
+                        SetObjectText_ThreadSafe(btnOHLStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnMomentumReversalStart, "Start")
+                        SetObjectText_ThreadSafe(btnMomentumReversalStop, "Stop")
+                    End If
+                Case UIMode.Idle
+                    SetObjectEnableDisable_ThreadSafe(btnAmiSignalStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnAmiSignalStop, False)
+                    SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, Nothing)
             End Select
         End If
     End Sub
@@ -642,6 +840,9 @@ Public Class frmMainTabbed
         ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
             blbTickerStatusCommon = blbMomentumReversalTickerStatus
             tmrTickerStatusCommon = tmrMomentumReversalTickerStatus
+        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+            blbTickerStatusCommon = blbAmiSignalTickerStatus
+            tmrTickerStatusCommon = tmrAmiSignalTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
@@ -660,6 +861,8 @@ Public Class frmMainTabbed
             blbTickerStatusCommon = blbOHLTickerStatus
         ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
             blbTickerStatusCommon = blbMomentumReversalTickerStatus
+        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+            blbTickerStatusCommon = blbAmiSignalTickerStatus
         End If
         blbTickerStatusCommon.Color = color
     End Sub
@@ -675,6 +878,8 @@ Public Class frmMainTabbed
             sfdgvCommon = sfdgvOHLMainDashboard
         ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
             sfdgvCommon = sfdgvMomentumReversalMainDashboard
+        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+            sfdgvCommon = sfdgvAmiSignalMainDashboard
         End If
 
         Dim eFilterPopupShowingEventArgsCommon As FilterPopupShowingEventArgs = Nothing
@@ -731,11 +936,17 @@ Public Class frmMainTabbed
                 Case LogMode.One
                     SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
+        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(AmiSignalStrategy) Then
+            Select Case mode
+                Case LogMode.One
+                    SetListAddItem_ThreadSafe(lstAmiSignalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+            End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
                     SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstAmiSignalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -752,21 +963,25 @@ Public Class frmMainTabbed
         End If
         EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing))
         EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+        EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Pink)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
+        ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Lime)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
+        ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
         If Not isConnected Then
             ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Pink)
             ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
+            ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -779,6 +994,7 @@ Public Class frmMainTabbed
     Private Sub OnTickerReconnect()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Yellow)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
+        ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)

@@ -18,7 +18,7 @@ Namespace ChartHandler.ChartStyle
             MyBase.New(associatedParentController, assoicatedParentInstrument, associatedStrategyInstruments, canceller)
         End Sub
         Public Overrides Async Function GetChartFromHistoricalAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
-            'Exit Function
+            Exit Function
             Try
                 While _historicalLock > 0
                     Await Task.Delay(10).ConfigureAwait(False)
