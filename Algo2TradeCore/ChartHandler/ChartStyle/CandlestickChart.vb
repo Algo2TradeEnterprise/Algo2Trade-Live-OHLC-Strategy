@@ -149,8 +149,8 @@ Namespace ChartHandler.ChartStyle
                                                                                Return x.Key
                                                                            End Function).FirstOrDefault.Value
                         'Print previous candle
-                        Debug.WriteLine(previousCandle.PreviousPayload.ToString)
-                        Debug.WriteLine(previousCandle.ToString)
+                        'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
+                        'Debug.WriteLine(previousCandle.ToString)
                     End If
                     runningPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
                     With runningPayload

@@ -35,43 +35,43 @@ Public Class OHLStrategy
         Await Task.Delay(0).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            ' Get all the futures instruments
-            Dim futureAllInstruments = allInstruments.Where(Function(x)
-                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
-                                                            End Function)
-            _cts.Token.ThrowIfCancellationRequested()
-            If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-                For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    ret = True
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
-                Next
-                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            End If
-
-            'Get OHL Strategy Instruments
-            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
-            ''Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
-            'Dim dt As DataTable = Nothing
-            'Using readCSV As New CSVHelper(filePath, ",", _cts)
-            '    dt = readCSV.GetDataTableFromCSV(0)
-            'End Using
-            'If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
-            '    Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-            '    For i As Integer = 0 To dt.Rows.Count - 1
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        Dim rowNumber As Integer = i
-            '        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-            '                                                                                    Return x.TradingSymbol = dt.Rows(rowNumber).Item(0)
-            '                                                                                End Function)
+            '' Get all the futures instruments
+            'Dim futureAllInstruments = allInstruments.Where(Function(x)
+            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
+            '                                                End Function)
+            '_cts.Token.ThrowIfCancellationRequested()
+            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
+            '    For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
             '        _cts.Token.ThrowIfCancellationRequested()
             '        ret = True
             '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+            '        retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
             '    Next
             '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             'End If
+
+            'Get OHL Strategy Instruments
+            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
+            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
+            Dim dt As DataTable = Nothing
+            Using readCSV As New CSVHelper(filePath, ",", _cts)
+                dt = readCSV.GetDataTableFromCSV(0)
+            End Using
+            If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+                For i As Integer = 0 To dt.Rows.Count - 1
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim rowNumber As Integer = i
+                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                                Return x.TradingSymbol = dt.Rows(rowNumber).Item(0)
+                                                                                            End Function)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    ret = True
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                Next
+                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+            End If
         End If
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
@@ -110,30 +110,6 @@ Public Class OHLStrategy
 
         Return ret
     End Function
-    ''' <summary>
-    ''' This will create the required number of instrument workers based on the already filled tradable instruments.
-    ''' It will also trigger the RunDirect method if the common condition for trigger for all instruments as per this strategy is satisfied
-    ''' </summary>
-    ''' <returns></returns>
-    'Public Overrides Async Function ExecuteAsync() As Task
-    '    logger.Debug("ExecuteAsync, parameters:Nothing")
-    '    _cts.Token.ThrowIfCancellationRequested()
-
-    '    'To fire any time based common calls to the strategy instruments
-    '    While True
-    '        _cts.Token.ThrowIfCancellationRequested()
-    '        Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
-    '        If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
-    '            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-    '                For Each runningTradableStrategyInstrument In TradableStrategyInstruments
-    '                    _cts.Token.ThrowIfCancellationRequested()
-    '                    runningTradableStrategyInstrument.RunDirectAsync()
-    '                Next
-    '            End If
-    '        End If
-    '        Await Task.Delay(1001).ConfigureAwait(False)
-    '    End While
-    'End Function
     Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
         _cts.Token.ThrowIfCancellationRequested()
@@ -170,13 +146,6 @@ Public Class OHLStrategy
         Return ret
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        'Dim ctr As Integer = 0
-        'While True
-        '    ctr += 1000
-        '    'If ctr = 10000 Then Throw New ApplicationException("DOnno")
-        '    _cts.Token.ThrowIfCancellationRequested()
-        '    Await Task.Delay(1000)
-        'End While
         Dim lastException As Exception = Nothing
 
         Try
@@ -189,7 +158,7 @@ Public Class OHLStrategy
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             'tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
-            'tasks.Add(Task.Run(AddressOf ExitAllTrades))
+            tasks.Add(Task.Run(AddressOf ExitAllTrades))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -237,10 +206,13 @@ Public Class OHLStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
         Dim currentTime As Date = Now
-        If currentTime.Hour = 14 AndAlso currentTime.Minute = 30 AndAlso currentTime.Second >= 0 Then
+        If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
             Return True
         Else
             Return False
+        End If
+        If Me.TotalPL >= 300 Then
+            Return True
         End If
     End Function
 End Class

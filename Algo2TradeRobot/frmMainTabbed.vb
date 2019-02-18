@@ -597,6 +597,11 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
+            OnHeartbeat("Validating Settings & instrument details")
+            Dim amiSignalSettings As New AmiSignalUserInputs
+            amiSignalSettings.SignalTimeFrame = 1
+            Await amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts).ConfigureAwait(False)
+
             EnableDisableUIEx(UIMode.Active, New AmiSignalStrategy(Nothing, Nothing, Nothing))
             EnableDisableUIEx(UIMode.BlockOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
 
@@ -690,7 +695,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
 
-            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, _cts)
+            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, amiSignalSettings, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()

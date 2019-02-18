@@ -149,6 +149,7 @@ Public Class OHLStrategyInstrument
     Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
         Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            Dim currentTime As Date = Now
             For Each parentOrderId In OrderDetails.Keys
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
                 If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
@@ -163,13 +164,13 @@ Public Class OHLStrategyInstrument
                             If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                                 triggerPrice -= buffer
                                 potentialStoplossPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                If triggerPrice < potentialStoplossPrice Then
+                                If currentTime.Hour = 9 AndAlso currentTime.Minute >= 16 AndAlso triggerPrice < potentialStoplossPrice Then
                                     triggerPrice = potentialStoplossPrice
                                 End If
                             ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                                 triggerPrice += buffer
                                 potentialStoplossPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + parentOrderPrice * 0.005, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                If triggerPrice > potentialStoplossPrice Then
+                                If currentTime.Hour = 9 AndAlso currentTime.Minute >= 16 AndAlso triggerPrice > potentialStoplossPrice Then
                                     triggerPrice = potentialStoplossPrice
                                 End If
                             End If
@@ -186,6 +187,20 @@ Public Class OHLStrategyInstrument
             Next
         End If
         Return ret
+    End Function
+    Public Overrides Async Function ExitAllTradesAsync() As Task
+        Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(True)
+        If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
+            Try
+                Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, True).ConfigureAwait(False)
+            Catch cex As OperationCanceledException
+                logger.Error(cex)
+                Me.ParentStrategy.ParentController.OrphanException = cex
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
+            End Try
+        End If
     End Function
 
 #Region "IDisposable Support"

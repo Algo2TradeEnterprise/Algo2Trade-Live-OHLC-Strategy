@@ -746,30 +746,32 @@ Namespace Controller
                         Dim slOrder As IEnumerable(Of IOrder) = Nothing
                         If wrappedParentOrder.WrappedOrder.TransactionType = "BUY" Then
                             _cts.Token.ThrowIfCancellationRequested()
-                            targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                       Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                              y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice
-                                                                   End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
                             slOrder = allOrders.ToList.FindAll(Function(x)
                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                          y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                          y.WrappedOrder.TriggerPrice < wrappedParentOrder.WrappedOrder.AveragePrice
                                                                End Function)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            targetOrder = allOrders.ToList.FindAll(Function(x)
+                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                       Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                              y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                              y.WrappedOrder.Price <> 0
+                                                                   End Function)
                         ElseIf wrappedParentOrder.WrappedOrder.TransactionType = "SELL" Then
                             _cts.Token.ThrowIfCancellationRequested()
-                            targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                       Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                              y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice
-                                                                   End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
                             slOrder = allOrders.ToList.FindAll(Function(x)
                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                          y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                          y.WrappedOrder.TriggerPrice > wrappedParentOrder.WrappedOrder.AveragePrice
                                                                End Function)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            targetOrder = allOrders.ToList.FindAll(Function(x)
+                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                       Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                              y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                              y.WrappedOrder.Price <> 0
+                                                                   End Function)
                         End If
                         For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
                             _cts.Token.ThrowIfCancellationRequested()
@@ -781,7 +783,7 @@ Namespace Controller
                                                                                 .SLOrder = slOrder,
                                                                                 .TargetOrder = targetOrder}
                                     Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
-                                    logger.Debug(Utils.JsonSerialize(runningStrategyInstrument.OrderDetails))
+                                    'logger.Debug(Utils.JsonSerialize(runningStrategyInstrument.OrderDetails))
                                 End If
                             End If
                         Next

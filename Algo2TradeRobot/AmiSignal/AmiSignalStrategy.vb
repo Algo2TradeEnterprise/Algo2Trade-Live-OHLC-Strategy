@@ -13,8 +13,6 @@ Public Class AmiSignalStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Property EntrySignals As Concurrent.ConcurrentDictionary(Of String, AmiSignal)
-    Public Property ExitSignals As Concurrent.ConcurrentDictionary(Of String, AmiSignal)
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As AmiSignalUserInputs,
@@ -47,43 +45,37 @@ Public Class AmiSignalStrategy
         Await Task.Delay(0).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            'Get all the futures instruments
-            Dim futureAllInstruments = allInstruments.Where(Function(x)
-                                                                Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
-                                                            End Function)
-            _cts.Token.ThrowIfCancellationRequested()
-            If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-                For Each runningFutureAllInstrument In futureAllInstruments.Take(1)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    ret = True
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
-                Next
-                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            End If
-
-            ''Get AmiSignal Strategy Instruments
-            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\AmiSignal Tradable Instruments.csv"
-            ''Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\AmiSignal Tradable Instruments - Copy.csv"
-            'Dim dt As DataTable = Nothing
-            'Using readCSV As New CSVHelper(filePath, ",", _cts)
-            '    dt = readCSV.GetDataTableFromCSV(0)
-            'End Using
-            'If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
-            '    Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-            '    For i As Integer = 0 To dt.Rows.Count - 1
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        Dim rowNumber As Integer = i
-            '        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-            '                                                                                    Return x.TradingSymbol = dt.Rows(rowNumber).Item(0)
-            '                                                                                End Function)
+            ''Get all the futures instruments
+            'Dim futureAllInstruments = allInstruments.Where(Function(x)
+            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
+            '                                                End Function)
+            '_cts.Token.ThrowIfCancellationRequested()
+            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
+            '    For Each runningFutureAllInstrument In futureAllInstruments.Take(1)
             '        _cts.Token.ThrowIfCancellationRequested()
             '        ret = True
             '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+            '        retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
             '    Next
             '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             'End If
+
+            'Get AmiSignal Strategy Instruments
+            Dim amiUserInputs As AmiSignalUserInputs = CType(UserSettings, AmiSignalUserInputs)
+            If amiUserInputs.InstrumentsData IsNot Nothing AndAlso amiUserInputs.InstrumentsData.Count > 0 Then
+                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+                For Each instrument In amiUserInputs.InstrumentsData
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                                Return x.TradingSymbol.ToUpper = instrument.Value.InstrumentName.ToUpper
+                                                                                            End Function)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    ret = True
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                Next
+                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+            End If
         End If
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
@@ -158,13 +150,6 @@ Public Class AmiSignalStrategy
         Return ret
     End Function
     Public Overrides Async Function MonitorAsync() As Task
-        'Dim ctr As Integer = 0
-        'While True
-        '    ctr += 1000
-        '    'If ctr = 10000 Then Throw New ApplicationException("DOnno")
-        '    _cts.Token.ThrowIfCancellationRequested()
-        '    Await Task.Delay(1000)
-        'End While
         Dim lastException As Exception = Nothing
 
         Try
@@ -177,7 +162,7 @@ Public Class AmiSignalStrategy
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
-            'tasks.Add(Task.Run(AddressOf ExitAllTrades))
+            tasks.Add(Task.Run(AddressOf ExitAllTrades, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -201,17 +186,32 @@ Public Class AmiSignalStrategy
             Dim client As Net.Sockets.TcpClient = Nothing
             Dim clientData As IO.StreamReader = Nothing
             server.Start()
+            'Dim flag As Boolean = False
             While True
-                If Me.ParentController.OrphanException IsNot Nothing Then
-                    Throw Me.ParentController.OrphanException
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                If server.Pending Then
-                    client = server.AcceptTcpClient
-                    clientData = New IO.StreamReader(client.GetStream)
-                    'Console.WriteLine(clientData.ReadLine())
-                    PopulateSignalAsync(clientData.ReadLine())
-                End If
+                Try
+                    If Me.ParentController.OrphanException IsNot Nothing Then
+                        Throw Me.ParentController.OrphanException
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+                    'If flag Then
+                    '    Throw New ApplicationException("Test exception")
+                    '    flag = False
+                    'End If
+                    If server.Pending Then
+                        client = server.AcceptTcpClient
+                        clientData = New IO.StreamReader(client.GetStream)
+                        'Console.WriteLine(clientData.ReadLine())
+                        PopulateExternalSignalAsync(clientData.ReadLine())
+                        'flag = True
+                    End If
+                Catch iex As Exception
+                    logger.Error("Strategy:{0}, error:{1}", Me.ToString, iex.ToString)
+                    If server IsNot Nothing Then server.Stop()
+                    server = Nothing
+                    server = New Net.Sockets.TcpListener(serverIP, serverPort)
+                    server.Start()
+                    'flag = False
+                End Try
                 Await Task.Delay(100).ConfigureAwait(False)
             End While
         Catch ex As Exception
@@ -226,70 +226,31 @@ Public Class AmiSignalStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
         Dim currentTime As Date = Now
-        If currentTime.Hour = 14 AndAlso currentTime.Minute = 30 AndAlso currentTime.Second >= 0 Then
+        If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
             Return True
         Else
             Return False
         End If
     End Function
-    Private Async Function PopulateSignalAsync(ByVal signal As String) As Task
-        Dim signalarr() As String = signal.Trim.Split(" ")
-        'TODO: Validation of 2 items, first item buy,sell,cover,short. second should present in tradable instrument list.
-        Dim currentSignal As AmiSignal = Nothing
-        If EntrySignals Is Nothing Then EntrySignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
-        If ExitSignals Is Nothing Then ExitSignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
-
-        Select Case signalarr(0).ToUpper()
-            Case "BUY"
-                currentSignal = New AmiSignal
-                With currentSignal
-                    .Direction = APIAdapter.TransactionType.Buy
-                    .InstrumentIdentifier = signalarr(1)
-                    .SignalType = TypeOfSignal.Entry
-                    .Timestamp = Now()
-                End With
-                EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
-            Case "SELL"
-                currentSignal = New AmiSignal
-                With currentSignal
-                    .Direction = APIAdapter.TransactionType.Sell
-                    .InstrumentIdentifier = signalarr(1)
-                    .SignalType = TypeOfSignal.Exit
-                    .Timestamp = Now()
-                End With
-                ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
-            Case "SHORT"
-                currentSignal = New AmiSignal
-                With currentSignal
-                    .Direction = APIAdapter.TransactionType.Sell
-                    .InstrumentIdentifier = signalarr(1)
-                    .SignalType = TypeOfSignal.Entry
-                    .Timestamp = Now()
-                End With
-                EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
-            Case "COVER"
-                currentSignal = New AmiSignal
-                With currentSignal
-                    .Direction = APIAdapter.TransactionType.Buy
-                    .InstrumentIdentifier = signalarr(1)
-                    .SignalType = TypeOfSignal.Exit
-                    .Timestamp = Now()
-                End With
-                ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
-        End Select
-        'TODO: Need to validate get or add return to check unique entry
+    Private Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
+        Await Task.Delay(0).ConfigureAwait(False)
+        If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
+            Dim signalarr() As String = signal.Trim.Split(" ")
+            If signalarr.Count > 2 Then
+                logger.Error("Invalid Signal Details. {0}", signal)
+                Exit Function
+            End If
+            Dim amiUserInputs As AmiSignalUserInputs = CType(UserSettings, AmiSignalUserInputs)
+            If amiUserInputs.InstrumentsData.ContainsKey(signalarr(1).ToUpper) Then
+                Dim runningStrategyInstruments As IEnumerable(Of AmiSignalStrategyInstrument) = Me.TradableStrategyInstruments.Where(Function(x)
+                                                                                                                                         Return x.TradableInstrument.TradingSymbol.ToUpper = amiUserInputs.InstrumentsData(signalarr(1).ToUpper).InstrumentName.ToUpper
+                                                                                                                                     End Function)
+                If runningStrategyInstruments IsNot Nothing AndAlso runningStrategyInstruments.Count > 0 Then
+                    runningStrategyInstruments.FirstOrDefault.PopulateExternalSignalAsync(signal)
+                End If
+            Else
+                logger.Error("Instrument is not available in the given list. {0}", signal)
+            End If
+        End If
     End Function
-
-    <Serializable>
-    Public Class AmiSignal
-        Public InstrumentIdentifier As String
-        Public Direction As APIAdapter.TransactionType
-        Public SignalType As TypeOfSignal
-        Public Timestamp As Date
-    End Class
-    Public Enum TypeOfSignal
-        Entry = 1
-        [Exit]
-        None
-    End Enum
 End Class

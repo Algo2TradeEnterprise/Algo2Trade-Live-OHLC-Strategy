@@ -184,30 +184,6 @@ Public Class MomentumReversalStrategy
 
         Return ret
     End Function
-    ''' <summary>
-    ''' This will create the required number of instrument workers based on the already filled tradable instruments.
-    ''' It will also trigger the RunDirect method if the common condition for trigger for all instruments as per this strategy is satisfied
-    ''' </summary>
-    ''' <returns></returns>
-    'Public Overrides Async Function ExecuteAsync() As Task
-    '    logger.Debug("ExecuteAsync, parameters:Nothing")
-    '    _cts.Token.ThrowIfCancellationRequested()
-
-    '    'To fire any time based common calls to the strategy instruments
-    '    While True
-    '        _cts.Token.ThrowIfCancellationRequested()
-    '        Dim triggerRecevied As Tuple(Of Boolean, Trigger) = Await IsTriggerReachedAsync().ConfigureAwait(False)
-    '        If triggerRecevied IsNot Nothing AndAlso triggerRecevied.Item1 = True Then
-    '            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-    '                For Each runningTradableStrategyInstrument In TradableStrategyInstruments
-    '                    _cts.Token.ThrowIfCancellationRequested()
-    '                    runningTradableStrategyInstrument.RunDirectAsync()
-    '                Next
-    '            End If
-    '        End If
-    '        Await Task.Delay(1001).ConfigureAwait(False)
-    '    End While
-    'End Function
     Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
         _cts.Token.ThrowIfCancellationRequested()

@@ -83,8 +83,10 @@ Namespace Strategies
         Public Enum ExecuteCommands
             PlaceBOLimtMISOrder = 1
             PlaceBOSLMISOrder
+            PlaceCOMarketMISOrder
             ModifyStoplossOrder
-            CancelOrder
+            CancelBOOrder
+            CancelCOOrder
         End Enum
 #End Region
 
@@ -394,23 +396,10 @@ Namespace Strategies
             Return bufferPrice
         End Function
         Public MustOverride Async Function MonitorAsync() As Task
-        Public Overridable Async Function ExitAllTrades() As Task
-            Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders()
-            If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
-                Try
-                    Await ExecuteCommandAsync(ExecuteCommands.CancelOrder, Nothing).ConfigureAwait(False)
-                Catch cex As OperationCanceledException
-                    logger.Error(cex)
-                    Me.ParentStrategy.ParentController.OrphanException = cex
-                Catch ex As Exception
-                    logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                    Throw ex
-                End Try
-            End If
-        End Function
+        Public MustOverride Async Function ExitAllTradesAsync() As Task
         Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Protected MustOverride Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
-        Protected Overridable Function IsTriggerReceivedForExitAllOrders() As List(Of Tuple(Of Boolean, String, String))
+        Protected Overridable Function IsTriggerReceivedForExitAllOrders(ByVal forceExit As Boolean) As List(Of Tuple(Of Boolean, String, String))
             Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
@@ -471,7 +460,7 @@ Namespace Strategies
                                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=APIAdapter.Exchange.NSE,
+                                    placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
                                                                                                        tradingSymbol:=TradingSymbol,
                                                                                                        transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                        quantity:=placeOrderTrigger.Item2.Quantity,
@@ -528,8 +517,8 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
-                            Case ExecuteCommands.CancelOrder
-                                Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders()
+                            Case ExecuteCommands.CancelBOOrder
+                                Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(data)
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
                                     For Each cancelOrderTrigger In cancelOrderTriggers
                                         If cancelOrderTrigger.Item1 = True Then
@@ -560,11 +549,43 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
+                            Case ExecuteCommands.CancelCOOrder
+                                Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(data)
+                                If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
+                                    For Each cancelOrderTrigger In cancelOrderTriggers
+                                        If cancelOrderTrigger.Item1 = True Then
+                                            Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
+                                            cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=cancelOrderTrigger.Item2,
+                                                                                                       parentOrderID:=cancelOrderTrigger.Item3)
+                                            If cancelOrderResponse IsNot Nothing Then
+                                                logger.Debug("Cancel order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
+                                                lastException = Nothing
+                                                allOKWithoutException = True
+                                                _cts.Token.ThrowIfCancellationRequested()
+                                                ret = cancelOrderResponse
+                                                _cts.Token.ThrowIfCancellationRequested()
+                                                Exit For
+                                            Else
+                                                Throw New ApplicationException(String.Format("Cancel order did not succeed"))
+                                            End If
+                                        Else
+                                            lastException = Nothing
+                                            allOKWithoutException = True
+                                            _cts.Token.ThrowIfCancellationRequested()
+                                            Exit For
+                                        End If
+                                    Next
+                                Else
+                                    lastException = Nothing
+                                    allOKWithoutException = True
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Exit For
+                                End If
                             Case ExecuteCommands.PlaceBOSLMISOrder
                                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=APIAdapter.Exchange.NSE,
+                                    placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
                                                                                                     tradingSymbol:=TradingSymbol,
                                                                                                     transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                     quantity:=placeOrderTrigger.Item2.Quantity,
@@ -572,6 +593,33 @@ Namespace Strategies
                                                                                                     triggerPrice:=placeOrderTrigger.Item2.TriggerPrice,
                                                                                                     squareOffValue:=placeOrderTrigger.Item2.SquareOffValue,
                                                                                                     stopLossValue:=placeOrderTrigger.Item2.StoplossValue,
+                                                                                                    tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
+                                    If placeOrderResponse IsNot Nothing Then
+                                        logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
+                                        lastException = Nothing
+                                        allOKWithoutException = True
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        ret = placeOrderResponse
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        Exit For
+                                    Else
+                                        Throw New ApplicationException(String.Format("Place order did not succeed"))
+                                    End If
+                                Else
+                                    lastException = Nothing
+                                    allOKWithoutException = True
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Exit For
+                                End If
+                            Case ExecuteCommands.PlaceCOMarketMISOrder
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
+                                    Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
+                                    placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
+                                                                                                    tradingSymbol:=TradingSymbol,
+                                                                                                    transaction:=placeOrderTrigger.Item2.EntryDirection,
+                                                                                                    quantity:=placeOrderTrigger.Item2.Quantity,
+                                                                                                    triggerPrice:=placeOrderTrigger.Item2.TriggerPrice,
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))

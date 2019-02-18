@@ -95,7 +95,6 @@ Namespace Strategies
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
         Public MustOverride Overrides Function ToString() As String
-        'Public MustOverride Async Function ExecuteAsync() As Task
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task
         Public Overridable Async Function FillOrderDetailsAsync() As Task
@@ -124,7 +123,7 @@ Namespace Strategies
                     _cts.Token.ThrowIfCancellationRequested()
                     If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                         For Each runningStrategyInstrument In TradableStrategyInstruments
-                            Await runningStrategyInstrument.ExitAllTrades().ConfigureAwait(False)
+                            Await runningStrategyInstrument.ExitAllTradesAsync().ConfigureAwait(False)
                         Next
                     End If
                 End While

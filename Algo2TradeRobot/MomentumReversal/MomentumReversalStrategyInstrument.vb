@@ -91,6 +91,20 @@ Public Class MomentumReversalStrategyInstrument
 
         Return ret
     End Function
+    Public Overrides Async Function ExitAllTradesAsync() As Task
+        Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(True)
+        If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
+            Try
+                Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, True).ConfigureAwait(False)
+            Catch cex As OperationCanceledException
+                logger.Error(cex)
+                Me.ParentStrategy.ParentController.OrphanException = cex
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
+            End Try
+        End If
+    End Function
 
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls
