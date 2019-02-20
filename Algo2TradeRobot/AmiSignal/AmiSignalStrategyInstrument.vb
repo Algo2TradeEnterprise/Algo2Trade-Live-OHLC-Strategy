@@ -89,7 +89,8 @@ Public Class AmiSignalStrategyInstrument
                 If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                     quantity = Me.TradableInstrument.LotSize
                 Else
-                    quantity = (amiUserSettings.MaxCapitalPerTrade * amiUserSettings.MaxStoplossPercentage / 100) / (amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100)
+                    'quantity = Math.Floor((amiUserSettings.MaxCapitalPerTrade * amiUserSettings.MaxStoplossPercentage / 100) / (amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100))
+                    quantity = 1
                 End If
 
                 If currentEntrySignal.Direction = APIAdapter.TransactionType.Buy Then
@@ -172,10 +173,6 @@ Public Class AmiSignalStrategyInstrument
         Dim returnedSignal As AmiSignal = Nothing
         Select Case signalarr(0).ToUpper()
             Case "BUY"
-                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
-                    Exit Function
-                End If
                 currentSignal = New AmiSignal
                 With currentSignal
                     .Direction = APIAdapter.TransactionType.Buy
@@ -195,6 +192,10 @@ Public Class AmiSignalStrategyInstrument
                         End If
                         Await Task.Delay(100).ConfigureAwait(False)
                     End While
+                End If
+                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
+                    Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
@@ -218,10 +219,6 @@ Public Class AmiSignalStrategyInstrument
                     logger.Error(New ApplicationException(String.Format("{0} No BUY trade running to exit", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
             Case "SHORT"
-                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
-                    Exit Function
-                End If
                 currentSignal = New AmiSignal
                 With currentSignal
                     .Direction = APIAdapter.TransactionType.Sell
@@ -240,6 +237,10 @@ Public Class AmiSignalStrategyInstrument
                             exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
                         End If
                     End While
+                End If
+                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
+                    Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then

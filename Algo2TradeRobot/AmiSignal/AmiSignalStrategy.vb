@@ -231,7 +231,7 @@ Public Class AmiSignalStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
         Dim currentTime As Date = Now
-        If currentTime.Hour = 12 AndAlso currentTime.Minute = 45 AndAlso currentTime.Second >= 0 Then
+        If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
             Return True
         Else
             Return False
