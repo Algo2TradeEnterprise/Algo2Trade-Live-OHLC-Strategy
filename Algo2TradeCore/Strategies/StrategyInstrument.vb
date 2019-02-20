@@ -222,8 +222,8 @@ Namespace Strategies
         Public ReadOnly Property ActiveInstrument As Boolean
             Get
                 Dim ret As Boolean = False
-                Dim allActiveOrders As Task(Of List(Of IOrder)) = GetAllActiveOrdersAsync(APIAdapter.TransactionType.None)
-                ret = allActiveOrders.Result IsNot Nothing AndAlso allActiveOrders.Result.Count > 0
+                Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
+                ret = allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0
                 Return ret
             End Get
         End Property
@@ -424,11 +424,10 @@ Namespace Strategies
                 Throw ex
             End Try
         End Function
-        Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of Boolean, PlaceOrderParameters))
-        Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, Decimal)))
-        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, String)))
-        Protected Overridable Async Function GetAllActiveOrdersAsync(ByVal signalDirection As APIAdapter.TransactionType) As Task(Of List(Of IOrder))
-            Await Task.Delay(0).ConfigureAwait(False)
+        Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
+        Protected MustOverride Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
+        Protected MustOverride Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of Boolean, String, String))
+        Protected Overridable Function GetAllActiveOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of IOrder)
             Dim ret As List(Of IOrder) = Nothing
             Dim direction As String = Nothing
             If signalDirection = APIAdapter.TransactionType.Buy Then
@@ -459,10 +458,10 @@ Namespace Strategies
             End If
             Return ret
         End Function
-        Protected Overridable Async Function GetActiveOrderAsync(ByVal signalDirection As APIAdapter.TransactionType) As Task(Of IBusinessOrder)
+        Protected Overridable Function GetActiveOrder(ByVal signalDirection As APIAdapter.TransactionType) As IBusinessOrder
             'logger.Debug("GetActiveOrder, parameters:Nothing")
             Dim ret As IBusinessOrder = Nothing
-            Dim allActiveOrders As List(Of IOrder) = Await GetAllActiveOrdersAsync(signalDirection).ConfigureAwait(False)
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
                 Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
                                                                                   Return x.ParentOrderIdentifier Is Nothing
@@ -473,9 +472,9 @@ Namespace Strategies
             End If
             Return ret
         End Function
-        Protected Overridable Async Function GetAllCancelableOrdersAsync(ByVal signalDirection As APIAdapter.TransactionType) As Task(Of List(Of Tuple(Of Boolean, String, String)))
+        Protected Overridable Function GetAllCancelableOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of Tuple(Of Boolean, String, String))
             Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
-            Dim allActiveOrders As List(Of IOrder) = Await GetAllActiveOrdersAsync(signalDirection).ConfigureAwait(False)
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
                 For Each activeOrder In allActiveOrders
                     If activeOrder.Status <> "COMPLETE" Then
@@ -524,7 +523,7 @@ Namespace Strategies
                         _cts.Token.ThrowIfCancellationRequested()
                         Select Case command
                             Case ExecuteCommands.PlaceBOLimitMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
@@ -553,7 +552,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.ModifyStoplossOrder
-                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of Boolean, String, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync().ConfigureAwait(False)
+                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
                                 If modifyStoplossOrderTriggers IsNot Nothing AndAlso modifyStoplossOrderTriggers.Count > 0 Then
                                     For Each modifyStoplossOrderTrigger In modifyStoplossOrderTriggers
                                         If modifyStoplossOrderTrigger.Item1 = True Then
@@ -588,9 +587,9 @@ Namespace Strategies
                                 Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = Nothing
                                 Select Case command
                                     Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
-                                        cancelOrderTriggers = Await GetAllCancelableOrdersAsync(APIAdapter.TransactionType.None).ConfigureAwait(False)
+                                        cancelOrderTriggers = GetAllCancelableOrders(APIAdapter.TransactionType.None)
                                     Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder
-                                        cancelOrderTriggers = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
+                                        cancelOrderTriggers = IsTriggerReceivedForExitOrder()
                                 End Select
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
                                     For Each cancelOrderTrigger In cancelOrderTriggers
@@ -629,7 +628,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceBOSLMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
@@ -659,7 +658,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceCOMarketMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,

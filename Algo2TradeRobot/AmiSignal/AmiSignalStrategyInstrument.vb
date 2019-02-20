@@ -44,33 +44,26 @@ Public Class AmiSignalStrategyInstrument
     End Function
     Public Overrides Async Function MonitorAsync() As Task
         Try
-            Dim slDelayCtr As Integer = 0
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
-                    'Interlocked.Increment(_StrategyProtector)
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
                     EntrySignals.FirstOrDefault.Value.OrderTimestamp = Now()
                     EntrySignals.FirstOrDefault.Value.OrderID = orderDetails("data")("order_id")
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                'TODO: Delete slDelayCtr
-                If slDelayCtr = 5 Then
-                    slDelayCtr = 0
-                    'Dim exitOrderDetails As Object = Nothing
-                    Dim exitOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
-                    If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
-                        Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
-                        ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
-                    End If
+                'Dim exitOrderDetails As Object = Nothing
+                Dim exitOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitOrder()
+                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                    Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
+                    ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                slDelayCtr += 1
                 Await Task.Delay(1000)
             End While
         Catch ex As Exception
@@ -80,46 +73,45 @@ Public Class AmiSignalStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of Boolean, PlaceOrderParameters))
-        Await Task.Delay(0).ConfigureAwait(False)
+    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         If Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
             Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If currentEntrySignal.SignalType = TypeOfSignal.Entry AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
-                Dim amiSignalTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
-                Dim quantity As Integer = Nothing
-                Dim triggerPrice As Decimal = Nothing
-                Dim tag As String = GenerateTag()
                 Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
+                Dim amiSignalTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
+                Dim buffer As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.DefaultBufferPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
+                Dim entryPrice As Decimal = Nothing
+                Dim target As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * 0.1, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                Dim stoploss As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                Dim quantity As Integer = Nothing
+                Dim tag As String = GenerateTag()
                 If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                     quantity = Me.TradableInstrument.LotSize
                 Else
-                    'quantity = (amiUserSettings.MaxCapitalPerTrade * amiUserSettings.MaxStoplossPercentage / 100) / (amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100)
-                    quantity = 1
+                    quantity = (amiUserSettings.MaxCapitalPerTrade * amiUserSettings.MaxStoplossPercentage / 100) / (amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100)
                 End If
 
                 If currentEntrySignal.Direction = APIAdapter.TransactionType.Buy Then
-                    triggerPrice = amiSignalTradePrice - amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100
-                    triggerPrice = Math.Round(ConvertFloorCeling(triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    entryPrice = amiSignalTradePrice + buffer
                     Dim parameters As New PlaceOrderParameters With
                        {.EntryDirection = APIAdapter.TransactionType.Buy,
                        .Quantity = quantity,
-                       .Price = Nothing,
+                       .Price = entryPrice,
                        .TriggerPrice = Nothing,
-                       .SquareOffValue = Nothing,
-                       .StoplossValue = Nothing,
+                       .SquareOffValue = target,
+                       .StoplossValue = stoploss,
                        .Tag = tag}
                     ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
                 ElseIf currentEntrySignal.Direction = APIAdapter.TransactionType.Sell Then
-                    triggerPrice = amiSignalTradePrice + amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100
-                    triggerPrice = Math.Round(ConvertFloorCeling(triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    entryPrice = amiSignalTradePrice - buffer
                     Dim parameters As New PlaceOrderParameters With
                       {.EntryDirection = APIAdapter.TransactionType.Sell,
                       .Quantity = quantity,
-                      .Price = Nothing,
-                      .TriggerPrice = triggerPrice,
-                      .SquareOffValue = Nothing,
-                      .StoplossValue = Nothing,
+                      .Price = entryPrice,
+                      .TriggerPrice = Nothing,
+                      .SquareOffValue = target,
+                      .StoplossValue = stoploss,
                       .Tag = tag}
                     ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
                 End If
@@ -127,21 +119,20 @@ Public Class AmiSignalStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, Decimal)))
-        Await Task.Delay(0).ConfigureAwait(False)
+    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
         Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, String)))
+    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of Boolean, String, String))
         Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
         If Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
             Dim currentExitSignal As AmiSignal = ExitSignals.FirstOrDefault.Value
             Dim allActiveOrders As List(Of IOrder) = Nothing
-            If currentExitSignal.Direction = APIAdapter.TransactionType.Buy Then
-                ret = Await GetAllCancelableOrdersAsync(APIAdapter.TransactionType.Sell).ConfigureAwait(False)
-            ElseIf currentExitSignal.Direction = APIAdapter.TransactionType.Sell Then
-                ret = Await GetAllCancelableOrdersAsync(APIAdapter.TransactionType.Buy).ConfigureAwait(False)
+            If currentExitSignal.Direction = APIAdapter.TransactionType.Buy AndAlso currentExitSignal.OrderTimestamp = Date.MinValue Then
+                ret = GetAllCancelableOrders(APIAdapter.TransactionType.Sell)
+            ElseIf currentExitSignal.Direction = APIAdapter.TransactionType.Sell AndAlso currentExitSignal.OrderTimestamp = Date.MinValue Then
+                ret = GetAllCancelableOrders(APIAdapter.TransactionType.Buy)
             End If
         Else
             Return Nothing
@@ -179,13 +170,12 @@ Public Class AmiSignalStrategyInstrument
         If ExitSignals Is Nothing Then ExitSignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
         Dim signalarr() As String = signal.Trim.Split(" ")
         Dim returnedSignal As AmiSignal = Nothing
-        If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-            logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
-            Exit Function
-        End If
-
         Select Case signalarr(0).ToUpper()
             Case "BUY"
+                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
+                    Exit Function
+                End If
                 currentSignal = New AmiSignal
                 With currentSignal
                     .Direction = APIAdapter.TransactionType.Buy
@@ -194,7 +184,7 @@ Public Class AmiSignalStrategyInstrument
                     .SignalTimestamp = Now()
                 End With
                 If Me.ActiveInstrument Then
-                    If GetActiveOrderAsync(APIAdapter.TransactionType.Buy) IsNot Nothing Then
+                    If GetActiveOrder(APIAdapter.TransactionType.Buy) IsNot Nothing Then
                         logger.Info(New ApplicationException(String.Format("{0} Buy signal running", Me.TradableInstrument.InstrumentIdentifier)))
                         Exit Function
                     End If
@@ -219,11 +209,19 @@ Public Class AmiSignalStrategyInstrument
                     .SignalType = TypeOfSignal.Exit
                     .SignalTimestamp = Now()
                 End With
-                returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
-                If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                If GetAllCancelableOrders(APIAdapter.TransactionType.Buy) IsNot Nothing AndAlso GetAllCancelableOrders(APIAdapter.TransactionType.Buy).Count > 0 Then
+                    returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
+                    If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
+                        logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                    End If
+                Else
+                    logger.Error(New ApplicationException(String.Format("{0} No BUY trade running to exit", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
             Case "SHORT"
+                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
+                    Exit Function
+                End If
                 currentSignal = New AmiSignal
                 With currentSignal
                     .Direction = APIAdapter.TransactionType.Sell
@@ -232,7 +230,7 @@ Public Class AmiSignalStrategyInstrument
                     .SignalTimestamp = Now()
                 End With
                 If Me.ActiveInstrument Then
-                    If GetActiveOrderAsync(APIAdapter.TransactionType.Sell) IsNot Nothing Then
+                    If GetActiveOrder(APIAdapter.TransactionType.Sell) IsNot Nothing Then
                         logger.Info(New ApplicationException(String.Format("{0} Short signal running", Me.TradableInstrument.InstrumentIdentifier)))
                         Exit Function
                     End If
@@ -256,9 +254,13 @@ Public Class AmiSignalStrategyInstrument
                     .SignalType = TypeOfSignal.Exit
                     .SignalTimestamp = Now()
                 End With
-                returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
-                If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                If GetAllCancelableOrders(APIAdapter.TransactionType.Sell) IsNot Nothing AndAlso GetAllCancelableOrders(APIAdapter.TransactionType.Sell).Count > 0 Then
+                    returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
+                    If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
+                        logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                    End If
+                Else
+                    logger.Error(New ApplicationException(String.Format("{0} No SHORT trade running to exit", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
             Case Else
                 logger.Error(New ApplicationException(String.Format("{0} Invalid Signal Details. {1}", Me.TradableInstrument.InstrumentIdentifier, signal)))
@@ -268,12 +270,12 @@ Public Class AmiSignalStrategyInstrument
     Private Async Function GenerateExitSignalAsync() As Task(Of Boolean)
         'logger.Debug("GenerateExitSignal, parameters:Nothing")
         Dim ret As Boolean = False
-        Dim runningOrder As IBusinessOrder = GetActiveOrderAsync(APIAdapter.TransactionType.Buy)
+        Dim runningOrder As IBusinessOrder = GetActiveOrder(APIAdapter.TransactionType.Buy)
         If runningOrder IsNot Nothing Then
             Await PopulateExternalSignalAsync(String.Format("SELL {0}", Me.TradingSymbol)).ConfigureAwait(False)
             ret = True
         Else
-            runningOrder = GetActiveOrderAsync(APIAdapter.TransactionType.Sell)
+            runningOrder = GetActiveOrder(APIAdapter.TransactionType.Sell)
             If runningOrder IsNot Nothing Then
                 Await PopulateExternalSignalAsync(String.Format("COVER {0}", Me.TradingSymbol)).ConfigureAwait(False)
                 ret = True

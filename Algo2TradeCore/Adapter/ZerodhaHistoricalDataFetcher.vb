@@ -168,7 +168,7 @@ Namespace Adapter
                 logger.Error("No tokens to subscribe for historical")
             Else
                 OnHeartbeat(String.Format("Subscribed:{0} instruments for historical", _subscribedInstruments.Count))
-                StartPollingAsync()
+                'StartPollingAsync()
             End If
         End Function
 
