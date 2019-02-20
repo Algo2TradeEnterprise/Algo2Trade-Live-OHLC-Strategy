@@ -95,7 +95,7 @@ Namespace Adapter
         End Function
         Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
             'Intentionally no _cts.Token.ThrowIfCancellationRequested() since we need to close the ticker when cancellation is done
-            Await Task.Delay(0)
+            Await Task.Delay(0).ConfigureAwait(False)
             If _ticker IsNot Nothing AndAlso _ticker.IsConnected Then
                 _ticker.Close()
             End If

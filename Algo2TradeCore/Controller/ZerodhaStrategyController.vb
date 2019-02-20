@@ -526,7 +526,7 @@ Namespace Controller
                             Else
                                 OnHeartbeat(String.Format("Login process failed after token expiry:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                                 _cts.Token.ThrowIfCancellationRequested()
-                                Await Task.Delay(10000)
+                                Await Task.Delay(10000).ConfigureAwait(False)
                                 _cts.Token.ThrowIfCancellationRequested()
                             End If
                         Else

@@ -19,12 +19,12 @@ Public Class frmMomentumReversalSettings
     Private Sub frmMomentumReversalSettings_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LoadSettings()
     End Sub
-    Private Async Sub btnSaveMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnSaveMomentumReversalSettings.Click
+    Private Sub btnSaveMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnSaveMomentumReversalSettings.Click
         Try
             _cts = New CancellationTokenSource
             If _MRSettings Is Nothing Then _MRSettings = New MomentumReversalUserInputs
             _MRSettings.InstrumentsData = Nothing
-            Await ValidateInputs().ConfigureAwait(False)
+            ValidateInputs()
             SaveSettings()
             Me.Close()
         Catch ex As Exception
@@ -70,17 +70,17 @@ Public Class frmMomentumReversalSettings
         If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
         Return ret
     End Function
-    Private Async Function ValidateFile() As Task
-        Await _MRSettings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts).ConfigureAwait(False)
-    End Function
-    Private Async Function ValidateInputs() As Task
+    Private Sub ValidateFile()
+        _MRSettings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
+    End Sub
+    Private Sub ValidateInputs()
         ValidateNumbers(0, 100, txtCandleWickSizePercentage)
         ValidateNumbers(0, 100, txtMinCandleRangePercentage)
         ValidateNumbers(0, 100, txtMaxSLPercentage)
         ValidateNumbers(0, 999, txtTargetMultiplier)
         ValidateNumbers(1, 60, txtSignalTimeFrame)
-        Await ValidateFile().ConfigureAwait(False)
-    End Function
+        ValidateFile()
+    End Sub
 
     Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
         opnFileMRSettings.ShowDialog()

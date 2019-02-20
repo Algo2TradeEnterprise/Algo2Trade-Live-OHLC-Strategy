@@ -164,7 +164,7 @@ Namespace Controller
                                 End If
                             Case ExecutionCommands.GetQuotes
                                 Dim allQuotesResponse As IEnumerable(Of IQuote) = Nothing
-                                allQuotesResponse = Await _APIAdapter.GetAllQuotes(data).ConfigureAwait(False)
+                                allQuotesResponse = Await _APIAdapter.GetAllQuotesAsync(data).ConfigureAwait(False)
                                 If allQuotesResponse IsNot Nothing Then
                                     logger.Debug("Getting all quotes is complete, allQuotesResponse.count:{0}", allQuotesResponse.Count)
                                     lastException = Nothing

@@ -64,7 +64,7 @@ Public Class AmiSignalStrategyInstrument
                     ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000)
+                Await Task.Delay(1000).ConfigureAwait(False)
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
@@ -236,6 +236,7 @@ Public Class AmiSignalStrategyInstrument
                         If Not exitSignal Then
                             exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
                         End If
+                        Await Task.Delay(100).ConfigureAwait(False)
                     End While
                 End If
                 If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then

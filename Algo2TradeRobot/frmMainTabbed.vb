@@ -260,7 +260,7 @@ Public Class frmMainTabbed
     Private Sub sfdgvMomentumReversalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMomentumReversalMainDashboard.AutoGeneratingColumn
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
-    Private Async Function MomentumReversalWorker() As Task
+    Private Async Function MomentumReversalWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
             MsgBox("Cannot start as another strategy is loggin in")
             Exit Function
@@ -277,7 +277,7 @@ Public Class frmMainTabbed
                 _MRUserInputs = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
                 fs.Close()
                 _MRUserInputs.InstrumentsData = Nothing
-                Await _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts).ConfigureAwait(False)
+                _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts)
             Else
                 Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
             End If
@@ -351,7 +351,7 @@ Public Class frmMainTabbed
                         Else
                             OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000)
+                            Await Task.Delay(10000).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
@@ -380,7 +380,7 @@ Public Class frmMainTabbed
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(momentumReversalStrategyToExecute)
+            Await _commonController.SubscribeStrategyAsync(momentumReversalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
@@ -410,7 +410,7 @@ Public Class frmMainTabbed
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
-        Await Task.Run(AddressOf MomentumReversalWorker).ConfigureAwait(False)
+        Await Task.Run(AddressOf MomentumReversalWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
         FlashTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
@@ -433,7 +433,7 @@ Public Class frmMainTabbed
     Private Sub sfdgvOHLMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvOHLMainDashboard.AutoGeneratingColumn
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New OHLStrategy(Nothing, Nothing, Nothing))
     End Sub
-    Private Async Function OHLStartWorker() As Task
+    Private Async Function OHLStartWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
             MsgBox("Cannot start as another strategy is loggin in")
             Exit Function
@@ -512,7 +512,7 @@ Public Class frmMainTabbed
                         Else
                             OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000)
+                            Await Task.Delay(10000).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
@@ -540,7 +540,7 @@ Public Class frmMainTabbed
             OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(ohlStrategyToExecute)
+            Await _commonController.SubscribeStrategyAsync(ohlStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
@@ -568,7 +568,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
-        Await Task.Run(AddressOf OHLStartWorker).ConfigureAwait(False)
+        Await Task.Run(AddressOf OHLStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
         FlashTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing))
@@ -587,7 +587,7 @@ Public Class frmMainTabbed
     Private Sub sfdgvAmiSignalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvAmiSignalMainDashboard.AutoGeneratingColumn
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New AmiSignalStrategy(Nothing, Nothing, Nothing))
     End Sub
-    Private Async Function AmiSignalStartWorker() As Task
+    Private Async Function AmiSignalStartWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
             MsgBox("Cannot start as another strategy is loggin in")
             Exit Function
@@ -600,7 +600,7 @@ Public Class frmMainTabbed
             OnHeartbeat("Validating Settings & instrument details")
             Dim amiSignalSettings As New AmiSignalUserInputs
             amiSignalSettings.SignalTimeFrame = 1
-            Await amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts).ConfigureAwait(False)
+            amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts)
 
             EnableDisableUIEx(UIMode.Active, New AmiSignalStrategy(Nothing, Nothing, Nothing))
             EnableDisableUIEx(UIMode.BlockOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
@@ -671,7 +671,7 @@ Public Class frmMainTabbed
                         Else
                             OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000)
+                            Await Task.Delay(10000).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
@@ -699,7 +699,7 @@ Public Class frmMainTabbed
             OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute)
+            Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
             Dim dashboadList As BindingList(Of AmiSignalStrategyInstrument) = New BindingList(Of AmiSignalStrategyInstrument)(AmiSignalStrategyToExecute.TradableStrategyInstruments)
@@ -727,7 +727,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnAmiSignalStart_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStart.Click
-        Await Task.Run(AddressOf AmiSignalStartWorker).ConfigureAwait(False)
+        Await Task.Run(AddressOf AmiSignalStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrAmiSignalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrAmiSignalTickerStatus.Tick
         FlashTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing))

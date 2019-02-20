@@ -162,15 +162,15 @@ Public Class AmiSignalStrategy
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
-            tasks.Add(Task.Run(AddressOf ForceExitAllTrades, _cts.Token))
+            tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
             logger.Error(ex)
         End Try
         If lastException IsNot Nothing Then
-            Await ParentController.CloseTickerIfConnectedAsync()
-            Await ParentController.CloseFetcherIfConnectedAsync()
+            Await ParentController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+            Await ParentController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
             Throw lastException
         End If
     End Function

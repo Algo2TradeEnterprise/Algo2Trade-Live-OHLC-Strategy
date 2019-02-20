@@ -82,7 +82,7 @@ Namespace Adapter
             End If
             Return ret
         End Function
-        Public Overrides Async Function GetAllQuotes(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
+        Public Overrides Async Function GetAllQuotesAsync(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
             'logger.Debug("GetAllQuotes, parameters:{0}", Utils.JsonSerialize(instruments))
             Dim ret As List(Of ZerodhaQuote) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes

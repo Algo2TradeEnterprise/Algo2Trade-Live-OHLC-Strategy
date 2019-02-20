@@ -25,8 +25,7 @@ Public Class MomentumReversalUserInputs
         Futures
         Both
     End Enum
-    Public Async Function FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource) As Task
-        Await Task.Delay(0).ConfigureAwait(False)
+    Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
                 Dim extension As String = Path.GetExtension(filePath)
@@ -138,5 +137,5 @@ Public Class MomentumReversalUserInputs
         Else
             Throw New ApplicationException("No valid file path exists")
         End If
-    End Function
+    End Sub
 End Class

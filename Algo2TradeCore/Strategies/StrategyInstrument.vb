@@ -558,7 +558,7 @@ Namespace Strategies
                                         If modifyStoplossOrderTrigger.Item1 = True Then
                                             Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
                                             modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=modifyStoplossOrderTrigger.Item2,
-                                                                                                                     triggerPrice:=modifyStoplossOrderTrigger.Item3)
+                                                                                                                     triggerPrice:=modifyStoplossOrderTrigger.Item3).ConfigureAwait(False)
                                             If modifyStoplossOrderResponse IsNot Nothing Then
                                                 logger.Debug("Modify stoploss order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(modifyStoplossOrderResponse))
                                                 lastException = Nothing
@@ -598,10 +598,10 @@ Namespace Strategies
                                             Select Case command
                                                 Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
                                                     cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=cancelOrderTrigger.Item2,
-                                                                                                       parentOrderID:=cancelOrderTrigger.Item3)
+                                                                                                       parentOrderID:=cancelOrderTrigger.Item3).ConfigureAwait(False)
                                                 Case ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelCOOrder
                                                     cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=cancelOrderTrigger.Item2,
-                                                                                                       parentOrderID:=cancelOrderTrigger.Item3)
+                                                                                                       parentOrderID:=cancelOrderTrigger.Item3).ConfigureAwait(False)
                                             End Select
                                             If cancelOrderResponse IsNot Nothing Then
                                                 logger.Debug("Cancel order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))

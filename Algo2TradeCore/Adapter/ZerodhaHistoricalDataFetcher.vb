@@ -91,7 +91,7 @@ Namespace Adapter
                         Next
                         For Each specificInstrumentHistoricalDataFetcher In specificInstrumentsHistoricalDataFetcher
                             _cts.Token.ThrowIfCancellationRequested()
-                            tasks.Add(Task.Run(AddressOf specificInstrumentHistoricalDataFetcher.GetHistoricalCandleStick, _cts.Token))
+                            tasks.Add(Task.Run(AddressOf specificInstrumentHistoricalDataFetcher.GetHistoricalCandleStickAsync, _cts.Token))
                         Next
                         OnHeartbeat("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
@@ -143,7 +143,7 @@ Namespace Adapter
                             _isPollRunning = False
                             Exit While
                         End If
-                        Await Task.Delay(1000)
+                        Await Task.Delay(1000).ConfigureAwait(False)
                     End While
                 End While
             Catch ex As Exception
@@ -168,11 +168,11 @@ Namespace Adapter
                 logger.Error("No tokens to subscribe for historical")
             Else
                 OnHeartbeat(String.Format("Subscribed:{0} instruments for historical", _subscribedInstruments.Count))
-                'StartPollingAsync()
+                StartPollingAsync()
             End If
         End Function
 
-        Protected Overrides Async Function GetHistoricalCandleStick() As Task
+        Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task
             'logger.Debug("{0}->GetHistoricalCandleStick, parameters:Nothing", Me.ToString)
             Try
                 If _instrumentIdentifer Is Nothing Then Exit Function

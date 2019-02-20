@@ -115,7 +115,7 @@ Namespace Strategies
                 Throw ex
             End Try
         End Function
-        Public Overridable Async Function ForceExitAllTrades() As Task
+        Public Overridable Async Function ForceExitAllTradesAsync() As Task
             'logger.Debug("ForceExitAllTrades, parameters:Nothing")
             Try
                 Dim delayCtr As Integer = 0

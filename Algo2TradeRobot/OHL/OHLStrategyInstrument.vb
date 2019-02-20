@@ -79,7 +79,7 @@ Public Class OHLStrategyInstrument
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000)
+                Await Task.Delay(1000).ConfigureAwait(False)
                 slDelayCtr += 1
             End While
         Catch ex As Exception
