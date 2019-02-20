@@ -12,6 +12,7 @@
         ReadOnly Property FilledQuantity As Integer
         ReadOnly Property AveragePrice As Decimal
         ReadOnly Property Tag As String
+        ReadOnly Property ParentOrderIdentifier As String
         ReadOnly Property Broker As APISource
     End Interface
 End Namespace

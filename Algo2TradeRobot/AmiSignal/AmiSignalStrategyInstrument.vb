@@ -36,23 +36,10 @@ Public Class AmiSignalStrategyInstrument
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         RawPayloadConsumers = New List(Of IPayloadConsumer)
     End Sub
-    Public Overrides Function ToString() As String
-        Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
-    End Function
-    Public Overrides Function GenerateTag() As String
-        Return Hex(Convert.ToDecimal(String.Format("{0}{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.InstrumentIdentifier)))
-    End Function
-    Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
-        'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
-        _cts.Token.ThrowIfCancellationRequested()
-        Await MyBase.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
-        _cts.Token.ThrowIfCancellationRequested()
-    End Function
     Public Overrides Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
         _cts.Token.ThrowIfCancellationRequested()
         Await MyBase.ProcessOrderAsync(orderData).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
-        'TODO: Log for parent order quantity when deleted
         DeleteProcessedOrderAsync(orderData)
     End Function
     Public Overrides Async Function MonitorAsync() As Task
@@ -63,26 +50,28 @@ Public Class AmiSignalStrategyInstrument
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                'Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                Dim orderDetails As Object = Nothing
+                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                     'Interlocked.Increment(_StrategyProtector)
-                    Dim orderDetails As Object = Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
+                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
                     EntrySignals.FirstOrDefault.Value.OrderTimestamp = Now()
-                    'TODO:
-                    EntrySignals.FirstOrDefault.Value.OrderID = ""
+                    EntrySignals.FirstOrDefault.Value.OrderID = orderDetails("data")("order_id")
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                'Dim exitOrderDetails As Object = Nothing
-                Dim exitOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(False)
-                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 AndAlso slDelayCtr = 5 Then
+                'TODO: Delete slDelayCtr
+                If slDelayCtr = 5 Then
                     slDelayCtr = 0
-                    Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, False).ConfigureAwait(False)
-                    ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
+                    'Dim exitOrderDetails As Object = Nothing
+                    Dim exitOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
+                    If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                        Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
+                        ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
+                    End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000)
                 slDelayCtr += 1
+                Await Task.Delay(1000)
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
@@ -91,7 +80,8 @@ Public Class AmiSignalStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of Boolean, PlaceOrderParameters))
+        Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         If Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
             Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
@@ -115,7 +105,7 @@ Public Class AmiSignalStrategyInstrument
                        {.EntryDirection = APIAdapter.TransactionType.Buy,
                        .Quantity = quantity,
                        .Price = Nothing,
-                       .TriggerPrice = triggerPrice,
+                       .TriggerPrice = Nothing,
                        .SquareOffValue = Nothing,
                        .StoplossValue = Nothing,
                        .Tag = tag}
@@ -137,41 +127,37 @@ Public Class AmiSignalStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, Decimal)))
+        Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
+        Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitAllOrders(ByVal forceExit As Boolean) As List(Of Tuple(Of Boolean, String, String))
-        If forceExit Then
-            Return MyBase.IsTriggerReceivedForExitAllOrders(forceExit)
-        ElseIf Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
-            Return MyBase.IsTriggerReceivedForExitAllOrders(forceExit)
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, String)))
+        Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
+        If Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
+            Dim currentExitSignal As AmiSignal = ExitSignals.FirstOrDefault.Value
+            Dim allActiveOrders As List(Of IOrder) = Nothing
+            If currentExitSignal.Direction = APIAdapter.TransactionType.Buy Then
+                ret = Await GetAllCancelableOrdersAsync(APIAdapter.TransactionType.Sell).ConfigureAwait(False)
+            ElseIf currentExitSignal.Direction = APIAdapter.TransactionType.Sell Then
+                ret = Await GetAllCancelableOrdersAsync(APIAdapter.TransactionType.Buy).ConfigureAwait(False)
+            End If
         Else
             Return Nothing
         End If
-    End Function
-    Public Overrides Async Function ExitAllTradesAsync() As Task
-        Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(True)
-        If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
-            Try
-                Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, True).ConfigureAwait(False)
-            Catch cex As OperationCanceledException
-                logger.Error(cex)
-                Me.ParentStrategy.ParentController.OrphanException = cex
-            Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                Throw ex
-            End Try
-        End If
+        Return ret
     End Function
 
     Private Async Function DeleteProcessedOrderAsync(ByVal orderData As IBusinessOrder) As Task
+        'logger.Debug("DeleteProcessedOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
         Await Task.Delay(0).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
 
         If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 Then
             Dim entrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If orderData.ParentOrderIdentifier.ToUpper = entrySignal.OrderID.ToUpper AndAlso Not entrySignal.OrderTimestamp = Date.MinValue Then
+                logger.Info("Parent Order Quantity: {0}, Filled Quantity:{1}", orderData.ParentOrder.Quantity, orderData.ParentOrder.FilledQuantity)
                 EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, entrySignal)
             End If
         End If
@@ -186,16 +172,18 @@ Public Class AmiSignalStrategyInstrument
 
 
     Public Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
+        'logger.Debug("PopulateExternalSignalAsync, parameters:{0}", signal)
         Await Task.Delay(0).ConfigureAwait(False)
         Dim currentSignal As AmiSignal = Nothing
         If EntrySignals Is Nothing Then EntrySignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
         If ExitSignals Is Nothing Then ExitSignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
         Dim signalarr() As String = signal.Trim.Split(" ")
         Dim returnedSignal As AmiSignal = Nothing
-        If Me.ParentStrategy.ActiveInstruments = CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTarde Then
-            logger.Error("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)
+        If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+            logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
             Exit Function
         End If
+
         Select Case signalarr(0).ToUpper()
             Case "BUY"
                 currentSignal = New AmiSignal
@@ -205,9 +193,22 @@ Public Class AmiSignalStrategyInstrument
                     .SignalType = TypeOfSignal.Entry
                     .SignalTimestamp = Now()
                 End With
+                If Me.ActiveInstrument Then
+                    If GetActiveOrderAsync(APIAdapter.TransactionType.Buy) IsNot Nothing Then
+                        logger.Info(New ApplicationException(String.Format("{0} Buy signal running", Me.TradableInstrument.InstrumentIdentifier)))
+                        Exit Function
+                    End If
+                    Dim exitSignal As Boolean = False
+                    While Me.ActiveInstrument
+                        If Not exitSignal Then
+                            exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
+                        End If
+                        Await Task.Delay(100).ConfigureAwait(False)
+                    End While
+                End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error("{0} Previous signal still exists")
+                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
                 'Interlocked.Decrement(_StrategyProtector)
             Case "SELL"
@@ -220,7 +221,7 @@ Public Class AmiSignalStrategyInstrument
                 End With
                 returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error("{0} Previous signal still exists")
+                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
             Case "SHORT"
                 currentSignal = New AmiSignal
@@ -230,9 +231,21 @@ Public Class AmiSignalStrategyInstrument
                     .SignalType = TypeOfSignal.Entry
                     .SignalTimestamp = Now()
                 End With
+                If Me.ActiveInstrument Then
+                    If GetActiveOrderAsync(APIAdapter.TransactionType.Sell) IsNot Nothing Then
+                        logger.Info(New ApplicationException(String.Format("{0} Short signal running", Me.TradableInstrument.InstrumentIdentifier)))
+                        Exit Function
+                    End If
+                    Dim exitSignal As Boolean = False
+                    While Me.ActiveInstrument
+                        If Not exitSignal Then
+                            exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
+                        End If
+                    End While
+                End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error("{0} Previous signal still exists")
+                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
                 'Interlocked.Decrement(_StrategyProtector)
             Case "COVER"
@@ -245,12 +258,28 @@ Public Class AmiSignalStrategyInstrument
                 End With
                 returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error("{0} Previous signal still exists")
+                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
                 End If
             Case Else
-                logger.Error("{0} Invalid Signal Details. {1}", Me.TradableInstrument.InstrumentIdentifier, signal)
+                logger.Error(New ApplicationException(String.Format("{0} Invalid Signal Details. {1}", Me.TradableInstrument.InstrumentIdentifier, signal)))
         End Select
-        'TODO: Need to validate get or add return to check unique entry
+    End Function
+
+    Private Async Function GenerateExitSignalAsync() As Task(Of Boolean)
+        'logger.Debug("GenerateExitSignal, parameters:Nothing")
+        Dim ret As Boolean = False
+        Dim runningOrder As IBusinessOrder = GetActiveOrderAsync(APIAdapter.TransactionType.Buy)
+        If runningOrder IsNot Nothing Then
+            Await PopulateExternalSignalAsync(String.Format("SELL {0}", Me.TradingSymbol)).ConfigureAwait(False)
+            ret = True
+        Else
+            runningOrder = GetActiveOrderAsync(APIAdapter.TransactionType.Sell)
+            If runningOrder IsNot Nothing Then
+                Await PopulateExternalSignalAsync(String.Format("COVER {0}", Me.TradingSymbol)).ConfigureAwait(False)
+                ret = True
+            End If
+        End If
+        Return ret
     End Function
 
 #Region "AmiSignal"

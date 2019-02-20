@@ -162,7 +162,7 @@ Public Class AmiSignalStrategy
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
-            tasks.Add(Task.Run(AddressOf ExitAllTrades, _cts.Token))
+            tasks.Add(Task.Run(AddressOf ForceExitAllTrades, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -175,6 +175,7 @@ Public Class AmiSignalStrategy
         End If
     End Function
     Public Async Function MonitorAmiBrokerAsync() As Task
+        logger.Debug("MonitorAmiBrokerAsync, parameters:Nothing")
         Try
             If Me.ParentController.OrphanException IsNot Nothing Then
                 Throw Me.ParentController.OrphanException
@@ -204,6 +205,10 @@ Public Class AmiSignalStrategy
                         PopulateExternalSignalAsync(clientData.ReadLine())
                         'flag = True
                     End If
+                Catch cex As OperationCanceledException
+                    logger.Error(cex)
+                    Me.ParentController.OrphanException = cex
+                    Exit While
                 Catch iex As Exception
                     logger.Error("Strategy:{0}, error:{1}", Me.ToString, iex.ToString)
                     If server IsNot Nothing Then server.Stop()
@@ -233,23 +238,24 @@ Public Class AmiSignalStrategy
         End If
     End Function
     Private Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
+        logger.Debug("PopulateExternalSignalAsync, parameters:{0}", signal)
         Await Task.Delay(0).ConfigureAwait(False)
         If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
             Dim signalarr() As String = signal.Trim.Split(" ")
             If signalarr.Count > 2 Then
-                logger.Error("Invalid Signal Details. {0}", signal)
+                logger.Error(New ApplicationException(String.Format("Invalid Signal Details. {0}", signal)))
                 Exit Function
             End If
             Dim amiUserInputs As AmiSignalUserInputs = CType(UserSettings, AmiSignalUserInputs)
             If amiUserInputs.InstrumentsData.ContainsKey(signalarr(1).ToUpper) Then
-                Dim runningStrategyInstruments As IEnumerable(Of AmiSignalStrategyInstrument) = Me.TradableStrategyInstruments.Where(Function(x)
-                                                                                                                                         Return x.TradableInstrument.TradingSymbol.ToUpper = amiUserInputs.InstrumentsData(signalarr(1).ToUpper).InstrumentName.ToUpper
-                                                                                                                                     End Function)
+                Dim runningStrategyInstruments As IEnumerable(Of StrategyInstrument) = Me.TradableStrategyInstruments.Where(Function(x)
+                                                                                                                                Return x.TradableInstrument.TradingSymbol.ToUpper = amiUserInputs.InstrumentsData(signalarr(1).ToUpper).InstrumentName.ToUpper
+                                                                                                                            End Function)
                 If runningStrategyInstruments IsNot Nothing AndAlso runningStrategyInstruments.Count > 0 Then
-                    runningStrategyInstruments.FirstOrDefault.PopulateExternalSignalAsync(signal)
+                    CType(runningStrategyInstruments.FirstOrDefault, AmiSignalStrategyInstrument).PopulateExternalSignalAsync(signal)
                 End If
             Else
-                logger.Error("Instrument is not available in the given list. {0}", signal)
+                logger.Error(New ApplicationException(String.Format("Instrument is not available in the given list. {0}", signal)))
             End If
         End If
     End Function

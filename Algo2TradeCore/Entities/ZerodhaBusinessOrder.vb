@@ -15,5 +15,8 @@
         Public Property SLOrder As IEnumerable(Of IOrder) Implements IBusinessOrder.SLOrder
 
         Public Property TargetOrder As IEnumerable(Of IOrder) Implements IBusinessOrder.TargetOrder
+
+        Public Property AllOrder As IEnumerable(Of IOrder) Implements IBusinessOrder.AllOrder
+
     End Class
 End Namespace

@@ -42,7 +42,7 @@ Namespace Adapter
             AddHandler Me.FetcherError, AddressOf currentZerodhaStrategyController.OnFetcherError
         End Sub
         Public Overrides Async Function ConnectFetcherAsync() As Task
-            logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
+            'logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             'Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
@@ -55,6 +55,7 @@ Namespace Adapter
         End Function
 
         Public Overrides Async Function StartPollingAsync() As Task
+            'logger.Debug("{0}->StartPollingAsync, parameters:Nothing", Me.ToString)
             Try
                 _stopPollRunning = False
                 _isPollRunning = False
@@ -153,7 +154,7 @@ Namespace Adapter
             End Try
         End Function
         Public Overrides Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
-            logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
+            'logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedInstruments Is Nothing Then _subscribedInstruments = New List(Of String)
@@ -172,6 +173,7 @@ Namespace Adapter
         End Function
 
         Protected Overrides Async Function GetHistoricalCandleStick() As Task
+            'logger.Debug("{0}->GetHistoricalCandleStick, parameters:Nothing", Me.ToString)
             Try
                 If _instrumentIdentifer Is Nothing Then Exit Function
                 _cts.Token.ThrowIfCancellationRequested()

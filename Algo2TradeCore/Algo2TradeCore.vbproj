@@ -81,9 +81,9 @@
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
-    <Compile Include="Calculator\IBrokerageAttributes.vb" />
+    <Compile Include="Entities\IBrokerageAttributes.vb" />
     <Compile Include="Calculator\APIBrokerageCalculator.vb" />
-    <Compile Include="Calculator\ZerodhaBrokerageAttributes.vb" />
+    <Compile Include="Entities\ZerodhaBrokerageAttributes.vb" />
     <Compile Include="Calculator\ZerodhaBrokerageCalculator.vb" />
     <Compile Include="ChartHandler\ChartStyle\CandleStickChart.vb" />
     <Compile Include="ChartHandler\ChartStyle\Chart.vb" />

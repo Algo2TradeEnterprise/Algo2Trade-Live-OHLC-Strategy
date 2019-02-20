@@ -9,7 +9,7 @@ Public Class AmiSignalUserInputs
     Public MaxStoplossPercentage As Decimal
     Public MaxCapitalPerTrade As Decimal
     Public DefaultBufferPercentage As Decimal
-    Public NumberOfTarde As Integer
+    Public NumberOfTrade As Integer
     Public InstrumentDetailsFilePath As String
     Public InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
@@ -102,7 +102,7 @@ Public Class AmiSignalUserInputs
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                     Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            Me.NumberOfTarde = instrumentDetails(rowCtr, columnCtr)
+                                            Me.NumberOfTrade = instrumentDetails(rowCtr, columnCtr)
                                         Else
                                             Throw New ApplicationException(String.Format("Number of trade cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If

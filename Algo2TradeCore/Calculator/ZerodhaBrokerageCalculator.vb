@@ -11,6 +11,7 @@ Namespace Calculator
             MyBase.New(canceller)
         End Sub
         Public Overrides Function GetIntradayEquityBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
+            logger.Debug("{0}->GetIntradayEquityBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -41,6 +42,7 @@ Namespace Calculator
         End Function
 
         Public Overrides Function GetDeliveryEquityBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
+            logger.Debug("{0}->GetDeliveryEquityBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -72,6 +74,7 @@ Namespace Calculator
         End Function
 
         Public Overrides Function GetIntradayEquityFuturesBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
+            logger.Debug("{0}->GetIntradayEquityFuturesBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -106,6 +109,7 @@ Namespace Calculator
         End Function
 
         Public Overrides Async Function GetIntradayCommodityFuturesBrokerageAsync(item As String, buy As Decimal, sell As Decimal, quantity As Integer) As Task(Of IBrokerageAttributes)
+            logger.Debug("{0}->GetIntradayCommodityFuturesBrokerageAsync, parameters:{1},{2},{3},{4}", Me.ToString, item, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -172,14 +176,17 @@ Namespace Calculator
         End Function
 
         Public Overrides Function GetIntradayEquityOptionsBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
+            logger.Debug("{0}->GetIntradayEquityOptionsBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Throw New NotImplementedException()
         End Function
 
         Public Overrides Function GetIntradayCurrencyFuturesBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
+            logger.Debug("{0}->GetIntradayCurrencyFuturesBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Throw New NotImplementedException()
         End Function
 
         Public Overrides Function GetIntradayCurrencyOptionsBrokerage(StrikePrice As Decimal, buyPremium As Decimal, sellPremium As Decimal, quantity As Integer) As IBrokerageAttributes
+            logger.Debug("{0}->GetIntradayCurrencyOptionsBrokerage, parameters:{1},{2},{3},{4}", Me.ToString, StrikePrice, buyPremium, sellPremium, quantity)
             Throw New NotImplementedException()
         End Function
 

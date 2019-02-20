@@ -83,7 +83,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function GetAllQuotes(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
-            'logger.Debug("GetAllQuotes, instruments:{0}", Utils.JsonSerialize(instruments))
+            'logger.Debug("GetAllQuotes, parameters:{0}", Utils.JsonSerialize(instruments))
             Dim ret As List(Of ZerodhaQuote) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
 
@@ -139,7 +139,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
-            logger.Debug("GetAllTradesAsync, parameters:Nothing")
+            'logger.Debug("GetAllTradesAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaTrade) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrderTrades
             _cts.Token.ThrowIfCancellationRequested()
@@ -199,7 +199,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
-            logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaOrder) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
             _cts.Token.ThrowIfCancellationRequested()
@@ -258,7 +258,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function ModifyStoplossOrderAsync(ByVal orderId As String, ByVal triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, triggerPrice)
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, triggerPrice)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.ModifySLOrderPrice
             _cts.Token.ThrowIfCancellationRequested()
@@ -309,7 +309,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function CancelBOOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -364,7 +364,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Async Function CancelCOOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -426,7 +426,7 @@ Namespace Adapter
                                                                    ByVal squareOffValue As Decimal,
                                                                    ByVal stopLossValue As Decimal,
                                                                    ByVal tag As String) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7}", tradeExchange, tradingSymbol, transaction, quantity, price, squareOffValue, stopLossValue, tag)
+            'logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7}", tradeExchange, tradingSymbol, transaction, quantity, price, squareOffValue, stopLossValue, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -507,7 +507,7 @@ Namespace Adapter
                                                                 ByVal squareOffValue As Decimal,
                                                                 ByVal stopLossValue As Decimal,
                                                                 ByVal tag As String) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7},{8}", tradeExchange, tradingSymbol, transaction, quantity, price, triggerPrice, squareOffValue, stopLossValue, tag)
+            'logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7},{8}", tradeExchange, tradingSymbol, transaction, quantity, price, triggerPrice, squareOffValue, stopLossValue, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -585,7 +585,7 @@ Namespace Adapter
                                                                    ByVal quantity As Integer,
                                                                    ByVal triggerPrice As Decimal,
                                                                    ByVal tag As String) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5}", tradeExchange, tradingSymbol, transaction, quantity, triggerPrice, tag)
+            'logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5}", tradeExchange, tradingSymbol, transaction, quantity, triggerPrice, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -661,7 +661,7 @@ Namespace Adapter
 
 #Region "Zerodha Commands"
         Private Async Function ExecuteCommandAsync(ByVal command As ExecutionCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
-            'logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
+            logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As Dictionary(Of String, Object) = Nothing
 

@@ -241,7 +241,7 @@ Public Class MomentumReversalStrategy
             Next
             'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
-            'tasks.Add(Task.Run(AddressOf ExitAllTrades))
+            tasks.Add(Task.Run(AddressOf ForceExitAllTrades, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -258,7 +258,7 @@ Public Class MomentumReversalStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
         Dim currentTime As Date = Now
-        If currentTime.Hour = 14 AndAlso currentTime.Minute = 30 AndAlso currentTime.Second >= 0 Then
+        If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
             Return True
         Else
             Return False

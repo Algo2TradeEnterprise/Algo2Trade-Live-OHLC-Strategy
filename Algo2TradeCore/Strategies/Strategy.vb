@@ -98,13 +98,14 @@ Namespace Strategies
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task
         Public Overridable Async Function FillOrderDetailsAsync() As Task
+            'logger.Debug("FillOrderDetailsAsync, parameters:Nothing")
             Try
                 While True
                     If Me.ParentController.OrphanException IsNot Nothing Then
                         Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
-                    Await Me.ParentController.FillOrderDetailsAsyc(Me).ConfigureAwait(False)
+                    Await Me.ParentController.FillOrderDetailsAsync(Me).ConfigureAwait(False)
                     Await Task.Delay(10000).ConfigureAwait(False)
                 End While
             Catch ex As Exception
@@ -114,18 +115,27 @@ Namespace Strategies
                 Throw ex
             End Try
         End Function
-        Public Overridable Async Function ExitAllTrades() As Task
+        Public Overridable Async Function ForceExitAllTrades() As Task
+            'logger.Debug("ForceExitAllTrades, parameters:Nothing")
             Try
+                Dim delayCtr As Integer = 0
                 While True
                     If Me.ParentController.OrphanException IsNot Nothing Then
                         Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
                     If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-                        For Each runningStrategyInstrument In TradableStrategyInstruments
-                            Await runningStrategyInstrument.ExitAllTradesAsync().ConfigureAwait(False)
-                        Next
+                        If delayCtr = 5 Then
+                            delayCtr = 0
+                            For Each runningStrategyInstrument In TradableStrategyInstruments
+                                runningStrategyInstrument.ForceExitAllTradesAsync()
+                            Next
+                        End If
+                        delayCtr += 1
+                    Else
+                        delayCtr = 0
                     End If
+                    Await Task.Delay(1000).ConfigureAwait(False)
                 End While
             Catch ex As Exception
                 'To log exceptions getting created from this function as the bubble up of the exception
@@ -135,29 +145,6 @@ Namespace Strategies
             End Try
         End Function
         Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
-        'Public Overridable Function GetKiteExceptionResponse(ByVal ex As Exception) As Tuple(Of String, ExceptionResponse)
-        '    Dim ret As Tuple(Of String, ExceptionResponse) = Nothing
-        '    If ex.GetType = GetType(KiteConnect.GeneralException) Then
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-        '    ElseIf ex.GetType = GetType(KiteConnect.PermissionException) Then
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-        '    ElseIf ex.GetType = GetType(KiteConnect.OrderException) Then
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-        '    ElseIf ex.GetType = GetType(KiteConnect.InputException) Then
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-        '    ElseIf ex.GetType = GetType(KiteConnect.DataException) Then
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-        '    ElseIf ex.GetType = GetType(KiteConnect.NetworkException) Then
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.Ignore)
-        '    Else
-        '        ret = New Tuple(Of String, ExceptionResponse)(ex.Message, ExceptionResponse.NotKiteException)
-        '    End If
-        '    Return ret
-        'End Function
-        'Public Enum ExceptionResponse
-        '    Retry = 1
-        '    Ignore
-        '    NotKiteException
-        'End Enum
+
     End Class
 End Namespace

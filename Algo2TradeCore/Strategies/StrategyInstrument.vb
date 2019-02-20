@@ -81,12 +81,14 @@ Namespace Strategies
 
 #Region "Enum"
         Public Enum ExecuteCommands
-            PlaceBOLimtMISOrder = 1
+            PlaceBOLimitMISOrder = 1
             PlaceBOSLMISOrder
             PlaceCOMarketMISOrder
             ModifyStoplossOrder
             CancelBOOrder
             CancelCOOrder
+            ForceCancelBOOrder
+            ForceCancelCOOrder
         End Enum
 #End Region
 
@@ -96,6 +98,12 @@ Namespace Strategies
         Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
         Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
         Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
+        Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
+            TradableInstrument = associatedInstrument
+            Me.ParentStrategy = associatedParentStrategy
+            _cts = canceller
+            OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+        End Sub
 
         <System.ComponentModel.Browsable(False)>
         Public Property ParentStrategy As Strategy
@@ -214,24 +222,8 @@ Namespace Strategies
         Public ReadOnly Property ActiveInstrument As Boolean
             Get
                 Dim ret As Boolean = False
-                If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-                    For Each parentOrderId In OrderDetails.Keys
-                        Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
-                            parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                            For Each slOrder In parentBusinessOrder.SLOrder
-                                If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                    ret = True
-                                End If
-                            Next
-                        ElseIf parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "OPEN" Then
-                            ret = True
-                        Else
-                            ret = False
-                        End If
-                        If ret Then Exit For
-                    Next
-                End If
+                Dim allActiveOrders As Task(Of List(Of IOrder)) = GetAllActiveOrdersAsync(APIAdapter.TransactionType.None)
+                ret = allActiveOrders.Result IsNot Nothing AndAlso allActiveOrders.Result.Count > 0
                 Return ret
             End Get
         End Property
@@ -287,42 +279,63 @@ Namespace Strategies
         End Property
 
 #End Region
+
         Private Function CalculatePL() As Decimal
+            logger.Debug("CalculatePL, parameters:Nothing")
             Dim plOfDay As Decimal = 0
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
                     Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
                     Dim calculateWithLTP As Boolean = False
                     If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                        For Each slOrder In parentBusinessOrder.SLOrder
-                            If slOrder.Status = "CANCELLED" OrElse slOrder.Status = "COMPLETE" Then
-                                If slOrder.TransactionType = "BUY" Then
-                                    plOfDay += slOrder.AveragePrice * slOrder.Quantity * -1
-                                ElseIf slOrder.TransactionType = "SELL" Then
-                                    plOfDay += slOrder.AveragePrice * slOrder.Quantity
-                                End If
-                            ElseIf Not slOrder.Status = "REJECTED" Then
-                                calculateWithLTP = True
-                            End If
-                        Next
-                    Else
+                        'For Each slOrder In parentBusinessOrder.SLOrder
+                        '    If slOrder.Status = "CANCELLED" OrElse slOrder.Status = "COMPLETE" Then
+                        '        If slOrder.TransactionType = "BUY" Then
+                        '            plOfDay += slOrder.AveragePrice * slOrder.Quantity * -1
+                        '        ElseIf slOrder.TransactionType = "SELL" Then
+                        '            plOfDay += slOrder.AveragePrice * slOrder.Quantity
+                        '        End If
+                        '    ElseIf Not slOrder.Status = "REJECTED" Then
+                        '        calculateWithLTP = True
+                        '    End If
+                        'Next
                         calculateWithLTP = True
+                    Else
+                        'calculateWithLTP = True
                     End If
                     If parentBusinessOrder.TargetOrder IsNot Nothing AndAlso parentBusinessOrder.TargetOrder.Count > 0 Then
-                        For Each targetOrder In parentBusinessOrder.TargetOrder
-                            If targetOrder.Status = "CANCELLED" OrElse targetOrder.Status = "COMPLETE" Then
-                                If targetOrder.TransactionType = "BUY" Then
-                                    plOfDay += targetOrder.AveragePrice * targetOrder.Quantity * -1
-                                ElseIf targetOrder.TransactionType = "SELL" Then
-                                    plOfDay += targetOrder.AveragePrice * targetOrder.Quantity
+                        'For Each targetOrder In parentBusinessOrder.TargetOrder
+                        '    If targetOrder.Status = "CANCELLED" OrElse targetOrder.Status = "COMPLETE" Then
+                        '        If targetOrder.TransactionType = "BUY" Then
+                        '            plOfDay += targetOrder.AveragePrice * targetOrder.Quantity * -1
+                        '        ElseIf targetOrder.TransactionType = "SELL" Then
+                        '            plOfDay += targetOrder.AveragePrice * targetOrder.Quantity
+                        '        End If
+                        '    ElseIf Not targetOrder.Status = "REJECTED" Then
+                        '        calculateWithLTP = True
+                        '    End If
+                        'Next
+                        calculateWithLTP = True
+                    Else
+                        'calculateWithLTP = True
+                    End If
+
+                    If parentBusinessOrder.AllOrder IsNot Nothing AndAlso parentBusinessOrder.AllOrder.Count > 0 Then
+                        For Each order In parentBusinessOrder.AllOrder
+                            If order.Status = "CANCELLED" OrElse order.Status = "COMPLETE" Then
+                                If order.TransactionType = "BUY" Then
+                                    plOfDay += order.AveragePrice * order.Quantity * -1
+                                ElseIf order.TransactionType = "SELL" Then
+                                    plOfDay += order.AveragePrice * order.Quantity
                                 End If
-                            ElseIf Not targetOrder.Status = "REJECTED" Then
+                            ElseIf Not order.Status = "REJECTED" Then
                                 calculateWithLTP = True
                             End If
                         Next
                     Else
                         calculateWithLTP = True
                     End If
+
                     If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                         plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity * -1
                     ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
@@ -341,15 +354,14 @@ Namespace Strategies
                 Return Nothing
             End If
         End Function
-        Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
-            TradableInstrument = associatedInstrument
-            Me.ParentStrategy = associatedParentStrategy
-            _cts = canceller
-            OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
-        End Sub
-        Public MustOverride Overrides Function ToString() As String
-        Public MustOverride Function GenerateTag() As String
+        Public Overrides Function ToString() As String
+            Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
+        End Function
+        Public Overridable Function GenerateTag() As String
+            Return Hex(Convert.ToDecimal(String.Format("{0}{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.InstrumentIdentifier)))
+        End Function
         Public Overridable Async Function HandleTickTriggerToUIETCAsync() As Task
+            'logger.Debug("HandleTickTriggerToUIETCAsync, parameters:Nothing")
             Try
                 Await Task.Delay(0).ConfigureAwait(False)
 
@@ -373,6 +385,7 @@ Namespace Strategies
             End Try
         End Function
         Public Overridable Async Function PopulateChartAndIndicatorsAsync(ByVal candleCreator As Chart, ByVal currentCandle As OHLCPayload) As Task
+            'logger.Debug("PopulateChartAndIndicatorsAsync, parameters:{0},{1}", candleCreator.ToString, currentCandle.ToString)
             If RawPayloadConsumers IsNot Nothing AndAlso RawPayloadConsumers.Count > 0 Then
                 For Each runningRawPayloadConsumer In RawPayloadConsumers
                     If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart Then
@@ -385,36 +398,89 @@ Namespace Strategies
         End Function
 
         Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
+            'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
             Await Task.Delay(0).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
         End Function
         Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
+            'logger.Debug("CalculateBuffer, parameters:{0},{1}", price, floorOrCeiling)
             Dim bufferPrice As Double = Nothing
             'Assuming 1% target, we can afford to have buffer as 2.5% of that 1% target
             bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, 0.05, floorOrCeiling)
             Return bufferPrice
         End Function
         Public MustOverride Async Function MonitorAsync() As Task
-        Public MustOverride Async Function ExitAllTradesAsync() As Task
-        Protected MustOverride Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
-        Protected MustOverride Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
-        Protected Overridable Function IsTriggerReceivedForExitAllOrders(ByVal forceExit As Boolean) As List(Of Tuple(Of Boolean, String, String))
-            Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
+        Public Overridable Async Function ForceExitAllTradesAsync() As Task
+            'logger.Debug("ForceExitAllTradesAsync, parameters:Nothing")
+            Try
+                Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, Nothing).ConfigureAwait(False)
+                Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, Nothing).ConfigureAwait(False)
+            Catch cex As OperationCanceledException
+                logger.Error(cex)
+                Me.ParentStrategy.ParentController.OrphanException = cex
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
+            End Try
+        End Function
+        Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of Boolean, PlaceOrderParameters))
+        Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, Decimal)))
+        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, String)))
+        Protected Overridable Async Function GetAllActiveOrdersAsync(ByVal signalDirection As APIAdapter.TransactionType) As Task(Of List(Of IOrder))
+            Await Task.Delay(0).ConfigureAwait(False)
+            Dim ret As List(Of IOrder) = Nothing
+            Dim direction As String = Nothing
+            If signalDirection = APIAdapter.TransactionType.Buy Then
+                direction = "BUY"
+            ElseIf signalDirection = APIAdapter.TransactionType.Sell Then
+                direction = "SELL"
+            End If
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
                     Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                    If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
-                        parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                        For Each slOrder In parentBusinessOrder.SLOrder
-                            If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, String))
-                                ret.Add(New Tuple(Of Boolean, String, String)(True, slOrder.OrderIdentifier, parentOrderId))
+                    If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
+                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                                Dim parentNeedToInsert As Boolean = False
+                                For Each slOrder In parentBusinessOrder.SLOrder
+                                    If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                                        If ret Is Nothing Then ret = New List(Of IOrder)
+                                        ret.Add(slOrder)
+                                        parentNeedToInsert = True
+                                    End If
+                                Next
+                                If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
                             End If
-                        Next
-                    ElseIf parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
+                        End If
+                    End If
+                Next
+            End If
+            Return ret
+        End Function
+        Protected Overridable Async Function GetActiveOrderAsync(ByVal signalDirection As APIAdapter.TransactionType) As Task(Of IBusinessOrder)
+            'logger.Debug("GetActiveOrder, parameters:Nothing")
+            Dim ret As IBusinessOrder = Nothing
+            Dim allActiveOrders As List(Of IOrder) = Await GetAllActiveOrdersAsync(signalDirection).ConfigureAwait(False)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+                Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                                  Return x.ParentOrderIdentifier Is Nothing
+                                                                              End Function)
+                If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
+                    ret = OrderDetails(parentOrders.FirstOrDefault.OrderIdentifier)
+                End If
+            End If
+            Return ret
+        End Function
+        Protected Overridable Async Function GetAllCancelableOrdersAsync(ByVal signalDirection As APIAdapter.TransactionType) As Task(Of List(Of Tuple(Of Boolean, String, String)))
+            Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
+            Dim allActiveOrders As List(Of IOrder) = Await GetAllActiveOrdersAsync(signalDirection).ConfigureAwait(False)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+                For Each activeOrder In allActiveOrders
+                    If activeOrder.Status <> "COMPLETE" Then
                         If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, String))
-                        ret.Add(New Tuple(Of Boolean, String, String)(True, parentBusinessOrder.ParentOrder.OrderIdentifier, Nothing))
+                        ret.Add(New Tuple(Of Boolean, String, String)(True, activeOrder.OrderIdentifier, activeOrder.ParentOrderIdentifier))
                     End If
                 Next
             End If
@@ -429,6 +495,7 @@ Namespace Strategies
         ''' <param name="data"></param>
         ''' <returns></returns>
         Protected Async Function ExecuteCommandAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task(Of Object)
+            'logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
             Dim ret As Object = Nothing
             Dim lastException As Exception = Nothing
             Dim allOKWithoutException As Boolean = False
@@ -456,8 +523,8 @@ Namespace Strategies
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
                         Select Case command
-                            Case ExecuteCommands.PlaceBOLimtMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                            Case ExecuteCommands.PlaceBOLimitMISOrder
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
@@ -486,7 +553,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.ModifyStoplossOrder
-                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of Boolean, String, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync().ConfigureAwait(False)
                                 If modifyStoplossOrderTriggers IsNot Nothing AndAlso modifyStoplossOrderTriggers.Count > 0 Then
                                     For Each modifyStoplossOrderTrigger In modifyStoplossOrderTriggers
                                         If modifyStoplossOrderTrigger.Item1 = True Then
@@ -517,46 +584,26 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
-                            Case ExecuteCommands.CancelBOOrder
-                                Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(data)
+                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
+                                Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = Nothing
+                                Select Case command
+                                    Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
+                                        cancelOrderTriggers = Await GetAllCancelableOrdersAsync(APIAdapter.TransactionType.None).ConfigureAwait(False)
+                                    Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder
+                                        cancelOrderTriggers = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
+                                End Select
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
                                     For Each cancelOrderTrigger In cancelOrderTriggers
                                         If cancelOrderTrigger.Item1 = True Then
                                             Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
-                                            cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=cancelOrderTrigger.Item2,
+                                            Select Case command
+                                                Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
+                                                    cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=cancelOrderTrigger.Item2,
                                                                                                        parentOrderID:=cancelOrderTrigger.Item3)
-                                            If cancelOrderResponse IsNot Nothing Then
-                                                logger.Debug("Cancel order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
-                                                lastException = Nothing
-                                                allOKWithoutException = True
-                                                _cts.Token.ThrowIfCancellationRequested()
-                                                ret = cancelOrderResponse
-                                                _cts.Token.ThrowIfCancellationRequested()
-                                                Exit For
-                                            Else
-                                                Throw New ApplicationException(String.Format("Cancel order did not succeed"))
-                                            End If
-                                        Else
-                                            lastException = Nothing
-                                            allOKWithoutException = True
-                                            _cts.Token.ThrowIfCancellationRequested()
-                                            Exit For
-                                        End If
-                                    Next
-                                Else
-                                    lastException = Nothing
-                                    allOKWithoutException = True
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    Exit For
-                                End If
-                            Case ExecuteCommands.CancelCOOrder
-                                Dim cancelOrderTriggers As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(data)
-                                If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
-                                    For Each cancelOrderTrigger In cancelOrderTriggers
-                                        If cancelOrderTrigger.Item1 = True Then
-                                            Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
-                                            cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=cancelOrderTrigger.Item2,
+                                                Case ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelCOOrder
+                                                    cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=cancelOrderTrigger.Item2,
                                                                                                        parentOrderID:=cancelOrderTrigger.Item3)
+                                            End Select
                                             If cancelOrderResponse IsNot Nothing Then
                                                 logger.Debug("Cancel order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
                                                 lastException = Nothing
@@ -582,7 +629,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceBOSLMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
@@ -612,7 +659,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceCOMarketMISOrder
-                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,

@@ -18,7 +18,8 @@ Namespace ChartHandler.ChartStyle
             MyBase.New(associatedParentController, assoicatedParentInstrument, associatedStrategyInstruments, canceller)
         End Sub
         Public Overrides Async Function GetChartFromHistoricalAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
-            Exit Function
+            'Exit Function
+            'logger.Debug("{0}->GetChartFromHistoricalAsync, parameters:{1}", Me.ToString, Utilities.Strings.JsonSerialize(historicalCandlesJSONDict))
             Try
                 While _historicalLock > 0
                     Await Task.Delay(10).ConfigureAwait(False)
@@ -88,7 +89,7 @@ Namespace ChartHandler.ChartStyle
                     End If
                 End If
             Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                logger.Error("GetChartFromHistoricalAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
             Finally
                 Interlocked.Decrement(_historicalLock)
@@ -97,6 +98,7 @@ Namespace ChartHandler.ChartStyle
         End Function
 
         Public Overrides Async Function GetChartFromTickAsync(ByVal tickData As ITick) As Task
+            'logger.Debug("{0}->GetChartFromTickAsync, parameters:{1}", Me.ToString, Utilities.Strings.JsonSerialize(tickData))
             If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
                 Exit Function
             End If
@@ -194,7 +196,7 @@ Namespace ChartHandler.ChartStyle
                 '    Throw ex
                 'End Try
             Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                logger.Error("GetChartFromTickAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
             Finally
                 Interlocked.Decrement(_tickLock)
@@ -204,6 +206,7 @@ Namespace ChartHandler.ChartStyle
         End Function
 
         Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
+            'logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
             Await Task.Delay(0).ConfigureAwait(False)
             Dim blockDateInThisTimeframe As New Date(currentPayload.SnapshotDateTime.Year,
                                                     currentPayload.SnapshotDateTime.Month,

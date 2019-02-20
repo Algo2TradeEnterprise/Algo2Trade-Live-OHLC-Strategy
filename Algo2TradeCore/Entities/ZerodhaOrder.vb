@@ -78,10 +78,17 @@ Namespace Entities
             End Get
         End Property
 
+        Public ReadOnly Property ParentOrderIdentifier As String Implements IOrder.ParentOrderIdentifier
+            Get
+                Return WrappedOrder.ParentOrderId
+            End Get
+        End Property
+
         Public ReadOnly Property Tag As String Implements IOrder.Tag
             Get
                 Return WrappedOrder.Tag
             End Get
         End Property
+
     End Class
 End Namespace

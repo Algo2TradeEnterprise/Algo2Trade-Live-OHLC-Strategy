@@ -120,6 +120,7 @@ Namespace Controller
             If _APIHistoricalDataFetcher IsNot Nothing Then _APIHistoricalDataFetcher.RefreshCancellationToken(canceller)
         End Sub
         Protected Async Function ExecuteCommandAsync(ByVal command As APIAdapter.ExecutionCommands, ByVal data As Object) As Task(Of Object)
+            logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
             Dim ret As Object = Nothing
             Dim lastException As Exception = Nothing
             Dim allOKWithoutException As Boolean = False
@@ -317,12 +318,13 @@ Namespace Controller
             If Not allOKWithoutException Then Throw lastException
             Return ret
         End Function
+
 #Region "Login"
         Protected MustOverride Function GetLoginURL() As String
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
         Public MustOverride Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
-        Public MustOverride Async Function FillOrderDetailsAsyc(ByVal strategyToRun As Strategy) As Task
+        Public MustOverride Async Function FillOrderDetailsAsync(ByVal strategyToRun As Strategy) As Task
         Public Sub FillCandlestickCreator()
             If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 0 Then
                 For Each runningStrategyUniqueInstruments In _AllStrategyUniqueInstruments

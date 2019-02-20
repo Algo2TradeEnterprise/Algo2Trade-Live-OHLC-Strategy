@@ -31,24 +31,6 @@ Public Class MomentumReversalStrategyInstrument
         RawPayloadConsumers = New List(Of IPayloadConsumer)
         RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
     End Sub
-    Public Overrides Function ToString() As String
-        Return String.Format("{0}_{1}", ParentStrategy.ToString, TradableInstrument.ToString)
-    End Function
-    Public Overrides Function GenerateTag() As String
-        Return String.Format("{0}_{1}", ParentStrategy.StrategyIdentifier, TradableInstrument.TradingSymbol)
-    End Function
-    Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
-        'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
-        _cts.Token.ThrowIfCancellationRequested()
-        '_LastTick = tickData
-        Await MyBase.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
-        _cts.Token.ThrowIfCancellationRequested()
-    End Function
-    Public Overrides Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
-        _cts.Token.ThrowIfCancellationRequested()
-        Await MyBase.ProcessOrderAsync(orderData).ConfigureAwait(False)
-        _cts.Token.ThrowIfCancellationRequested()
-    End Function
     Public Overrides Async Function MonitorAsync() As Task
         Try
             Dim slDelayCtr As Integer = 0
@@ -58,14 +40,14 @@ Public Class MomentumReversalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
+                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
-                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimtMISOrder, Nothing).ConfigureAwait(False)
+                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 3 Then
                     slDelayCtr = 0
-                    Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                    Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync().ConfigureAwait(False)
                     If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                         Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                     End If
@@ -81,29 +63,23 @@ Public Class MomentumReversalStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of Boolean, PlaceOrderParameters))
+        Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
-
+        Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, Decimal)))
+        Await Task.Delay(0).ConfigureAwait(False)
         Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
-
+        Throw New NotImplementedException
         Return ret
     End Function
-    Public Overrides Async Function ExitAllTradesAsync() As Task
-        Dim cancelOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitAllOrders(True)
-        If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
-            Try
-                Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, True).ConfigureAwait(False)
-            Catch cex As OperationCanceledException
-                logger.Error(cex)
-                Me.ParentStrategy.ParentController.OrphanException = cex
-            Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                Throw ex
-            End Try
-        End If
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of Boolean, String, String)))
+        Await Task.Delay(0).ConfigureAwait(False)
+        Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
+        Throw New NotImplementedException
+        Return ret
     End Function
 
 #Region "IDisposable Support"
