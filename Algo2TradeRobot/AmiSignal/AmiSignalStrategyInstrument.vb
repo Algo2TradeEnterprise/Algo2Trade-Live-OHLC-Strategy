@@ -89,8 +89,8 @@ Public Class AmiSignalStrategyInstrument
                 If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                     quantity = Me.TradableInstrument.LotSize
                 Else
-                    'quantity = Math.Floor((amiUserSettings.MaxCapitalPerTrade * amiUserSettings.MaxStoplossPercentage / 100) / (amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100))
-                    quantity = 1
+                    quantity = Math.Floor(amiUserSettings.MaxCapitalPerTrade * 10 / amiSignalTradePrice)
+                    'quantity = 1
                 End If
 
                 If currentEntrySignal.Direction = APIAdapter.TransactionType.Buy Then
