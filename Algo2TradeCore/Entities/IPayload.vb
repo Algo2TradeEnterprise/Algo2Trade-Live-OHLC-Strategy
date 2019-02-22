@@ -13,6 +13,7 @@ Namespace Entities
         Property PreviousPayload As IPayload
         ReadOnly Property CandleColor As Color
         ReadOnly Property CandleRange As Decimal
+        ReadOnly Property CandleRangePercentage As Decimal
         ReadOnly Property CandleWicks As Wicks
         Property NumberOfTicks As Integer
         Property PayloadGeneratedBy As PayloadSource

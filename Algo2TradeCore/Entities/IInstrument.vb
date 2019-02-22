@@ -5,7 +5,6 @@ Imports Algo2TradeCore.Strategies
 Namespace Entities
     Public Interface IInstrument
         Property InstrumentIdentifier As String
-
         ReadOnly Property Exchange As String
         ReadOnly Property Expiry As Date?
         ReadOnly Property InstrumentType As String
@@ -16,5 +15,6 @@ Namespace Entities
         ReadOnly Property Broker As APISource
         Property LastTick As ITick
         Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+        Property IsHistoricalCompleted As Boolean
     End Interface
 End Namespace

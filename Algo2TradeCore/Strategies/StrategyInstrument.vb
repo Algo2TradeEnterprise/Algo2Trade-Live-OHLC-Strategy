@@ -112,6 +112,10 @@ Namespace Strategies
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
         Public Property RawPayloadConsumers As List(Of IPayloadConsumer)
 
+        Protected RequestResponseForPlaceOrder As Concurrent.ConcurrentDictionary(Of String, String)
+        Protected RequestResponseForModifyOrder As Concurrent.ConcurrentDictionary(Of String, String)
+        Protected RequestResponseForCancelOrder As Concurrent.ConcurrentDictionary(Of String, String)
+
 #Region "UI Properties"
         <Display(Name:="Symbol", Order:=0)>
         Public Overridable ReadOnly Property TradingSymbol As String
@@ -401,6 +405,9 @@ Namespace Strategies
             'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
             Await Task.Delay(0).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
+            If OrderDetails.ContainsKey(orderData.ParentOrderIdentifier) Then
+                orderData.SignalCandle = OrderDetails(orderData.ParentOrderIdentifier).SignalCandle
+            End If
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
         End Function
         Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
@@ -486,7 +493,6 @@ Namespace Strategies
             Return ret
         End Function
 
-
         ''' <summary>
         ''' To run in diffrent thread it is not defined in Strategy level
         ''' </summary>
@@ -496,6 +502,10 @@ Namespace Strategies
         Protected Async Function ExecuteCommandAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task(Of Object)
             'logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
             Dim ret As Object = Nothing
+            If RequestResponseForPlaceOrder Is Nothing Then RequestResponseForPlaceOrder = New Concurrent.ConcurrentDictionary(Of String, String)
+            If RequestResponseForModifyOrder Is Nothing Then RequestResponseForModifyOrder = New Concurrent.ConcurrentDictionary(Of String, String)
+            If RequestResponseForCancelOrder Is Nothing Then RequestResponseForCancelOrder = New Concurrent.ConcurrentDictionary(Of String, String)
+
             Dim lastException As Exception = Nothing
             Dim allOKWithoutException As Boolean = False
 
@@ -536,6 +546,7 @@ Namespace Strategies
                                                                                                        tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
+                                        RequestResponseForPlaceOrder.GetOrAdd(placeOrderTrigger.Item2.ToString(), placeOrderResponse("data")("order_id"))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()
@@ -642,6 +653,7 @@ Namespace Strategies
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
+                                        RequestResponseForPlaceOrder.GetOrAdd(placeOrderTrigger.Item2.ToString(), placeOrderResponse("data")("order_id"))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()
@@ -669,6 +681,7 @@ Namespace Strategies
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
+                                        RequestResponseForPlaceOrder.GetOrAdd(placeOrderTrigger.Item2.ToString(), placeOrderResponse("data")("order_id"))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()
@@ -820,6 +833,10 @@ Namespace Strategies
             Public Property SquareOffValue As Decimal = Nothing
             Public Property StoplossValue As Decimal = Nothing
             Public Property Tag As String = Nothing
+            Public Property SignalCandle As IPayload = Nothing
+            Public Overrides Function ToString() As String
+                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, SignalCandle.ToString)
+            End Function
         End Class
     End Class
 End Namespace

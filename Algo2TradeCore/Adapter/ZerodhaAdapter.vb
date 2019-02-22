@@ -1,5 +1,6 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Entities
+Imports Algo2TradeCore.Calculator
 Imports KiteConnect
 Imports NLog
 Imports Algo2TradeCore.Controller
@@ -22,6 +23,28 @@ Namespace Adapter
                              Debug:=False)
             _Kite.SetSessionExpiryHook(AddressOf associatedParentController.OnSessionExpireAsync)
         End Sub
+        Public Overrides Function CalculatePLWithBrokerage(ByVal stockName As String,
+                                                           ByVal buy As Double,
+                                                           ByVal sell As Double,
+                                                           ByVal quantity As Integer,
+                                                           ByVal exchange As String) As Decimal
+            Dim ret As Decimal = Nothing
+            Dim calculator As APIBrokerageCalculator = New ZerodhaBrokerageCalculator(_cts)
+            Dim brokerageAttributes As IBrokerageAttributes = Nothing
+            Select Case exchange
+                Case "NSE"
+                    brokerageAttributes = calculator.GetIntradayEquityBrokerage(buy, sell, quantity)
+                Case "NFO"
+                    brokerageAttributes = calculator.GetIntradayEquityFuturesBrokerage(buy, sell, quantity)
+                Case "MCX"
+                    stockName = stockName.Remove(stockName.Count - 8)
+                    brokerageAttributes = calculator.GetIntradayCommodityFuturesBrokerageAsync(stockName, buy, sell, quantity)
+                Case Else
+                    Throw New NotImplementedException("Calculator not implemented")
+            End Select
+            ret = brokerageAttributes.NetProfitLoss
+            Return ret
+        End Function
         Public Overrides Sub SetAPIAccessToken(ByVal apiAccessToken As String)
             logger.Debug("SetAPIAccessToken, apiAccessToken:{0}", apiAccessToken)
             _Kite.SetAccessToken(apiAccessToken)

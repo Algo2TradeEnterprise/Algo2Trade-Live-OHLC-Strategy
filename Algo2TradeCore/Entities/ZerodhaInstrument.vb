@@ -76,5 +76,7 @@ Namespace Entities
 
         Public Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
 
+        Public Property IsHistoricalCompleted As Boolean Implements IInstrument.IsHistoricalCompleted
+
     End Class
 End Namespace

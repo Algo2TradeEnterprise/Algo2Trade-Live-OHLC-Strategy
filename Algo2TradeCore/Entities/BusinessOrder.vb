@@ -1,12 +1,6 @@
 ﻿Namespace Entities
-    Public Class ZerodhaBusinessOrder
+    Public Class BusinessOrder
         Implements IBusinessOrder
-
-        Public ReadOnly Property Broker As APISource Implements IBusinessOrder.Broker
-            Get
-                Return APISource.Zerodha
-            End Get
-        End Property
 
         Public Property ParentOrder As IOrder Implements IBusinessOrder.ParentOrder
 
@@ -17,6 +11,8 @@
         Public Property TargetOrder As IEnumerable(Of IOrder) Implements IBusinessOrder.TargetOrder
 
         Public Property AllOrder As IEnumerable(Of IOrder) Implements IBusinessOrder.AllOrder
+
+        Public Property SignalCandle As IPayload Implements IBusinessOrder.SignalCandle
 
     End Class
 End Namespace

@@ -31,6 +31,21 @@ Namespace ChartHandler.ChartStyle
                     If historicalCandlesDict.ContainsKey("candles") Then
                         Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
                         Dim previousCandlePayload As OHLCPayload = Nothing
+                        If _parentInstrument.RawPayloads IsNot Nothing AndAlso _parentInstrument.RawPayloads.Count > 0 Then
+                            Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                            _parentInstrument.RawPayloads.Where(Function(y)
+                                                                    Return y.Key < Utilities.Time.GetDateTimeTillMinutes(historicalCandles(0)(0))
+                                                                End Function)
+
+                            If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
+                                previousCandlePayload = previousCandles.OrderByDescending(Function(x)
+                                                                                              Return x.Key
+                                                                                          End Function).FirstOrDefault.Value
+                                'Print previous candle
+                                'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
+                                'Debug.WriteLine(previousCandle.ToString)
+                            End If
+                        End If
                         For Each historicalCandle In historicalCandles
                             Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
                             With runningPayload
@@ -79,7 +94,7 @@ Namespace ChartHandler.ChartStyle
                                 End If
                             End If
                         Next
-
+                        _parentInstrument.IsHistoricalCompleted = True
                         'TODO: Below loop is for checking purpose
                         'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
                         '                                                              Return x.Key
@@ -120,6 +135,7 @@ Namespace ChartHandler.ChartStyle
                 Dim runningPayload As OHLCPayload = Nothing
                 Dim tickWasProcessed As Boolean = False
                 'Do not touch the payload if it was already processed by historical
+                Dim freshCandle As Boolean = False
                 If lastExistingPayload IsNot Nothing Then
                     With lastExistingPayload
                         .HighPrice = Math.Max(lastExistingPayload.HighPrice, tickData.LastPrice)
@@ -141,11 +157,16 @@ Namespace ChartHandler.ChartStyle
                     tickWasProcessed = True
                 ElseIf lastExistingPayload Is Nothing Then
                     'Fresh candle needs to be created
+                    freshCandle = True
                     Dim previousCandle As OHLCPayload = Nothing
                     Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                         _parentInstrument.RawPayloads.Where(Function(y)
-                                                                Return y.Key < tickData.Timestamp.Value
+                                                                Return y.Key < tickData.Timestamp.Value AndAlso
+                                                                (y.Value.PayloadGeneratedBy = IPayload.PayloadSource.Tick OrElse
+                                                                (_parentInstrument.IsHistoricalCompleted AndAlso
+                                                                y.Value.PayloadGeneratedBy = IPayload.PayloadSource.Historical))
                                                             End Function)
+
                     If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
                         previousCandle = previousCandles.OrderByDescending(Function(x)
                                                                                Return x.Key
@@ -168,6 +189,15 @@ Namespace ChartHandler.ChartStyle
                         .NumberOfTicks = 1
                     End With
                     tickWasProcessed = True
+
+                    ''TODO: Below loop is for checking purpose
+                    'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
+                    '                                                              Return x.Key
+                    '                                                          End Function)
+                    '    If payload.Value.PreviousPayload IsNot Nothing Then
+                    '        Debug.WriteLine(payload.Value.ToString())
+                    '    End If
+                    'Next
                 End If
                 If tickWasProcessed Then 'If not processed would mean that the tick was for a historical candle that was already processed and not for a live candle
                     If runningPayload IsNot Nothing Then
@@ -182,19 +212,23 @@ Namespace ChartHandler.ChartStyle
                     End If
                 End If
 
+
+
                 'TODO: Below loop is for checking purpose
-                'Try
-                '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
-                '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
-                '        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
-                '                                                                     Return x.Key
-                '                                                                 End Function)
-                '            Debug.WriteLine(payload.Value.ToString())
-                '        Next
-                '    End If
-                'Catch ex As Exception
-                '    Throw ex
-                'End Try
+                Try
+                    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
+                        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
+                                                                                     Return x.Key
+                                                                                 End Function)
+                            If payload.Value.PreviousPayload IsNot Nothing Then
+                                Debug.WriteLine(payload.Value.ToString())
+                            End If
+                        Next
+                    End If
+                Catch ex As Exception
+                    Throw ex
+                End Try
             Catch ex As Exception
                 logger.Error("GetChartFromTickAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
@@ -251,7 +285,11 @@ Namespace ChartHandler.ChartStyle
                     Dim previousPayload As OHLCPayload = Nothing
                     Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                         outputConsumer.ChartPayloads.Where(Function(y)
-                                                               Return y.Key < blockDateInThisTimeframe
+                                                               Return y.Key < blockDateInThisTimeframe AndAlso
+                                                                (y.Value.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick OrElse
+                                                                Interlocked.Read(_historicalLock) = 0 OrElse
+                                                                (Interlocked.Read(_historicalLock) = 1 AndAlso
+                                                                currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical))
                                                            End Function)
                     If previousPayloads IsNot Nothing AndAlso previousPayloads.Count > 0 Then
                         previousPayload = previousPayloads.OrderByDescending(Function(x)
@@ -275,6 +313,10 @@ Namespace ChartHandler.ChartStyle
                         .DailyVolume = currentPayload.DailyVolume
                         .PayloadGeneratedBy = payloadSource
                     End With
+
+                    'If currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
+                    '    If lastExistingPayload.PreviousPayload IsNot Nothing Then Debug.WriteLine(lastExistingPayload)
+                    'End If
                     'Debug.WriteLine(lastExistingPayload)
                 Else
                     Dim runninPayload As New OHLCPayload(payloadSource)
@@ -282,7 +324,11 @@ Namespace ChartHandler.ChartStyle
                     Dim previousPayload As OHLCPayload = Nothing
                     Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                         outputConsumer.ChartPayloads.Where(Function(y)
-                                                               Return y.Key < blockDateInThisTimeframe
+                                                               Return y.Key < blockDateInThisTimeframe AndAlso
+                                                                (y.Value.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick OrElse
+                                                                Interlocked.Read(_historicalLock) = 0 OrElse
+                                                                (Interlocked.Read(_historicalLock) = 1 AndAlso
+                                                                currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical))
                                                            End Function)
                     If previousPayloads IsNot Nothing AndAlso previousPayloads.Count > 0 Then
                         previousPayload = previousPayloads.OrderByDescending(Function(x)
@@ -309,11 +355,13 @@ Namespace ChartHandler.ChartStyle
                     End With
                     outputConsumer.ChartPayloads.GetOrAdd(runninPayload.SnapshotDateTime, runninPayload)
 
-                    'TODO: Below loop is for checking purpose
+                    ''TODO: Below loop is for checking purpose
                     'For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
                     '                                                             Return x.Key
                     '                                                         End Function)
-                    '    Debug.WriteLine(payload.Value.ToString())
+                    '    If payload.Value.PreviousPayload IsNot Nothing Then
+                    '        Debug.WriteLine(payload.Value.ToString())
+                    '    End If
                     'Next
 
                     'Debug.WriteLine(runninPayload)

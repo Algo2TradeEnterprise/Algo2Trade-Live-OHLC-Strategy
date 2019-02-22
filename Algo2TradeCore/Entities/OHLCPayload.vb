@@ -49,6 +49,14 @@ Namespace Entities
             End Get
         End Property
 
+        Private _CandleRangePercentage As Decimal
+        Public ReadOnly Property CandleRangePercentage As Decimal Implements IPayload.CandleRangePercentage
+            Get
+                _CandleRangePercentage = Me.CandleRange * 100 / Me.ClosePrice
+                Return _CandleRangePercentage
+            End Get
+        End Property
+
         Private _CandleWicks As IPayload.Wicks
         Public ReadOnly Property CandleWicks As IPayload.Wicks Implements IPayload.CandleWicks
             Get
@@ -77,7 +85,8 @@ Namespace Entities
 
         Public Overrides Function ToString() As String
             Return String.Format("TradingSymbol:{0}, Open:{1}, High:{2}, Low:{3}, Close:{4}, Volume:{5}, Timestamp:{6}, Source:{7}, DailyVolume:{8}",
-                                 Me.TradingSymbol, Me.OpenPrice, Me.HighPrice, Me.LowPrice, Me.ClosePrice, Me.Volume, Me.SnapshotDateTime.ToString(), Me.PayloadGeneratedBy.ToString, Me.DailyVolume)
+                                 Me.TradingSymbol, Me.OpenPrice, Me.HighPrice, Me.LowPrice, Me.ClosePrice, Me.Volume,
+                                 Me.SnapshotDateTime.ToString(), Me.PayloadGeneratedBy.ToString, Me.DailyVolume)
         End Function
         Public Overrides Function Equals(obj As Object) As Boolean
             Dim compareWith As OHLCPayload = obj

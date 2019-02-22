@@ -46,6 +46,7 @@ Public Class OHLStrategyInstrument
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         RawPayloadConsumers = New List(Of IPayloadConsumer)
+        RawPayloadConsumers.Add(New PayloadToChartConsumer(5))
     End Sub
     Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))

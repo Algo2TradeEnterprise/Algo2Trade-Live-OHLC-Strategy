@@ -293,7 +293,7 @@ Namespace Controller
                             RemoveHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                             RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                         Else
-                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 27, _cts)
+                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 1, _cts)
                         End If
 
                         AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
@@ -814,7 +814,7 @@ Namespace Controller
                             If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
                                 If wrappedParentOrder.WrappedOrder.Tag IsNot Nothing AndAlso
                                     wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
-                                    Dim businessOrder As New ZerodhaBusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
+                                    Dim businessOrder As New BusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
                                                                                 .ParentOrder = parentOrder,
                                                                                 .SLOrder = slOrder,
                                                                                 .AllOrder = allOrder,
@@ -840,10 +840,12 @@ Namespace Controller
         Public Overrides Async Function CloseFetcherIfConnectedAsync() As Task
             If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
         End Function
+        Dim ctr As Integer = 0
         Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
             'logger.Debug("OnFetcherCandlesAsync, parameteres:{0},{1}",instrumentIdentifier, Utils.JsonSerialize(historicalCandlesJSONDict))
             Await Task.Delay(0).ConfigureAwait(False)
-            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+            'ctr += 1
+            If ctr >= 0 AndAlso _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
                     _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).GetChartFromHistoricalAsync(historicalCandlesJSONDict)
                     Exit For

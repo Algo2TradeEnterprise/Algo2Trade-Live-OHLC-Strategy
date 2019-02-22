@@ -103,7 +103,7 @@
     <Compile Include="Entities\ITrade.vb" />
     <Compile Include="Entities\IUser.vb" />
     <Compile Include="Entities\IPayload.vb" />
-    <Compile Include="Entities\ZerodhaBusinessOrder.vb" />
+    <Compile Include="Entities\BusinessOrder.vb" />
     <Compile Include="Entities\ZerodhaConnection.vb" />
     <Compile Include="Entities\ZerodhaInstrument.vb" />
     <Compile Include="Entities\ZerodhaOrder.vb" />
