@@ -14,6 +14,7 @@ Public Class MomentumReversalStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Private _MRStrategyProtector As Integer = 0
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
@@ -41,8 +42,10 @@ Public Class MomentumReversalStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
-                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
+                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _MRStrategyProtector = 0 Then
+                    Interlocked.Increment(_MRStrategyProtector)
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
+                    Interlocked.Decrement(_MRStrategyProtector)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 3 Then
@@ -65,7 +68,30 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
-        Throw New NotImplementedException
+        Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
+        Dim tradeStartTime As Date = New Date(Now.Year, Now.Month, Now.Day, 9, 20, 0)
+        If Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
+            For Each runningRawPayloadConsumer In RawPayloadConsumers
+                If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
+                    CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe = MRUserSettings.SignalTimeFrame Then
+                    Dim XMinutePayloadConsumer As PayloadToChartConsumer = runningRawPayloadConsumer
+
+                    Dim runningCandlePayload As OHLCPayload = Nothing
+                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                        XMinutePayloadConsumer.ChartPayloads.Where(Function(y)
+                                                                       Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, XMinutePayloadConsumer.ChartPayloads.Keys.Max)
+                                                                   End Function)
+
+                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then runningCandlePayload = lastExistingPayloads.LastOrDefault.Value
+
+                    If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
+                        If runningCandlePayload.SnapshotDateTime >= tradeStartTime Then
+
+                        End If
+                    End If
+                End If
+            Next
+        End If
         Return ret
     End Function
     Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
