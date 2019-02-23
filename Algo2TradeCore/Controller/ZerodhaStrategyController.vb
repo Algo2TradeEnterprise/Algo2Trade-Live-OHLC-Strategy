@@ -910,20 +910,26 @@ Namespace Controller
                 Next
                 'This for loop needs to be after the tick is published
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    runningStrategyInstrument.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
+                    runningStrategyInstrument.HandleTickTriggerToUIETCAsync()
                 Next
             End If
         End Sub
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
             'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
+            Await Task.Delay(0).ConfigureAwait(False)
             If orderData.Status = "COMPLETE" OrElse orderData.Status = "MODIFIED" OrElse orderData.Status = "CANCELLED" Then
                 If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
                     For Each runningStrategy In _AllStrategies
-                        FillOrderDetailsAsync(runningStrategy).ConfigureAwait(False)
+                        FillOrderDetailsAsync(runningStrategy)
                     Next
                 End If
             End If
-            Await Task.Delay(0).ConfigureAwait(False)
+            'This for loop needs to be after the order is published
+            For Each runningStrategyInstrument In _subscribedStrategyInstruments(orderData.InstrumentToken)
+                If orderData.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
+                    runningStrategyInstrument.ProcessOrderAsync(New ZerodhaOrder With {.WrappedOrder = orderData})
+                End If
+            Next
         End Sub
 #End Region
 

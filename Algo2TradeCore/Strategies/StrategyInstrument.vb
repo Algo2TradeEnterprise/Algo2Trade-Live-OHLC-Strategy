@@ -410,6 +410,47 @@ Namespace Strategies
             End If
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
         End Function
+        Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IOrder) As Task
+            'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(order))
+            Await Task.Delay(0).ConfigureAwait(False)
+
+            'Delete RequestResponseForPlaceOrder collection
+            If RequestResponseForPlaceOrder IsNot Nothing AndAlso RequestResponseForPlaceOrder.Count > 0 Then
+                Dim placeOrderParameters As IEnumerable(Of String) = RequestResponseForPlaceOrder.Where(Function(x)
+                                                                                                            Return x.Value = orderData.OrderIdentifier
+                                                                                                        End Function)
+                If placeOrderParameters IsNot Nothing AndAlso placeOrderParameters.Count > 0 Then
+                    For Each placeOrderParameter In placeOrderParameters
+                        RequestResponseForPlaceOrder.TryRemove(placeOrderParameter, orderData.ParentOrderIdentifier)
+                    Next
+                End If
+            End If
+
+            'Delete RequestResponseForModifyOrder collection
+            If RequestResponseForModifyOrder IsNot Nothing AndAlso RequestResponseForModifyOrder.Count > 0 Then
+                Dim modifyOrderParameters As IEnumerable(Of String) = RequestResponseForModifyOrder.Where(Function(x)
+                                                                                                              Return x.Key = Utilities.Strings.Encrypt(orderData.TriggerPrice, orderData.OrderIdentifier)
+                                                                                                          End Function)
+                If modifyOrderParameters IsNot Nothing AndAlso modifyOrderParameters.Count > 0 Then
+                    For Each modifyOrderParameter In modifyOrderParameters
+                        RequestResponseForPlaceOrder.TryRemove(modifyOrderParameter, orderData.ParentOrderIdentifier)
+                    Next
+                End If
+            End If
+
+            'Delete RequestResponseForCancelOrder collection
+            If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 Then
+                Dim cancelOrderParameters As IEnumerable(Of String) = RequestResponseForCancelOrder.Where(Function(x)
+                                                                                                              Return x.Key = Utilities.Strings.Encrypt(orderData.ParentOrderIdentifier, orderData.OrderIdentifier)
+                                                                                                          End Function)
+                If cancelOrderParameters IsNot Nothing AndAlso cancelOrderParameters.Count > 0 Then
+                    For Each cancelOrderParameter In cancelOrderParameters
+                        RequestResponseForPlaceOrder.TryRemove(cancelOrderParameter, orderData.ParentOrderIdentifier)
+                    Next
+                End If
+            End If
+
+        End Function
         Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
             'logger.Debug("CalculateBuffer, parameters:{0},{1}", price, floorOrCeiling)
             Dim bufferPrice As Double = Nothing
@@ -485,10 +526,37 @@ Namespace Strategies
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
                 For Each activeOrder In allActiveOrders
                     If activeOrder.Status <> "COMPLETE" Then
+                        If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 AndAlso
+                            RequestResponseForCancelOrder.ContainsKey(Utilities.Strings.Encrypt(activeOrder.ParentOrderIdentifier, activeOrder.OrderIdentifier)) Then
+                            Continue For
+                        End If
                         If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, String))
                         ret.Add(New Tuple(Of Boolean, String, String)(True, activeOrder.OrderIdentifier, activeOrder.ParentOrderIdentifier))
                     End If
                 Next
+            End If
+            Return ret
+        End Function
+        Public Overridable Function GetXMinuteCurrentCandle(ByVal timeFrame As Integer) As OHLCPayload
+            Dim ret As OHLCPayload = Nothing
+            If Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
+                Dim XMinutePayloadConsumers As IEnumerable(Of PayloadToChartConsumer) = RawPayloadConsumers.Where(Function(x)
+                                                                                                                      Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
+                                                                                                                      CType(x, PayloadToChartConsumer).Timeframe = timeFrame
+                                                                                                                  End Function)
+                Dim XMinutePayloadConsumer As PayloadToChartConsumer = Nothing
+                If XMinutePayloadConsumers IsNot Nothing AndAlso XMinutePayloadConsumers.Count > 0 Then
+                    XMinutePayloadConsumer = XMinutePayloadConsumers.FirstOrDefault
+                End If
+
+                If XMinutePayloadConsumer IsNot Nothing Then
+                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                        XMinutePayloadConsumer.ChartPayloads.Where(Function(y)
+                                                                       Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, XMinutePayloadConsumer.ChartPayloads.Keys.Max)
+                                                                   End Function)
+
+                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then ret = lastExistingPayloads.LastOrDefault.Value
+                End If
             End If
             Return ret
         End Function
@@ -546,7 +614,7 @@ Namespace Strategies
                                                                                                        tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
-                                        RequestResponseForPlaceOrder.GetOrAdd(placeOrderTrigger.Item2.ToString(), placeOrderResponse("data")("order_id"))
+                                        RequestResponseForPlaceOrder.GetOrAdd(Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"), placeOrderResponse("data")("order_id"))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()
@@ -572,6 +640,7 @@ Namespace Strategies
                                                                                                                      triggerPrice:=modifyStoplossOrderTrigger.Item3).ConfigureAwait(False)
                                             If modifyStoplossOrderResponse IsNot Nothing Then
                                                 logger.Debug("Modify stoploss order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(modifyStoplossOrderResponse))
+                                                RequestResponseForModifyOrder.GetOrAdd(Utilities.Strings.Encrypt(modifyStoplossOrderTrigger.Item3, modifyStoplossOrderTrigger.Item2), modifyStoplossOrderResponse("data")("order_id"))
                                                 lastException = Nothing
                                                 allOKWithoutException = True
                                                 _cts.Token.ThrowIfCancellationRequested()
@@ -615,7 +684,9 @@ Namespace Strategies
                                                                                                        parentOrderID:=cancelOrderTrigger.Item3).ConfigureAwait(False)
                                             End Select
                                             If cancelOrderResponse IsNot Nothing Then
-                                                logger.Debug("Cancel order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
+                                                Dim encryptionDataString As String = If(cancelOrderTrigger.Item3, "Algo2TradeCancel")
+                                                RequestResponseForCancelOrder.GetOrAdd(Utilities.Strings.Encrypt(encryptionDataString, cancelOrderTrigger.Item2), cancelOrderResponse("data")("order_id"))
+                                                logger.Debug("Cancel order is completed, cancelOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
                                                 lastException = Nothing
                                                 allOKWithoutException = True
                                                 _cts.Token.ThrowIfCancellationRequested()
@@ -653,7 +724,7 @@ Namespace Strategies
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
-                                        RequestResponseForPlaceOrder.GetOrAdd(placeOrderTrigger.Item2.ToString(), placeOrderResponse("data")("order_id"))
+                                        RequestResponseForPlaceOrder.GetOrAdd(Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"), placeOrderResponse("data")("order_id"))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()
@@ -681,7 +752,7 @@ Namespace Strategies
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
-                                        RequestResponseForPlaceOrder.GetOrAdd(placeOrderTrigger.Item2.ToString(), placeOrderResponse("data")("order_id"))
+                                        RequestResponseForPlaceOrder.GetOrAdd(Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"), placeOrderResponse("data")("order_id"))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()

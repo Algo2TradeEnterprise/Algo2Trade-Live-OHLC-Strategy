@@ -215,20 +215,20 @@ Namespace ChartHandler.ChartStyle
 
 
                 'TODO: Below loop is for checking purpose
-                Try
-                    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
-                    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
-                        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
-                                                                                     Return x.Key
-                                                                                 End Function)
-                            If payload.Value.PreviousPayload IsNot Nothing Then
-                                Debug.WriteLine(payload.Value.ToString())
-                            End If
-                        Next
-                    End If
-                Catch ex As Exception
-                    Throw ex
-                End Try
+                'Try
+                '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
+                '        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
+                '                                                                     Return x.Key
+                '                                                                 End Function)
+                '            If payload.Value.PreviousPayload IsNot Nothing Then
+                '                Debug.WriteLine(payload.Value.ToString())
+                '            End If
+                '        Next
+                '    End If
+                'Catch ex As Exception
+                '    Throw ex
+                'End Try
             Catch ex As Exception
                 logger.Error("GetChartFromTickAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex

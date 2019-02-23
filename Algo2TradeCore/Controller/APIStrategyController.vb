@@ -319,7 +319,7 @@ Namespace Controller
             Return ret
         End Function
 
-#Region "Login"
+
         Protected MustOverride Function GetLoginURL() As String
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
@@ -341,7 +341,6 @@ Namespace Controller
                 Next
             End If
         End Sub
-#End Region
 
     End Class
 End Namespace

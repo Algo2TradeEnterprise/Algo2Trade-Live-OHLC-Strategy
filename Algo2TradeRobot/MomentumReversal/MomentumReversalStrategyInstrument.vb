@@ -67,6 +67,11 @@ Public Class MomentumReversalStrategyInstrument
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
+                Dim exitOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitOrder()
+                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                    Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000).ConfigureAwait(False)
                 slDelayCtr += 1
             End While
@@ -81,86 +86,70 @@ Public Class MomentumReversalStrategyInstrument
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
         Dim tradeStartTime As Date = New Date(Now.Year, Now.Month, Now.Day, 9, 20, 0)
-        If GetActiveOrder(APIAdapter.TransactionType.None) Is Nothing AndAlso
-            Me.TotalTrades <= MRUserSettings.NumberOfTarde AndAlso
-            Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
-            For Each runningRawPayloadConsumer In RawPayloadConsumers
-                If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
-                    CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe = MRUserSettings.SignalTimeFrame Then
-                    Dim XMinutePayloadConsumer As PayloadToChartConsumer = runningRawPayloadConsumer
+        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
 
-                    Dim runningCandlePayload As OHLCPayload = Nothing
-                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                        XMinutePayloadConsumer.ChartPayloads.Where(Function(y)
-                                                                       Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, XMinutePayloadConsumer.ChartPayloads.Keys.Max)
-                                                                   End Function)
+        If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso
+            runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            GetActiveOrder(APIAdapter.TransactionType.None) Is Nothing AndAlso Me.TotalTrades <= MRUserSettings.NumberOfTarde Then
 
-                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then runningCandlePayload = lastExistingPayloads.LastOrDefault.Value
-
-                    If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso
-                        runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-                        Dim benchmarkWicksSize As Double = runningCandlePayload.PreviousPayload.CandleRange * MRUserSettings.CandleWickSizePercentage / 100
-                        If runningCandlePayload.PreviousPayload.CandleRangePercentage > MRUserSettings.MinCandleRangePercentage Then
-                            If runningCandlePayload.PreviousPayload.CandleWicks.Top > benchmarkWicksSize Then
-                                Dim MRTradePrice As Decimal = runningCandlePayload.PreviousPayload.HighPrice
-                                Dim price As Decimal = MRTradePrice + Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                Dim triggerPrice As Decimal = MRTradePrice + CalculateBuffer(MRTradePrice, RoundOfType.Celing)
-                                Dim stoplossPrice As Decimal = runningCandlePayload.PreviousPayload.LowPrice - CalculateBuffer(runningCandlePayload.PreviousPayload.LowPrice, RoundOfType.Celing)
-                                Dim target As Decimal = Math.Round(ConvertFloorCeling((triggerPrice - stoplossPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                Dim quantity As Integer = Nothing
-                                Dim tag As String = GenerateTag()
-                                If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
-                                    quantity = Me.TradableInstrument.LotSize
-                                Else
-                                    quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
-                                End If
-                                Dim stoploss As Decimal = GetModifiedStoploss(triggerPrice, stoplossPrice, quantity)
-
-                                Dim parameters As New PlaceOrderParameters With
-                                   {.EntryDirection = APIAdapter.TransactionType.Buy,
-                                   .Quantity = quantity,
-                                   .Price = price,
-                                   .TriggerPrice = triggerPrice,
-                                   .SquareOffValue = target,
-                                   .StoplossValue = stoploss,
-                                   .Tag = tag,
-                                   .SignalCandle = runningCandlePayload.PreviousPayload}
-                                ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
-                            ElseIf runningCandlePayload.PreviousPayload.CandleWicks.Bottom > benchmarkWicksSize Then
-                                Dim MRTradePrice As Decimal = runningCandlePayload.PreviousPayload.LowPrice
-                                Dim price As Decimal = MRTradePrice - Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                Dim triggerPrice As Decimal = MRTradePrice - CalculateBuffer(MRTradePrice, RoundOfType.Celing)
-                                Dim stoplossPrice As Decimal = runningCandlePayload.PreviousPayload.HighPrice + CalculateBuffer(runningCandlePayload.PreviousPayload.HighPrice, RoundOfType.Celing)
-                                Dim target As Decimal = Math.Round(ConvertFloorCeling((stoplossPrice - triggerPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                                Dim quantity As Integer = Nothing
-                                Dim tag As String = GenerateTag()
-                                If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
-                                    quantity = Me.TradableInstrument.LotSize
-                                Else
-                                    quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
-                                End If
-                                Dim stoploss As Decimal = GetModifiedStoploss(stoplossPrice, triggerPrice, quantity)
-
-                                Dim parameters As New PlaceOrderParameters With
-                                   {.EntryDirection = APIAdapter.TransactionType.Sell,
-                                   .Quantity = quantity,
-                                   .Price = price,
-                                   .TriggerPrice = triggerPrice,
-                                   .SquareOffValue = target,
-                                   .StoplossValue = stoploss,
-                                   .Tag = tag,
-                                   .SignalCandle = runningCandlePayload.PreviousPayload}
-                                ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
-                            End If
-                        End If
+            Dim benchmarkWicksSize As Double = runningCandlePayload.PreviousPayload.CandleRange * MRUserSettings.CandleWickSizePercentage / 100
+            If runningCandlePayload.PreviousPayload.CandleRangePercentage > MRUserSettings.MinCandleRangePercentage Then
+                If runningCandlePayload.PreviousPayload.CandleWicks.Top > benchmarkWicksSize Then
+                    Dim MRTradePrice As Decimal = runningCandlePayload.PreviousPayload.HighPrice
+                    Dim price As Decimal = MRTradePrice + Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    Dim triggerPrice As Decimal = MRTradePrice + CalculateBuffer(MRTradePrice, RoundOfType.Celing)
+                    Dim stoplossPrice As Decimal = runningCandlePayload.PreviousPayload.LowPrice - CalculateBuffer(runningCandlePayload.PreviousPayload.LowPrice, RoundOfType.Celing)
+                    Dim target As Decimal = Math.Round(ConvertFloorCeling((triggerPrice - stoplossPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    Dim quantity As Integer = Nothing
+                    Dim tag As String = GenerateTag()
+                    If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
+                        quantity = Me.TradableInstrument.LotSize
+                    Else
+                        quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
                     End If
-                    Exit For
+                    Dim stoploss As Decimal = GetModifiedStoploss(triggerPrice, stoplossPrice, quantity)
+
+                    Dim parameters As New PlaceOrderParameters With
+                           {.EntryDirection = APIAdapter.TransactionType.Buy,
+                           .Quantity = quantity,
+                           .Price = price,
+                           .TriggerPrice = triggerPrice,
+                           .SquareOffValue = target,
+                           .StoplossValue = stoploss,
+                           .Tag = tag,
+                           .SignalCandle = runningCandlePayload.PreviousPayload}
+                    ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                ElseIf runningCandlePayload.PreviousPayload.CandleWicks.Bottom > benchmarkWicksSize Then
+                    Dim MRTradePrice As Decimal = runningCandlePayload.PreviousPayload.LowPrice
+                    Dim price As Decimal = MRTradePrice - Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    Dim triggerPrice As Decimal = MRTradePrice - CalculateBuffer(MRTradePrice, RoundOfType.Celing)
+                    Dim stoplossPrice As Decimal = runningCandlePayload.PreviousPayload.HighPrice + CalculateBuffer(runningCandlePayload.PreviousPayload.HighPrice, RoundOfType.Celing)
+                    Dim target As Decimal = Math.Round(ConvertFloorCeling((stoplossPrice - triggerPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    Dim quantity As Integer = Nothing
+                    Dim tag As String = GenerateTag()
+                    If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
+                        quantity = Me.TradableInstrument.LotSize
+                    Else
+                        quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                    End If
+                    Dim stoploss As Decimal = GetModifiedStoploss(stoplossPrice, triggerPrice, quantity)
+
+                    Dim parameters As New PlaceOrderParameters With
+                           {.EntryDirection = APIAdapter.TransactionType.Sell,
+                           .Quantity = quantity,
+                           .Price = price,
+                           .TriggerPrice = triggerPrice,
+                           .SquareOffValue = target,
+                           .StoplossValue = stoploss,
+                           .Tag = tag,
+                           .SignalCandle = runningCandlePayload.PreviousPayload}
+                    ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
                 End If
-            Next
+            End If
         End If
         If ret IsNot Nothing AndAlso RequestResponseForPlaceOrder IsNot Nothing AndAlso
-            RequestResponseForPlaceOrder.Count > 0 AndAlso ret.Item2 IsNot Nothing AndAlso
-            RequestResponseForPlaceOrder.ContainsKey(ret.Item2.ToString) Then
+        RequestResponseForPlaceOrder.Count > 0 AndAlso ret.Item2 IsNot Nothing AndAlso
+        RequestResponseForPlaceOrder.ContainsKey(Utilities.Strings.Encrypt(ret.Item2.ToString, "Algo2TradePlaceOrder")) Then
             ret = Nothing
         End If
         Return ret
@@ -190,6 +179,10 @@ Public Class MomentumReversalStrategyInstrument
                     For Each slOrder In parentBusinessOrder.SLOrder
                         If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "REJECTED" Then
                             If slOrder.TriggerPrice <> triggerPrice Then
+                                If RequestResponseForModifyOrder IsNot Nothing AndAlso RequestResponseForModifyOrder.Count > 0 AndAlso
+                                    RequestResponseForModifyOrder.ContainsKey(Utilities.Strings.Encrypt(triggerPrice, slOrder.OrderIdentifier)) Then
+                                    Continue For
+                                End If
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
                                 ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
                             Else
@@ -204,7 +197,26 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of Boolean, String, String))
         Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
-        Throw New NotImplementedException
+        Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
+        If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+            Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                              Return x.ParentOrderIdentifier Is Nothing AndAlso
+                                                                              x.Status = "OPEN"
+                                                                          End Function)
+            If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
+                For Each parentOrder In parentOrders
+                    Dim parentBussinessOrder As IBusinessOrder = OrderDetails(parentOrder.OrderIdentifier)
+                    Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+                    If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso
+                        runningCandle.PreviousPayload IsNot Nothing AndAlso runningCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
+                        If parentBussinessOrder.SignalCandle.SnapshotDateTime = runningCandle.PreviousPayload.PreviousPayload.SnapshotDateTime Then
+                            If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, String))
+                            ret.Add(New Tuple(Of Boolean, String, String)(True, parentBussinessOrder.ParentOrderIdentifier, Nothing))
+                        End If
+                    End If
+                Next
+            End If
+        End If
         Return ret
     End Function
     Private Function GetModifiedStoploss(ByVal entryPrice As Decimal, ByVal stoplossPrice As Decimal, ByVal quantity As Integer) As Decimal

@@ -129,7 +129,6 @@ Public Class AmiSignalStrategyInstrument
         Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
         If Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
             Dim currentExitSignal As AmiSignal = ExitSignals.FirstOrDefault.Value
-            Dim allActiveOrders As List(Of IOrder) = Nothing
             If currentExitSignal.Direction = APIAdapter.TransactionType.Buy AndAlso currentExitSignal.OrderTimestamp = Date.MinValue Then
                 ret = GetAllCancelableOrders(APIAdapter.TransactionType.Sell)
             ElseIf currentExitSignal.Direction = APIAdapter.TransactionType.Sell AndAlso currentExitSignal.OrderTimestamp = Date.MinValue Then
