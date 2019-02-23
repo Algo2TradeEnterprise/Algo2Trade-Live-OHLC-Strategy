@@ -46,7 +46,7 @@
   <ItemGroup>
     <Reference Include="KiteConnect, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\dotnetkiteconnect-kite3 Nov 2018\dotnetkiteconnect-kite3 Nov 2018\KiteConnect\bin\Release\KiteConnect.dll</HintPath>
+      <HintPath>..\..\dotnetkiteconnect-kite3 Nov 2018\KiteConnect\bin\Release\KiteConnect.dll</HintPath>
     </Reference>
     <Reference Include="NLog">
       <HintPath>..\packages\NLog.4.5.10\lib\net45\NLog.dll</HintPath>
