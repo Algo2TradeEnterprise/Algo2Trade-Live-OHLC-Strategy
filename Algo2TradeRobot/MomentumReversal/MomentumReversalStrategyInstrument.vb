@@ -211,7 +211,7 @@ Public Class MomentumReversalStrategyInstrument
                         runningCandle.PreviousPayload IsNot Nothing AndAlso runningCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
                         If parentBussinessOrder.SignalCandle.SnapshotDateTime = runningCandle.PreviousPayload.PreviousPayload.SnapshotDateTime Then
                             If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 AndAlso
-                                RequestResponseForCancelOrder.ContainsKey(Utilities.Strings.Encrypt("Algo2TradeCancel", parentBussinessOrder.ParentOrderIdentifier)) Then
+                                RequestResponseForCancelOrder.ContainsKey(Utilities.Strings.Encrypt("Algo2TradeParentCancel", parentBussinessOrder.ParentOrderIdentifier)) Then
                                 Continue For
                             End If
                             If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, String))

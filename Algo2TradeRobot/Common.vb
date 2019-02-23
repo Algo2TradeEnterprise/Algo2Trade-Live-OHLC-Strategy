@@ -16,6 +16,6 @@ Module Common
                 .APIVersion = "3",
                 .APIKey = Decrypt(My.Settings.ZerodhaAPIKey, MASTER_KEY),
                 .APISecret = Decrypt(My.Settings.ZerodhaAPISecret, MASTER_KEY),
-                .API2FA = Nothing}
+                .API2FAPin = Decrypt(My.Settings.Zerodha2FAPin, MASTER_KEY)}
     End Function
 End Module

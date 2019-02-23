@@ -33,7 +33,7 @@ Namespace Controller
             Return String.Format("{0}?api_key={1}&v={2}", _LoginURL, _currentUser.APIKey, _currentUser.APIVersion)
         End Function
         Public Overrides Function GetErrorResponse(ByVal response As Object) As String
-            logger.Debug("GetErrorResponse, response:{0}", Utils.JsonSerialize(response))
+            'logger.Debug("GetErrorResponse, response:{0}", Utils.JsonSerialize(response))
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As String = Nothing
 
@@ -142,7 +142,7 @@ Namespace Controller
                                 'user_id=DK4056&request_id=Ypnc3WNKh1ulM8jP5QsmZmCUdSBI8EqT0aS9uhiHYrBNgodDla1y7VhTZE8z4Ia9&twofa_value=111111
                                 twoFAUserId = tempRet.Item2("data")("user_id")
                                 twoFARequestId = tempRet.Item2("data")("request_id")
-                                twoFAPIN = "111111"
+                                twoFAPIN = _currentUser.API2FAPin
                                 If twoFAUserId IsNot Nothing AndAlso twoFARequestId IsNot Nothing Then
                                     logger.Debug("Id/pass submission returned, twoFAUserId:{0}, twoFARequestId:{1}", twoFAUserId, twoFARequestId)
                                     'Now preprate the 2 step authentication
@@ -297,7 +297,7 @@ Namespace Controller
                             RemoveHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                             RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                         Else
-                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 1, _cts)
+                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 27, _cts)
                         End If
 
                         AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
@@ -357,7 +357,7 @@ Namespace Controller
                                 .ZerodhaUser = New ZerodhaUser() With {.UserId = _currentUser.UserId,
                                                                         .Password = _currentUser.Password,
                                                                         .APIKey = _currentUser.APIKey,
-                                                                        .API2FA = _currentUser.API2FA,
+                                                                        .API2FAPin = _currentUser.API2FAPin,
                                                                         .APISecret = _currentUser.APISecret,
                                                                         .APIVersion = _currentUser.APIVersion,
                                                                         .WrappedUser = user}

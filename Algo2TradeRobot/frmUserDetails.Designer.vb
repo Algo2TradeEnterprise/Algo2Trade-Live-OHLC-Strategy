@@ -35,11 +35,15 @@ Partial Class frmZerodhaUserDetails
         Me.lblZerodhaUserId = New System.Windows.Forms.Label()
         Me.btnSaveZerodhaUserDetails = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
+        Me.txtZerodhaPin = New System.Windows.Forms.TextBox()
+        Me.lblZerodhaPin = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtZerodhaPin)
+        Me.GroupBox1.Controls.Add(Me.lblZerodhaPin)
         Me.GroupBox1.Controls.Add(Me.txtZerodhaAPISecret)
         Me.GroupBox1.Controls.Add(Me.txtZerodhaAPIKey)
         Me.GroupBox1.Controls.Add(Me.txtZerodhaPassword)
@@ -52,13 +56,13 @@ Partial Class frmZerodhaUserDetails
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(460, 183)
+        Me.GroupBox1.Size = New System.Drawing.Size(460, 206)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
         '
         'txtZerodhaAPISecret
         '
-        Me.txtZerodhaAPISecret.Location = New System.Drawing.Point(103, 138)
+        Me.txtZerodhaAPISecret.Location = New System.Drawing.Point(103, 171)
         Me.txtZerodhaAPISecret.Margin = New System.Windows.Forms.Padding(4)
         Me.txtZerodhaAPISecret.Name = "txtZerodhaAPISecret"
         Me.txtZerodhaAPISecret.Size = New System.Drawing.Size(348, 22)
@@ -66,7 +70,7 @@ Partial Class frmZerodhaUserDetails
         '
         'txtZerodhaAPIKey
         '
-        Me.txtZerodhaAPIKey.Location = New System.Drawing.Point(103, 100)
+        Me.txtZerodhaAPIKey.Location = New System.Drawing.Point(103, 133)
         Me.txtZerodhaAPIKey.Margin = New System.Windows.Forms.Padding(4)
         Me.txtZerodhaAPIKey.Name = "txtZerodhaAPIKey"
         Me.txtZerodhaAPIKey.Size = New System.Drawing.Size(348, 22)
@@ -92,7 +96,7 @@ Partial Class frmZerodhaUserDetails
         'lblZerodhaAPISecret
         '
         Me.lblZerodhaAPISecret.AutoSize = True
-        Me.lblZerodhaAPISecret.Location = New System.Drawing.Point(9, 142)
+        Me.lblZerodhaAPISecret.Location = New System.Drawing.Point(9, 175)
         Me.lblZerodhaAPISecret.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaAPISecret.Name = "lblZerodhaAPISecret"
         Me.lblZerodhaAPISecret.Size = New System.Drawing.Size(74, 17)
@@ -102,7 +106,7 @@ Partial Class frmZerodhaUserDetails
         'lblZerodhaAPIKey
         '
         Me.lblZerodhaAPIKey.AutoSize = True
-        Me.lblZerodhaAPIKey.Location = New System.Drawing.Point(9, 103)
+        Me.lblZerodhaAPIKey.Location = New System.Drawing.Point(9, 136)
         Me.lblZerodhaAPIKey.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblZerodhaAPIKey.Name = "lblZerodhaAPIKey"
         Me.lblZerodhaAPIKey.Size = New System.Drawing.Size(57, 17)
@@ -149,11 +153,31 @@ Partial Class frmZerodhaUserDetails
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
+        'txtZerodhaPin
+        '
+        Me.txtZerodhaPin.Location = New System.Drawing.Point(103, 96)
+        Me.txtZerodhaPin.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtZerodhaPin.MaxLength = 6
+        Me.txtZerodhaPin.Name = "txtZerodhaPin"
+        Me.txtZerodhaPin.PasswordChar = Global.Microsoft.VisualBasic.ChrW(64)
+        Me.txtZerodhaPin.Size = New System.Drawing.Size(185, 22)
+        Me.txtZerodhaPin.TabIndex = 9
+        '
+        'lblZerodhaPin
+        '
+        Me.lblZerodhaPin.AutoSize = True
+        Me.lblZerodhaPin.Location = New System.Drawing.Point(9, 100)
+        Me.lblZerodhaPin.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblZerodhaPin.Name = "lblZerodhaPin"
+        Me.lblZerodhaPin.Size = New System.Drawing.Size(57, 17)
+        Me.lblZerodhaPin.TabIndex = 8
+        Me.lblZerodhaPin.Text = "2FA Pin"
+        '
         'frmZerodhaUserDetails
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(603, 202)
+        Me.ClientSize = New System.Drawing.Size(603, 226)
         Me.Controls.Add(Me.btnSaveZerodhaUserDetails)
         Me.Controls.Add(Me.GroupBox1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -180,4 +204,6 @@ Partial Class frmZerodhaUserDetails
     Friend WithEvents lblZerodhaAPISecret As Label
     Friend WithEvents btnSaveZerodhaUserDetails As Button
     Friend WithEvents ImageList1 As ImageList
+    Friend WithEvents txtZerodhaPin As TextBox
+    Friend WithEvents lblZerodhaPin As Label
 End Class

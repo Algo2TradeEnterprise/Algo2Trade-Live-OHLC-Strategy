@@ -9,7 +9,7 @@ Namespace Entities
         Public Property APISecret As String Implements IUser.APISecret
         Public Property APIKey As String Implements IUser.APIKey
         Public Property APIVersion As String Implements IUser.APIVersion
-        Public Property API2FA As Dictionary(Of String, String) Implements IUser.API2FA
+        Public Property API2FAPin As String Implements IUser.API2FAPin
 
         Public Property WrappedUser As User
         Public ReadOnly Property Broker As APISource Implements IUser.Broker

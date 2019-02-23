@@ -540,16 +540,17 @@ Namespace Strategies
         Public Overridable Function GetXMinuteCurrentCandle(ByVal timeFrame As Integer) As OHLCPayload
             Dim ret As OHLCPayload = Nothing
             If Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
-                Dim XMinutePayloadConsumers As IEnumerable(Of PayloadToChartConsumer) = RawPayloadConsumers.Where(Function(x)
-                                                                                                                      Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
+                Dim XMinutePayloadConsumers As IEnumerable(Of IPayloadConsumer) = RawPayloadConsumers.Where(Function(x)
+                                                                                                                Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
                                                                                                                       CType(x, PayloadToChartConsumer).Timeframe = timeFrame
-                                                                                                                  End Function)
+                                                                                                            End Function)
                 Dim XMinutePayloadConsumer As PayloadToChartConsumer = Nothing
                 If XMinutePayloadConsumers IsNot Nothing AndAlso XMinutePayloadConsumers.Count > 0 Then
                     XMinutePayloadConsumer = XMinutePayloadConsumers.FirstOrDefault
                 End If
 
-                If XMinutePayloadConsumer IsNot Nothing Then
+                If XMinutePayloadConsumer IsNot Nothing AndAlso
+                    XMinutePayloadConsumer.ChartPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ChartPayloads.Count > 0 Then
                     Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                         XMinutePayloadConsumer.ChartPayloads.Where(Function(y)
                                                                        Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, XMinutePayloadConsumer.ChartPayloads.Keys.Max)
@@ -684,7 +685,7 @@ Namespace Strategies
                                                                                                        parentOrderID:=cancelOrderTrigger.Item3).ConfigureAwait(False)
                                             End Select
                                             If cancelOrderResponse IsNot Nothing Then
-                                                Dim encryptionDataString As String = If(cancelOrderTrigger.Item3, "Algo2TradeCancel")
+                                                Dim encryptionDataString As String = If(cancelOrderTrigger.Item3 Is Nothing, "Algo2TradeParentCancel", cancelOrderTrigger.Item3)
                                                 RequestResponseForCancelOrder.GetOrAdd(Utilities.Strings.Encrypt(encryptionDataString, cancelOrderTrigger.Item2), cancelOrderResponse("data")("order_id"))
                                                 logger.Debug("Cancel order is completed, cancelOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
                                                 lastException = Nothing

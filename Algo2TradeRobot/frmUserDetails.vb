@@ -12,6 +12,7 @@ Public Class frmZerodhaUserDetails
     Private Sub frmZerodhaUserDetails_Load(sender As Object, e As EventArgs) Handles Me.Load
         txtZerodhaUserId.Text = My.Settings.ZerodhaUserId
         txtZerodhaPassword.Text = Decrypt(My.Settings.ZerodhaPassword, Common.MASTER_KEY)
+        txtZerodhaPin.Text = Decrypt(My.Settings.Zerodha2FAPin, Common.MASTER_KEY)
         txtZerodhaAPIKey.Text = Decrypt(My.Settings.ZerodhaAPIKey, Common.MASTER_KEY)
         txtZerodhaAPISecret.Text = Decrypt(My.Settings.ZerodhaAPISecret, Common.MASTER_KEY)
     End Sub
@@ -19,6 +20,7 @@ Public Class frmZerodhaUserDetails
     Private Sub SaveUserDetails()
         My.Settings.ZerodhaUserId = txtZerodhaUserId.Text
         My.Settings.ZerodhaPassword = Encrypt(txtZerodhaPassword.Text, Common.MASTER_KEY)
+        My.Settings.Zerodha2FAPin = Encrypt(txtZerodhaPin.Text, Common.MASTER_KEY)
         My.Settings.ZerodhaAPIKey = Encrypt(txtZerodhaAPIKey.Text, Common.MASTER_KEY)
         My.Settings.ZerodhaAPISecret = Encrypt(txtZerodhaAPISecret.Text, Common.MASTER_KEY)
         My.Settings.Save()
@@ -27,6 +29,7 @@ Public Class frmZerodhaUserDetails
     Private Sub ValidateAll()
         ValidateTextLength(txtZerodhaUserId, 1, "User Id")
         ValidateTextLength(txtZerodhaPassword, 1, "Password")
+        ValidateTextLength(txtZerodhaPin, 1, "2FA Pin")
         ValidateTextLength(txtZerodhaAPIKey, 1, "API Key")
         ValidateTextLength(txtZerodhaAPISecret, 1, "API Secret")
     End Sub
