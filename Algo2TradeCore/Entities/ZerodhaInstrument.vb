@@ -2,6 +2,8 @@
 Imports Algo2TradeCore.ChartHandler.ChartStyle
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Strategies
+Imports System.Xml.Serialization
+Imports System.Web.Script.Serialization
 
 Namespace Entities
     <Serializable>
@@ -74,6 +76,7 @@ Namespace Entities
             End Set
         End Property
 
+        <ScriptIgnore()>
         Public Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload) Implements IInstrument.RawPayloads
 
         Public Property IsHistoricalCompleted As Boolean Implements IInstrument.IsHistoricalCompleted

@@ -641,7 +641,9 @@ Namespace Controller
                         tempList.Add(runningTradableStrategyInstrument.TradableInstrument)
                     Next
                     If _AllStrategyUniqueInstruments IsNot Nothing Then
-                        _AllStrategyUniqueInstruments = _AllStrategyUniqueInstruments.Union(tempList)
+                        If tempList IsNot Nothing AndAlso tempList.Count > 0 Then
+                            _AllStrategyUniqueInstruments = _AllStrategyUniqueInstruments.Union(tempList)
+                        End If
                     Else
                         _AllStrategyUniqueInstruments = tempList
                     End If
@@ -652,20 +654,20 @@ Namespace Controller
                 If Not ret Then Throw New ApplicationException(String.Format("No instruments fetched that can be traded, strategy:{0}", strategyToRun.ToString))
 
                 'Now create a local collection inside the controller for the strategy instruments that need to be subscribed as a dictionary for easy picking during tick receive
-                If _subscribedStrategyInstruments Is Nothing Then _subscribedStrategyInstruments = New Dictionary(Of String, List(Of StrategyInstrument))
+                If _subscribedStrategyInstruments Is Nothing Then _subscribedStrategyInstruments = New Dictionary(Of String, Concurrent.ConcurrentBag(Of StrategyInstrument))
                 Dim subscribedInstrumentTokens As List(Of String) = Nothing
                 For Each runningTradableStrategyInstrument In strategyToRun.TradableStrategyInstruments
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim instrumentKey As String = runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier
-                    Dim strategiesToBeSubscribedForThisInstrument As List(Of StrategyInstrument) = Nothing
+                    Dim strategiesToBeSubscribedForThisInstrument As Concurrent.ConcurrentBag(Of StrategyInstrument) = Nothing
                     If _subscribedStrategyInstruments.ContainsKey(instrumentKey) Then
                         strategiesToBeSubscribedForThisInstrument = _subscribedStrategyInstruments(instrumentKey)
                     Else
-                        strategiesToBeSubscribedForThisInstrument = New List(Of StrategyInstrument)
+                        strategiesToBeSubscribedForThisInstrument = New Concurrent.ConcurrentBag(Of StrategyInstrument)
                         _subscribedStrategyInstruments.Add(instrumentKey, strategiesToBeSubscribedForThisInstrument)
                     End If
                     'Remove the current strategy if present already
-                    strategiesToBeSubscribedForThisInstrument.RemoveAll(Function(X)
+                    strategiesToBeSubscribedForThisInstrument.TakeWhile(Function(X)
                                                                             Return X.GetType Is runningTradableStrategyInstrument.GetType
                                                                         End Function)
                     strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
@@ -849,11 +851,14 @@ Namespace Controller
             'logger.Debug("OnFetcherCandlesAsync, parameteres:{0},{1}",instrumentIdentifier, Utils.JsonSerialize(historicalCandlesJSONDict))
             Await Task.Delay(0).ConfigureAwait(False)
             'ctr += 1
-            If ctr >= 0 AndAlso _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
-                    _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).GetChartFromHistoricalAsync(historicalCandlesJSONDict)
-                    Exit For
-                Next
+            'If ctr >= 0 AndAlso _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+            '    For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
+            '        _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).GetChartFromHistoricalAsync(historicalCandlesJSONDict)
+            '        Exit For
+            '    Next
+            'End If
+            If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(instrumentIdentifier) Then
+                _rawPayloadCreators(instrumentIdentifier).GetChartFromHistoricalAsync(historicalCandlesJSONDict)
             End If
         End Sub
 
@@ -903,15 +908,17 @@ Namespace Controller
         Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
             'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
             Await Task.Delay(0).ConfigureAwait(False)
+            Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
+            Dim runningInstruments As IEnumerable(Of IInstrument) = _AllStrategyUniqueInstruments.Where(Function(x)
+                                                                                                            Return x.InstrumentIdentifier = tickData.InstrumentToken
+                                                                                                        End Function)
+            If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+                runningInstruments.FirstOrDefault.LastTick = runningTick
+            End If
+            If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(tickData.InstrumentToken) Then
+                _rawPayloadCreators(tickData.InstrumentToken).GetChartFromTickAsync(runningTick)
+            End If
             If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-                Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    runningStrategyInstrument.TradableInstrument.LastTick = runningTick
-                    _rawPayloadCreators(runningStrategyInstrument.TradableInstrument.InstrumentIdentifier).GetChartFromTickAsync(runningTick)
-                    'Since tick is supposed to be processed once for each tradableinstrument, hence we exit the loop so that it 
-                    'is not processed twice
-                    Exit For
-                Next
                 'This for loop needs to be after the tick is published
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
                     runningStrategyInstrument.HandleTickTriggerToUIETCAsync()

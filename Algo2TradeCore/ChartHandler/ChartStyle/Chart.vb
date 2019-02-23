@@ -50,13 +50,13 @@ Public MustInherit Class Chart
 
     Public Property ParentController As APIStrategyController
     Protected _parentInstrument As IInstrument
-    Protected _subscribedStrategyInstruments As List(Of StrategyInstrument)
+    Protected _subscribedStrategyInstruments As Concurrent.ConcurrentBag(Of StrategyInstrument)
     Protected _cts As New CancellationTokenSource
     Protected _historicalLock As Integer
     Protected _tickLock As Integer
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                       ByVal assoicatedParentInstrument As IInstrument,
-                      ByVal associatedStrategyInstruments As List(Of StrategyInstrument),
+                      ByVal associatedStrategyInstruments As Concurrent.ConcurrentBag(Of StrategyInstrument),
                       ByVal canceller As CancellationTokenSource)
         Me.ParentController = associatedParentController
         _parentInstrument = assoicatedParentInstrument

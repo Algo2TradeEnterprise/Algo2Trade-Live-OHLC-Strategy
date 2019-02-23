@@ -1,8 +1,4 @@
-﻿Imports Algo2TradeCore.ChartHandler.ChartStyle
-Imports Algo2TradeCore.Controller
-Imports Algo2TradeCore.Strategies
-
-Namespace Entities
+﻿Namespace Entities
     Public Interface IInstrument
         Property InstrumentIdentifier As String
         ReadOnly Property Exchange As String

@@ -100,7 +100,7 @@ Namespace Controller
         Protected _AllInstruments As IEnumerable(Of IInstrument)
         Protected _AllStrategyUniqueInstruments As IEnumerable(Of IInstrument)
         Protected _AllStrategies As List(Of Strategy)
-        Protected _subscribedStrategyInstruments As Dictionary(Of String, List(Of StrategyInstrument))
+        Protected _subscribedStrategyInstruments As Dictionary(Of String, Concurrent.ConcurrentBag(Of StrategyInstrument))
         Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal associatedBrokerSource As APISource,
@@ -121,6 +121,7 @@ Namespace Controller
         End Sub
         Protected Async Function ExecuteCommandAsync(ByVal command As APIAdapter.ExecutionCommands, ByVal data As Object) As Task(Of Object)
             logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
+
             Dim ret As Object = Nothing
             Dim lastException As Exception = Nothing
             Dim allOKWithoutException As Boolean = False
