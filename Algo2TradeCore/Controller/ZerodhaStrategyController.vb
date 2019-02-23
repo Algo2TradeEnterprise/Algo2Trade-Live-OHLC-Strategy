@@ -105,7 +105,7 @@ Namespace Controller
                             postContent = New Dictionary(Of String, String)
                             postContent.Add("user_id", _currentUser.UserId)
                             postContent.Add("password", _currentUser.Password)
-                            postContent.Add("login", "")
+                            'postContent.Add("login", "")
 
                             'Now prepare the step 1 authentication
                             headers = New Dictionary(Of String, String)
@@ -129,23 +129,27 @@ Namespace Controller
                                                      False).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                             'Should come back as redirected url in Item1 and htmldocument in Item2
-                            Dim q1 As String = Nothing
-                            Dim q2 As String = Nothing
+                            Dim twoFAUserId As String = Nothing
+                            Dim twoFARequestId As String = Nothing
+                            Dim twoFAPIN As String = Nothing
 
                             If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) AndAlso
                                 tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" AndAlso
-                                tempRet.Item2.containskey("data") AndAlso tempRet.Item2("data").containskey("question_ids") AndAlso tempRet.Item2("data")("question_ids").count >= 2 Then
-                                q1 = tempRet.Item2("data")("question_ids")(0)
-                                q2 = tempRet.Item2("data")("question_ids")(1)
-                                If q1 IsNot Nothing AndAlso q2 IsNot Nothing Then
-                                    logger.Debug("Id/pass submission returned, q1:{0}, q2:{1}", q1, q2)
+                                tempRet.Item2.containskey("data") AndAlso tempRet.Item2("data").containskey("user_id") AndAlso
+                                tempRet.Item2("data").containskey("request_id") Then
+
+
+                                'user_id=DK4056&request_id=Ypnc3WNKh1ulM8jP5QsmZmCUdSBI8EqT0aS9uhiHYrBNgodDla1y7VhTZE8z4Ia9&twofa_value=111111
+                                twoFAUserId = tempRet.Item2("data")("user_id")
+                                twoFARequestId = tempRet.Item2("data")("request_id")
+                                twoFAPIN = "111111"
+                                If twoFAUserId IsNot Nothing AndAlso twoFARequestId IsNot Nothing Then
+                                    logger.Debug("Id/pass submission returned, twoFAUserId:{0}, twoFARequestId:{1}", twoFAUserId, twoFARequestId)
                                     'Now preprate the 2 step authentication
-                                    Dim stringPostContent As New Http.StringContent(String.Format("user_id={0}&question_id={1}&question_id={2}&answer={3}&answer={4}",
-                                                                                      Uri.EscapeDataString(_currentUser.UserId),
-                                                                                      Uri.EscapeDataString(q1),
-                                                                                      Uri.EscapeDataString(q2),
-                                                                                      Uri.EscapeDataString("a"),
-                                                                                      Uri.EscapeDataString("a")),
+                                    Dim stringPostContent As New Http.StringContent(String.Format("user_id={0}&request_id={1}&twofa_value={2}",
+                                                                                      Uri.EscapeDataString(twoFAUserId),
+                                                                                      Uri.EscapeDataString(twoFARequestId),
+                                                                                      Uri.EscapeDataString(twoFAPIN)),
                                                                         Text.Encoding.UTF8, "application/x-www-form-urlencoded")
 
                                     headers = New Dictionary(Of String, String)
