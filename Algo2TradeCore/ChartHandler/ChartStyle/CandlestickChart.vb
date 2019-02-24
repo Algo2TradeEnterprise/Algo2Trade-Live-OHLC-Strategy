@@ -21,30 +21,34 @@ Namespace ChartHandler.ChartStyle
             'Exit Function
             'logger.Debug("{0}->GetChartFromHistoricalAsync, parameters:{1}", Me.ToString, Utilities.Strings.JsonSerialize(historicalCandlesJSONDict))
             Try
-                While _historicalLock > 0
+                While Interlocked.Read(_historicalLock) > 0
                     Await Task.Delay(10).ConfigureAwait(False)
                 End While
                 Interlocked.Increment(_historicalLock)
                 'Debug.WriteLine(String.Format("Process Historical before. Time:{0}, Lock:{1}", Now, _lock))
                 If historicalCandlesJSONDict.ContainsKey("data") Then
                     Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
-                    If historicalCandlesDict.ContainsKey("candles") Then
+                    If historicalCandlesDict.ContainsKey("candles") AndAlso historicalCandlesDict("candles").count > 0 Then
                         Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
                         Dim previousCandlePayload As OHLCPayload = Nothing
                         If _parentInstrument.RawPayloads IsNot Nothing AndAlso _parentInstrument.RawPayloads.Count > 0 Then
-                            Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                            Try
+                                Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                             _parentInstrument.RawPayloads.Where(Function(y)
                                                                     Return y.Key < Utilities.Time.GetDateTimeTillMinutes(historicalCandles(0)(0))
                                                                 End Function)
 
-                            If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
-                                previousCandlePayload = previousCandles.OrderByDescending(Function(x)
-                                                                                              Return x.Key
-                                                                                          End Function).FirstOrDefault.Value
-                                'Print previous candle
-                                'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
-                                'Debug.WriteLine(previousCandle.ToString)
-                            End If
+                                If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
+                                    previousCandlePayload = previousCandles.OrderByDescending(Function(x)
+                                                                                                  Return x.Key
+                                                                                              End Function).FirstOrDefault.Value
+                                    'Print previous candle
+                                    'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
+                                    'Debug.WriteLine(previousCandle.ToString)
+                                End If
+                            Catch ex As Exception
+                                Throw ex
+                            End Try
                         End If
                         For Each historicalCandle In historicalCandles
                             Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
@@ -75,13 +79,10 @@ Namespace ChartHandler.ChartStyle
                                 End If
                                 Dim candleNeedsUpdate As Boolean = False
                                 If existingOrAddedPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
-                                    'existingOrAddedPayload = runningPayload
                                     candleNeedsUpdate = Not runningPayload.Equals(existingOrAddedPayload)
                                     _parentInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
-                                    '_parentInstrument.RawPayloads.TryUpdate(runningPayload.SnapshotDateTime, runningPayload, existingOrAddedPayload)
                                 ElseIf Not runningPayload.Equals(existingOrAddedPayload) Then
                                     candleNeedsUpdate = True
-                                    '_parentInstrument.RawPayloads.TryUpdate(runningPayload.SnapshotDateTime, runningPayload, existingOrAddedPayload)
                                 End If
                                 If candleNeedsUpdate OrElse freshCandleAdded Then
                                     'existingOrAddedPayload = runningPayload

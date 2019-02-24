@@ -667,9 +667,25 @@ Namespace Controller
                         _subscribedStrategyInstruments.Add(instrumentKey, strategiesToBeSubscribedForThisInstrument)
                     End If
                     'Remove the current strategy if present already
-                    strategiesToBeSubscribedForThisInstrument.TakeWhile(Function(X)
-                                                                            Return X.GetType Is runningTradableStrategyInstrument.GetType
-                                                                        End Function)
+                    Dim tmpList As List(Of StrategyInstrument) = Nothing
+                    While Not strategiesToBeSubscribedForThisInstrument.IsEmpty
+                        Dim removeCandidate As StrategyInstrument = Nothing
+                        strategiesToBeSubscribedForThisInstrument.TryTake(removeCandidate)
+                        If removeCandidate IsNot Nothing Then
+                            If removeCandidate.GetType IsNot runningTradableStrategyInstrument.GetType Then
+                                If tmpList Is Nothing Then tmpList = New List(Of StrategyInstrument)
+                                tmpList.Add(removeCandidate)
+                            End If
+                        End If
+                    End While
+                    If tmpList IsNot Nothing AndAlso tmpList.Count > 0 Then
+                        For Each tmpListItem In tmpList
+                            strategiesToBeSubscribedForThisInstrument.Add(tmpListItem)
+                        Next
+                    End If
+                    'strategiesToBeSubscribedForThisInstrument.TakeWhile(Function(X)
+                    '                                                        Return X.GetType Is runningTradableStrategyInstrument.GetType
+                    '                                                    End Function)
                     strategiesToBeSubscribedForThisInstrument.Add(runningTradableStrategyInstrument)
                 Next
 

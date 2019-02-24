@@ -356,6 +356,8 @@ Namespace Network
                                                   ByVal headers As Dictionary(Of String, String),
                                                   ByVal checkSuccessCode As Boolean,
                                                   ByVal responseType As String) As Task(Of Tuple(Of Uri, Object))
+            'If URLToBrowse.ToUpper.Contains("kitecharts".ToUpper) Then Exit Function
+
             logger.Debug("Placing non POST request asynchronously")
             Dim retTuple As Tuple(Of Uri, Object) = Nothing
 
@@ -386,7 +388,6 @@ Namespace Network
                         AddHeaders(request, referalURL, useRandomUserAgent, headers)
 
                         _canceller.Token.ThrowIfCancellationRequested()
-
                         response = Await _httpInstance.SendAsync(request, _canceller.Token).ConfigureAwait(False)
 
                         If checkSuccessCode Then response.EnsureSuccessStatusCode()

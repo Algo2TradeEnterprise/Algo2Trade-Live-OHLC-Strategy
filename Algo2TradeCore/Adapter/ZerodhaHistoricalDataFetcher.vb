@@ -15,12 +15,13 @@ Namespace Adapter
 #End Region
 
 #Region "Events/Event handlers specific to the derived class"
-        Public Event FetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
+        Public Event FetcherCandles(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
         Public Event FetcherError(ByVal instrumentIdentifier As String, ByVal msg As String)
         'The below functions are needed to allow the derived classes to raise the above two events
-        Protected Overridable Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
-            RaiseEvent FetcherCandlesAsync(instrumentIdentifier, historicalCandlesJSONDict)
-        End Sub
+        Protected Overridable Async Function OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
+            Await Task.Delay(0).ConfigureAwait(False)
+            RaiseEvent FetcherCandles(instrumentIdentifier, historicalCandlesJSONDict)
+        End Function
         Protected Overridable Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal msg As String)
             RaiseEvent FetcherError(instrumentIdentifier, msg)
         End Sub
@@ -38,7 +39,7 @@ Namespace Adapter
                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, daysToGoBack, instrumentIdentifier, canceller)
             Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
-            AddHandler Me.FetcherCandlesAsync, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
+            AddHandler Me.FetcherCandles, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
             AddHandler Me.FetcherError, AddressOf currentZerodhaStrategyController.OnFetcherError
         End Sub
         Public Overrides Async Function ConnectFetcherAsync() As Task
@@ -59,7 +60,7 @@ Namespace Adapter
             Try
                 _stopPollRunning = False
                 _isPollRunning = False
-                ServicePointManager.DefaultConnectionLimit = 10
+                ServicePointManager.DefaultConnectionLimit = 10000
                 Dim lastTimeWhenDone As Date = Date.MinValue
                 Dim nextTimeToDo As Date = Date.MinValue
                 Dim apiConnectionBeingUsed As ZerodhaConnection = Me.ParentController.APIConnection
@@ -91,7 +92,9 @@ Namespace Adapter
                         Next
                         For Each specificInstrumentHistoricalDataFetcher In specificInstrumentsHistoricalDataFetcher
                             _cts.Token.ThrowIfCancellationRequested()
+
                             tasks.Add(Task.Run(AddressOf specificInstrumentHistoricalDataFetcher.GetHistoricalCandleStickAsync, _cts.Token))
+                            'tasks.Add(Task.Run(AddressOf specificInstrumentHistoricalDataFetcher.DummyworkerAsync, _cts.Token))
                         Next
                         OnHeartbeat("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
@@ -171,9 +174,15 @@ Namespace Adapter
                 StartPollingAsync()
             End If
         End Function
+        Protected Async Function DummyworkerAsync() As Task
+            While True
+                Await Task.Delay(5000).ConfigureAwait(False)
+                Exit Function
+            End While
+        End Function
 
         Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task
-            'logger.Debug("{0}->GetHistoricalCandleStick, parameters:Nothing", Me.ToString)
+            logger.Debug("{0}->GetHistoricalCandleStick, parameters:Nothing", Me.ToString)
             Try
                 If _instrumentIdentifer Is Nothing Then Exit Function
                 _cts.Token.ThrowIfCancellationRequested()
@@ -205,6 +214,7 @@ Namespace Adapter
                                                                     Now.ToString("yyyy-MM-dd"))
                     logger.Debug("Opening historical candle page, GetHistoricalDataURL:{0}, headers:{1}", historicalDataURL, Utils.JsonSerialize(headers))
                     _cts.Token.ThrowIfCancellationRequested()
+
                     Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL,
                                                                                           Http.HttpMethod.Get,
                                                                                           Nothing,
@@ -213,6 +223,7 @@ Namespace Adapter
                                                                                           False,
                                                                                           "application/json").ConfigureAwait(False)
 
+                    'Exit Function
                     _cts.Token.ThrowIfCancellationRequested()
                     If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
                         Dim errorMessage As String = ParentController.GetErrorResponse(tempRet.Item2)
@@ -263,7 +274,7 @@ Namespace Adapter
                     ' TODO: dispose managed state (managed objects).
                     Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
 
-                    RemoveHandler Me.FetcherCandlesAsync, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
+                    RemoveHandler Me.FetcherCandles, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
                     RemoveHandler Me.FetcherError, AddressOf currentZerodhaStrategyController.OnFetcherError
                 End If
 
