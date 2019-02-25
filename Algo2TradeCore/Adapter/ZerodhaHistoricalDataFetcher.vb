@@ -64,6 +64,7 @@ Namespace Adapter
                                                                     Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
                                                                     Now.ToString("yyyy-MM-dd"))
 
+
                 Console.WriteLine(historicalDataURL)
                 Using sr = New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
                     Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
@@ -111,16 +112,16 @@ Namespace Adapter
                         Dim tasks = _subscribedInstruments.Select(Async Function(x)
                                                                       Try
                                                                           Dim individualFetcher As New ZerodhaHistoricalDataFetcher(Me.ParentController,
-                                                                                                              _daysToGoBack,
-                                                                                                              x,
+                                                                                                              If(x.IsHistoricalCompleted, 1, _daysToGoBack),
+                                                                                                              x.InstrumentIdentifier,
                                                                                                               Me._cts)
                                                                           Dim tempRet = Await individualFetcher.DownloadFileAsync.ConfigureAwait(False)
                                                                           If tempRet IsNot Nothing AndAlso tempRet.GetType Is GetType(Dictionary(Of String, Object)) Then
                                                                               Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
                                                                               If errorMessage IsNot Nothing Then
-                                                                                  individualFetcher.OnFetcherError(x, errorMessage)
+                                                                                  individualFetcher.OnFetcherError(x.InstrumentIdentifier, errorMessage)
                                                                               Else
-                                                                                  Await individualFetcher.OnFetcherCandlesAsync(x, tempRet).ConfigureAwait(False)
+                                                                                  Await individualFetcher.OnFetcherCandlesAsync(x.InstrumentIdentifier, tempRet).ConfigureAwait(False)
                                                                               End If
                                                                           Else
                                                                               'TO DO: Uncomment this
@@ -273,23 +274,35 @@ Namespace Adapter
         '        _isPollRunning = False
         '    End Try
         'End Function
-        Public Overrides Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
+        Public Overrides Async Function SubscribeAsync(ByVal tradableInstruments As IEnumerable(Of IInstrument), ByVal maxNumberOfDays As Integer) As Task
             'logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
-            If _subscribedInstruments Is Nothing Then _subscribedInstruments = New List(Of String)
-            For Each runningInstrumentIdentifier In instrumentIdentifiers
+            If _subscribedInstruments Is Nothing Then
+                _subscribedInstruments = New List(Of IInstrument)
+            End If
+            For Each runningInstrument In tradableInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                If _subscribedInstruments.Contains(runningInstrumentIdentifier) Then Continue For
-                _subscribedInstruments.Add(runningInstrumentIdentifier)
+                Dim existingSubscribeInstrument As IInstrument = _subscribedInstruments.Find(Function(x)
+                                                                                                 Return x.InstrumentIdentifier = runningInstrument.InstrumentIdentifier
+                                                                                             End Function)
+                If existingSubscribeInstrument IsNot Nothing Then
+                    If maxNumberOfDays > _daysToGoBack Then existingSubscribeInstrument.IsHistoricalCompleted = False
+                    Continue For
+                End If
+                _subscribedInstruments.Add(runningInstrument)
             Next
             If _subscribedInstruments Is Nothing OrElse _subscribedInstruments.Count = 0 Then
                 OnHeartbeat("No instruments were subscribed for historical as they may be already subscribed")
                 logger.Error("No tokens to subscribe for historical")
             Else
                 OnHeartbeat(String.Format("Subscribed:{0} instruments for historical", _subscribedInstruments.Count))
-                StartPollingAsync()
+                If Not _isFirstTimeDone Then
+                    StartPollingAsync()
+                    _isFirstTimeDone = True
+                End If
             End If
+            _daysToGoBack = Math.Max(_daysToGoBack, maxNumberOfDays)
         End Function
         Protected Async Function DummyworkerAsync() As Task
             While True

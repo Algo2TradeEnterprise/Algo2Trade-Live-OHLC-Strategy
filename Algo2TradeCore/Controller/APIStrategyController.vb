@@ -94,6 +94,8 @@ Namespace Controller
         Public Property APIConnection As IConnection
         Public ReadOnly Property BrokerSource As APISource
         Public Property OrphanException As Exception
+        Public Property FillOrderLastTimeWhenDone As Date
+
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
         Protected _APIHistoricalDataFetcher As APIHistoricalDataFetcher

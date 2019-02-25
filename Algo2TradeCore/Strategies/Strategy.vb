@@ -57,15 +57,18 @@ Namespace Strategies
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
         Public Property UserSettings As UserInputs = Nothing
         Public Property ParentController As APIStrategyController
+        Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
 
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal associatedStrategyIdentifier As String,
                        ByVal userSettings As UserInputs,
+                       ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
             Me.StrategyIdentifier = associatedStrategyIdentifier
             Me.UserSettings = userSettings
+            Me.MaxNumberOfDaysForHistoricalFetch = maxNumberOfDaysForHistoricalFetch
             _cts = canceller
         End Sub
         Public ReadOnly Property ActiveInstruments As Integer
@@ -105,7 +108,9 @@ Namespace Strategies
                         Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
-                    Await Me.ParentController.FillOrderDetailsAsync(Me).ConfigureAwait(False)
+                    If Now() >= Me.ParentController.FillOrderLastTimeWhenDone.AddSeconds(10) Then
+                        Await Me.ParentController.FillOrderDetailsAsync(Me).ConfigureAwait(False)
+                    End If
                     Await Task.Delay(10000).ConfigureAwait(False)
                 End While
             Catch ex As Exception

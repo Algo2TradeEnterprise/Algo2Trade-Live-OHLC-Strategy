@@ -212,7 +212,8 @@ Namespace ChartHandler.ChartStyle
 
 
 
-                'TODO: Below loop is for checking purpose
+
+                ''TODO: Below loop is for checking purpose
                 'Try
                 '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
                 '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then

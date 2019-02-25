@@ -238,7 +238,7 @@ Namespace Strategies
                 If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                     For Each parentOrderId In OrderDetails.Keys
                         Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                        If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
                             tradeCount += 1
                         End If
                     Next
@@ -340,12 +340,12 @@ Namespace Strategies
                         calculateWithLTP = True
                     End If
 
-                    If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                    If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                         plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity * -1
-                    ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                    ElseIf parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                         plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity
                     End If
-                    If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                    If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
                         If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                             plOfDay += Me.LastPrice * parentBusinessOrder.ParentOrder.Quantity
                         ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
@@ -486,20 +486,26 @@ Namespace Strategies
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
                     Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                    If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
-                            If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                                Dim parentNeedToInsert As Boolean = False
-                                For Each slOrder In parentBusinessOrder.SLOrder
-                                    If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                        If ret Is Nothing Then ret = New List(Of IOrder)
-                                        ret.Add(slOrder)
-                                        parentNeedToInsert = True
-                                    End If
-                                Next
-                                If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
+                    If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
+                        If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
+                            'If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            If Not parentBusinessOrder.ParentOrder.Status = "REJECTED" Then
+                                If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                                    Dim parentNeedToInsert As Boolean = False
+                                    For Each slOrder In parentBusinessOrder.SLOrder
+                                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                                            If ret Is Nothing Then ret = New List(Of IOrder)
+                                            ret.Add(slOrder)
+                                            parentNeedToInsert = True
+                                        End If
+                                    Next
+                                    If ret Is Nothing Then ret = New List(Of IOrder)
+                                    If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
+                                End If
+                                If ret Is Nothing Then ret = New List(Of IOrder)
+                                If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
+                                If parentBusinessOrder.ParentOrder.Status = "TRIGGER PENDING" Then ret.Add(parentBusinessOrder.ParentOrder)
                             End If
-                            If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
                         End If
                     End If
                 Next
@@ -907,7 +913,7 @@ Namespace Strategies
             Public Property Tag As String = Nothing
             Public Property SignalCandle As IPayload = Nothing
             Public Overrides Function ToString() As String
-                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, SignalCandle.ToString)
+                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, If(SignalCandle Is Nothing, "Nothing", SignalCandle.ToString()))
             End Function
         End Class
     End Class

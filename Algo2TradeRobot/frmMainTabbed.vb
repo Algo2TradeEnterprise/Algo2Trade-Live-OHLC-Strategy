@@ -376,7 +376,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
 
-            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, 2, _MRUserInputs, _cts)
+            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, 2, _MRUserInputs, 5, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -428,10 +428,10 @@ Public Class frmMainTabbed
 
 #Region "OHL"
     Private Sub sfdgvOHLMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvOHLMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New OHLStrategy(Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Sub sfdgvOHLMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvOHLMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New OHLStrategy(Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Async Function OHLStartWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
@@ -443,8 +443,8 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
-            EnableDisableUIEx(UIMode.Active, New OHLStrategy(Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.BlockOther, New OHLStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Active, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.BlockOther, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
 
             If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
@@ -534,9 +534,9 @@ Public Class frmMainTabbed
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
 
-            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, _cts)
+            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -556,8 +556,8 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
         End Try
         'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -571,7 +571,7 @@ Public Class frmMainTabbed
         Await Task.Run(AddressOf OHLStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
-        FlashTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing))
+        FlashTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Async Sub btnOHLStop_Click(sender As Object, e As EventArgs) Handles btnOHLStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -582,10 +582,10 @@ Public Class frmMainTabbed
 
 #Region "AmiSignal"
     Private Sub sfdgvAmiSignalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvAmiSignalMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Sub sfdgvAmiSignalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvAmiSignalMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Async Function AmiSignalStartWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
@@ -602,8 +602,8 @@ Public Class frmMainTabbed
             amiSignalSettings.SignalTimeFrame = 1
             amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts)
 
-            EnableDisableUIEx(UIMode.Active, New AmiSignalStrategy(Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.BlockOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Active, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.BlockOther, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
 
             If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
@@ -693,9 +693,9 @@ Public Class frmMainTabbed
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
 
-            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, amiSignalSettings, _cts)
+            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, amiSignalSettings, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -715,8 +715,8 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
         End Try
         'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -730,7 +730,7 @@ Public Class frmMainTabbed
         Await Task.Run(AddressOf AmiSignalStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrAmiSignalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrAmiSignalTickerStatus.Tick
-        FlashTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing))
+        FlashTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Async Sub btnAmiSignalStop_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -966,25 +966,25 @@ Public Class frmMainTabbed
         If Not Common.IsZerodhaUserDetailsPopulated() Then
             miUserDetails_Click(sender, e)
         End If
-        EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing))
+        EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
         EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
         EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
     End Sub
     Private Sub OnTickerClose()
-        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Pink)
+        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
-        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Lime)
+        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
         ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
         If Not isConnected Then
-            ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Pink)
+            ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
             ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
             ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
         End If
@@ -997,7 +997,7 @@ Public Class frmMainTabbed
         'Nothing to do
     End Sub
     Private Sub OnTickerReconnect()
-        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing), Color.Yellow)
+        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
         ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
         ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")

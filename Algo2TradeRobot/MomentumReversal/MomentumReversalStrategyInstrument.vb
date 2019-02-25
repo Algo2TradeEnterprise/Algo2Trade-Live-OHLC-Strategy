@@ -45,7 +45,7 @@ Public Class MomentumReversalStrategyInstrument
                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _MRStrategyProtector = 0 Then
                     Interlocked.Increment(_MRStrategyProtector)
-                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
+                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
 
                     'To store signal candle in order collection
                     Dim businessOrder As IBusinessOrder = New BusinessOrder With {
@@ -105,7 +105,8 @@ Public Class MomentumReversalStrategyInstrument
                     If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                         quantity = Me.TradableInstrument.LotSize
                     Else
-                        quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                        'quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                        quantity = 1
                     End If
                     Dim stoploss As Decimal = GetModifiedStoploss(triggerPrice, stoplossPrice, quantity)
 
@@ -130,7 +131,8 @@ Public Class MomentumReversalStrategyInstrument
                     If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                         quantity = Me.TradableInstrument.LotSize
                     Else
-                        quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                        'quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                        quantity = 1
                     End If
                     Dim stoploss As Decimal = GetModifiedStoploss(stoplossPrice, triggerPrice, quantity)
 
@@ -160,7 +162,8 @@ Public Class MomentumReversalStrategyInstrument
             Dim currentTime As Date = Now
             For Each parentOrderId In OrderDetails.Keys
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                If parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
+                If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.SignalCandle IsNot Nothing AndAlso
+                    parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
                     parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
                     Dim parentOrderPrice As Decimal = parentBusinessOrder.ParentOrder.AveragePrice
                     Dim potentialSLPrice As Decimal = Nothing
@@ -201,7 +204,7 @@ Public Class MomentumReversalStrategyInstrument
         If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
             Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
                                                                               Return x.ParentOrderIdentifier Is Nothing AndAlso
-                                                                              x.Status = "OPEN"
+                                                                              x.Status = "TRIGGER PENDING"
                                                                           End Function)
             If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
                 For Each parentOrder In parentOrders
@@ -209,7 +212,8 @@ Public Class MomentumReversalStrategyInstrument
                     Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
                     If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso
                         runningCandle.PreviousPayload IsNot Nothing AndAlso runningCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
-                        If parentBussinessOrder.SignalCandle.SnapshotDateTime = runningCandle.PreviousPayload.PreviousPayload.SnapshotDateTime Then
+                        If parentBussinessOrder.SignalCandle IsNot Nothing AndAlso
+                            parentBussinessOrder.SignalCandle.SnapshotDateTime = runningCandle.PreviousPayload.PreviousPayload.SnapshotDateTime Then
                             If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 AndAlso
                                 RequestResponseForCancelOrder.ContainsKey(Utilities.Strings.Encrypt("Algo2TradeParentCancel", parentBussinessOrder.ParentOrderIdentifier)) Then
                                 Continue For

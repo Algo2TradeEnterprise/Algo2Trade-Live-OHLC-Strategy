@@ -16,8 +16,9 @@ Public Class MomentumReversalStrategy
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As MomentumReversalUserInputs,
+                   ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, userSettings, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -25,12 +26,9 @@ Public Class MomentumReversalStrategy
     End Sub
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
+                   ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        Me.New(associatedParentController, strategyIdentifier, Nothing, canceller)
-        'Though the TradableStrategyInstruments is being populated from inside by newing it,
-        'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
-        'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
-        'TradableStrategyInstruments = New List(Of StrategyInstrument)
+        MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
     End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
@@ -196,7 +194,7 @@ Public Class MomentumReversalStrategy
             Next
             _cts.Token.ThrowIfCancellationRequested()
             Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
-            Await usableFetcher.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
+            Await usableFetcher.SubscribeAsync(TradableInstrumentsAsPerStrategy, Me.MaxNumberOfDaysForHistoricalFetch).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
         End If
     End Function

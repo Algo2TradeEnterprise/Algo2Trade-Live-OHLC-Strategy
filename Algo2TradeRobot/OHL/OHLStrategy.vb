@@ -15,8 +15,9 @@ Public Class OHLStrategy
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
+                   ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, Nothing, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
     End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
@@ -51,8 +52,8 @@ Public Class OHLStrategy
             'End If
 
             'Get OHL Strategy Instruments
-            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
-            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
+            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
+            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
                 dt = readCSV.GetDataTableFromCSV(0)
@@ -122,7 +123,7 @@ Public Class OHLStrategy
             Next
             _cts.Token.ThrowIfCancellationRequested()
             Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
-            Await usableFetcher.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
+            Await usableFetcher.SubscribeAsync(TradableInstrumentsAsPerStrategy, Me.MaxNumberOfDaysForHistoricalFetch).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
         End If
     End Function

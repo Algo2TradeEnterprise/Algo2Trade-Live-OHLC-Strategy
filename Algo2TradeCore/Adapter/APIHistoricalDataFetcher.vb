@@ -1,5 +1,6 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Controller
+Imports Algo2TradeCore.Entities
 Imports NLog
 
 Namespace Adapter
@@ -32,10 +33,11 @@ Namespace Adapter
         Protected _cts As CancellationTokenSource
         Public Property ParentController As APIStrategyController
         Protected _daysToGoBack As Integer
-        Protected _subscribedInstruments As List(Of String) 'The unique tokens/instrument identifier
+        Protected _subscribedInstruments As List(Of IInstrument) 'The unique instruments
         Protected _instrumentIdentifer As String 'To allow this to process each instrument seperately
         Protected _isPollRunning As Boolean
         Protected _stopPollRunning As Boolean
+        Protected _isFirstTimeDone As Boolean
         Public Sub New(ByVal associatedParentcontroller As APIStrategyController,
                        ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
@@ -51,7 +53,7 @@ Namespace Adapter
             Me._instrumentIdentifer = instrumentIdentifier
         End Sub
         Public MustOverride Async Function ConnectFetcherAsync() As Task
-        Public MustOverride Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
+        Public MustOverride Async Function SubscribeAsync(ByVal instrumentIdentifiers As IEnumerable(Of IInstrument), ByVal maxNumberOfDays As Integer) As Task
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Sub ClearLocalUniqueSubscriptionList()
         Public MustOverride Function IsConnected() As Boolean

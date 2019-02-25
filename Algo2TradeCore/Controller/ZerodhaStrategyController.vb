@@ -297,7 +297,7 @@ Namespace Controller
                             RemoveHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                             RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                         Else
-                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 5, _cts)
+                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 0, _cts)
                         End If
 
                         AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
@@ -751,6 +751,7 @@ Namespace Controller
         Public Overrides Async Function FillOrderDetailsAsync(ByVal strategyToRun As Strategy) As Task
             'logger.Debug("FillOrderDetailsAsync, parameters:{0}", strategyToRun.ToString())
             Try
+                Me.FillOrderLastTimeWhenDone = Now()
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(0).ConfigureAwait(False)
                 Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
@@ -776,7 +777,8 @@ Namespace Controller
                                                                        Return Nothing
                                                                    Else
                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                         y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                         y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                         y.WrappedOrder.TriggerPrice <> 0
                                                                    End If
                                                                End Function)
                             _cts.Token.ThrowIfCancellationRequested()
@@ -807,7 +809,8 @@ Namespace Controller
                                                                        Return Nothing
                                                                    Else
                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                        y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                        y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                        y.WrappedOrder.TriggerPrice <> 0
                                                                    End If
                                                                End Function)
                             _cts.Token.ThrowIfCancellationRequested()
