@@ -3,7 +3,7 @@ Imports Algo2TradeCore.Controller
 Imports NLog
 
 Namespace Adapter
-    Public MustInherit Class APITicker
+    Public MustInherit Class APIInformationCollector
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
@@ -31,20 +31,29 @@ Namespace Adapter
 
         Protected _cts As CancellationTokenSource
         Public Property ParentController As APIStrategyController
-        Protected _subscribedInstruments As List(Of String) 'The tokens
+
+        Protected _pollingFrequency As Integer
+        Protected _isPollRunning As Boolean
+        Protected _stopPollRunning As Boolean
         Public Sub New(ByVal associatedParentcontroller As APIStrategyController,
+                       ByVal pollingFrequency As Integer,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentcontroller
+            _pollingFrequency = pollingFrequency
             _cts = canceller
         End Sub
-        Public MustOverride Async Function ConnectTickerAsync() As Task
-        Public MustOverride Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
+        Public MustOverride Async Function ConnectCollectorAsync() As Task
         Public MustOverride Overrides Function ToString() As String
-        Public MustOverride Sub ClearLocalUniqueSubscriptionList()
         Public MustOverride Function IsConnected() As Boolean
-        Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
+        Public MustOverride Async Function CloseCollectorIfConnectedAsync(ByVal forceClose As Boolean) As Task
         Public Sub RefreshCancellationToken(ByVal canceller As CancellationTokenSource)
             _cts = canceller
         End Sub
+        Protected MustOverride Async Function StartPollingAsync() As Task
+        Protected MustOverride Async Function GetOrderUpdatesAsync() As Task
+        Public Enum InformationType
+            GetOrderDetails = 1
+            None
+        End Enum
     End Class
 End Namespace

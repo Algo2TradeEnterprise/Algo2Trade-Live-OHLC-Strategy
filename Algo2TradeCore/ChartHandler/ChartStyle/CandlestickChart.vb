@@ -4,6 +4,7 @@ Imports Algo2TradeCore.Controller
 Imports NLog
 Imports Algo2TradeCore.Strategies
 Namespace ChartHandler.ChartStyle
+
     Public Class CandleStickChart
         Inherits Chart
 #Region "Logging and Status Progress"
@@ -13,7 +14,7 @@ Namespace ChartHandler.ChartStyle
 
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal assoicatedParentInstrument As IInstrument,
-                       ByVal associatedStrategyInstruments As Concurrent.ConcurrentBag(Of StrategyInstrument),
+                       ByVal associatedStrategyInstruments As IEnumerable(Of StrategyInstrument),
                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, assoicatedParentInstrument, associatedStrategyInstruments, canceller)
         End Sub
@@ -32,23 +33,19 @@ Namespace ChartHandler.ChartStyle
                         Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
                         Dim previousCandlePayload As OHLCPayload = Nothing
                         If _parentInstrument.RawPayloads IsNot Nothing AndAlso _parentInstrument.RawPayloads.Count > 0 Then
-                            Try
-                                Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                            _parentInstrument.RawPayloads.Where(Function(y)
-                                                                    Return y.Key < Utilities.Time.GetDateTimeTillMinutes(historicalCandles(0)(0))
-                                                                End Function)
+                            Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
+                           _parentInstrument.RawPayloads.Where(Function(y)
+                                                                   Return y.Key < Utilities.Time.GetDateTimeTillMinutes(historicalCandles(0)(0))
+                                                               End Function)
 
-                                If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
-                                    previousCandlePayload = previousCandles.OrderByDescending(Function(x)
-                                                                                                  Return x.Key
-                                                                                              End Function).FirstOrDefault.Value
-                                    'Print previous candle
-                                    'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
-                                    'Debug.WriteLine(previousCandle.ToString)
-                                End If
-                            Catch ex As Exception
-                                Throw ex
-                            End Try
+                            If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
+                                previousCandlePayload = previousCandles.OrderByDescending(Function(x)
+                                                                                              Return x.Key
+                                                                                          End Function).FirstOrDefault.Value
+                                'Print previous candle
+                                'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
+                                'Debug.WriteLine(previousCandle.ToString)
+                            End If
                         End If
                         For Each historicalCandle In historicalCandles
                             Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
@@ -215,7 +212,8 @@ Namespace ChartHandler.ChartStyle
 
 
 
-                'TODO: Below loop is for checking purpose
+
+                ''TODO: Below loop is for checking purpose
                 'Try
                 '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
                 '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then

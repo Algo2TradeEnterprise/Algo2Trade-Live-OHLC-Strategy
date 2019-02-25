@@ -238,7 +238,7 @@ Namespace Strategies
                 If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                     For Each parentOrderId In OrderDetails.Keys
                         Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                        If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
                             tradeCount += 1
                         End If
                     Next
@@ -285,7 +285,7 @@ Namespace Strategies
 #End Region
 
         Private Function CalculatePL() As Decimal
-            logger.Debug("CalculatePL, parameters:Nothing")
+            'logger.Debug("CalculatePL, parameters:Nothing")
             Dim plOfDay As Decimal = 0
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
@@ -340,12 +340,12 @@ Namespace Strategies
                         calculateWithLTP = True
                     End If
 
-                    If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                    If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                         plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity * -1
-                    ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                    ElseIf parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                         plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity
                     End If
-                    If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                    If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
                         If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                             plOfDay += Me.LastPrice * parentBusinessOrder.ParentOrder.Quantity
                         ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
@@ -415,41 +415,48 @@ Namespace Strategies
             Await Task.Delay(0).ConfigureAwait(False)
 
             'Delete RequestResponseForPlaceOrder collection
+            'logger.Warn("Process Order ID: {0}, Parent Order ID: {1}", orderData.OrderIdentifier, orderData.ParentOrderIdentifier)
+            'logger.Warn("Place Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
             If RequestResponseForPlaceOrder IsNot Nothing AndAlso RequestResponseForPlaceOrder.Count > 0 Then
-                Dim placeOrderParameters As IEnumerable(Of String) = RequestResponseForPlaceOrder.Where(Function(x)
-                                                                                                            Return x.Value = orderData.OrderIdentifier
-                                                                                                        End Function)
+                Dim placeOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForPlaceOrder.Where(Function(x)
+                                                                                                                                     Return x.Value = orderData.OrderIdentifier
+                                                                                                                                 End Function)
                 If placeOrderParameters IsNot Nothing AndAlso placeOrderParameters.Count > 0 Then
                     For Each placeOrderParameter In placeOrderParameters
-                        RequestResponseForPlaceOrder.TryRemove(placeOrderParameter, orderData.ParentOrderIdentifier)
+                        RequestResponseForPlaceOrder.TryRemove(placeOrderParameter.Key, placeOrderParameter.Value)
+                        'logger.Warn("Place Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
                     Next
                 End If
             End If
 
             'Delete RequestResponseForModifyOrder collection
+            'logger.Warn("Modify Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForModifyOrder))
             If RequestResponseForModifyOrder IsNot Nothing AndAlso RequestResponseForModifyOrder.Count > 0 Then
-                Dim modifyOrderParameters As IEnumerable(Of String) = RequestResponseForModifyOrder.Where(Function(x)
-                                                                                                              Return x.Key = Utilities.Strings.Encrypt(orderData.TriggerPrice, orderData.OrderIdentifier)
-                                                                                                          End Function)
+                Dim modifyOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForModifyOrder.Where(Function(x)
+                                                                                                                                       Return x.Key = Utilities.Strings.Encrypt(orderData.TriggerPrice, orderData.OrderIdentifier)
+                                                                                                                                   End Function)
                 If modifyOrderParameters IsNot Nothing AndAlso modifyOrderParameters.Count > 0 Then
                     For Each modifyOrderParameter In modifyOrderParameters
-                        RequestResponseForPlaceOrder.TryRemove(modifyOrderParameter, orderData.ParentOrderIdentifier)
+                        RequestResponseForPlaceOrder.TryRemove(modifyOrderParameter.Key, modifyOrderParameter.Value)
+                        'logger.Warn("Modify Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForModifyOrder))
                     Next
                 End If
             End If
 
             'Delete RequestResponseForCancelOrder collection
+            'logger.Warn("Cancel Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
             If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 Then
-                Dim cancelOrderParameters As IEnumerable(Of String) = RequestResponseForCancelOrder.Where(Function(x)
-                                                                                                              Return x.Key = Utilities.Strings.Encrypt(orderData.ParentOrderIdentifier, orderData.OrderIdentifier)
-                                                                                                          End Function)
+                Dim encryptionDataString As String = If(orderData.ParentOrderIdentifier Is Nothing, "Algo2TradeParentCancel", orderData.ParentOrderIdentifier)
+                Dim cancelOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForCancelOrder.Where(Function(x)
+                                                                                                                                       Return x.Key = Utilities.Strings.Encrypt(encryptionDataString, orderData.OrderIdentifier)
+                                                                                                                                   End Function)
                 If cancelOrderParameters IsNot Nothing AndAlso cancelOrderParameters.Count > 0 Then
                     For Each cancelOrderParameter In cancelOrderParameters
-                        RequestResponseForPlaceOrder.TryRemove(cancelOrderParameter, orderData.ParentOrderIdentifier)
+                        RequestResponseForPlaceOrder.TryRemove(cancelOrderParameter.Key, cancelOrderParameter.Value)
+                        'logger.Warn("Cancel Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
                     Next
                 End If
             End If
-
         End Function
         Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
             'logger.Debug("CalculateBuffer, parameters:{0},{1}", price, floorOrCeiling)
@@ -486,20 +493,26 @@ Namespace Strategies
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
                     Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                    If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
-                        If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
-                            If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                                Dim parentNeedToInsert As Boolean = False
-                                For Each slOrder In parentBusinessOrder.SLOrder
-                                    If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                        If ret Is Nothing Then ret = New List(Of IOrder)
-                                        ret.Add(slOrder)
-                                        parentNeedToInsert = True
-                                    End If
-                                Next
-                                If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
+                    If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
+                        If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
+                            'If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            If Not parentBusinessOrder.ParentOrder.Status = "REJECTED" Then
+                                If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                                    Dim parentNeedToInsert As Boolean = False
+                                    For Each slOrder In parentBusinessOrder.SLOrder
+                                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                                            If ret Is Nothing Then ret = New List(Of IOrder)
+                                            ret.Add(slOrder)
+                                            parentNeedToInsert = True
+                                        End If
+                                    Next
+                                    If ret Is Nothing Then ret = New List(Of IOrder)
+                                    If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
+                                End If
+                                If ret Is Nothing Then ret = New List(Of IOrder)
+                                If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
+                                If parentBusinessOrder.ParentOrder.Status = "TRIGGER PENDING" Then ret.Add(parentBusinessOrder.ParentOrder)
                             End If
-                            If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
                         End If
                     End If
                 Next
@@ -725,7 +738,10 @@ Namespace Strategies
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
+                                        logger.Warn("Encrypted String: {0}", Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"))
+                                        logger.Warn("Before Collection add:{0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
                                         RequestResponseForPlaceOrder.GetOrAdd(Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"), placeOrderResponse("data")("order_id"))
+                                        logger.Warn("After Collection add:{0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()
@@ -907,7 +923,7 @@ Namespace Strategies
             Public Property Tag As String = Nothing
             Public Property SignalCandle As IPayload = Nothing
             Public Overrides Function ToString() As String
-                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, SignalCandle.ToString)
+                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, If(SignalCandle Is Nothing, "Nothing", SignalCandle.SnapshotDateTime.ToString()))
             End Function
         End Class
     End Class

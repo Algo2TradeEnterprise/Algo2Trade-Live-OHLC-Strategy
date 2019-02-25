@@ -12,6 +12,7 @@ Imports Utilities
 Imports System.Net.Http
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Adapter.APIAdapter
+Imports Algo2TradeCore.UserSettings
 
 Namespace Controller
     Public Class ZerodhaStrategyController
@@ -22,8 +23,9 @@ Namespace Controller
 #End Region
 
         Public Sub New(ByVal validatedUser As ZerodhaUser,
+                       ByVal associatedUserInputs As ControllerUserInputs,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(validatedUser, APISource.Zerodha, canceller)
+            MyBase.New(validatedUser, APISource.Zerodha, associatedUserInputs, canceller)
             _LoginURL = "https://kite.trade/connect/login"
         End Sub
 
@@ -273,9 +275,10 @@ Namespace Controller
                             RemoveHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
                             RemoveHandler _APITicker.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                             RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                        Else
-                            _APITicker = New ZerodhaTicker(Me, _cts)
+                            'Else
                         End If
+                        _APITicker = New ZerodhaTicker(Me, _cts)
+                        'End If
 
                         AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
                         AddHandler _APITicker.WaitingFor, AddressOf OnWaitingFor
@@ -290,15 +293,16 @@ Namespace Controller
                         If _APIHistoricalDataFetcher IsNot Nothing Then
                             _APIHistoricalDataFetcher.ClearLocalUniqueSubscriptionList()
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+                            Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                             RemoveHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
                             RemoveHandler _APIHistoricalDataFetcher.WaitingFor, AddressOf OnWaitingFor
                             RemoveHandler _APIHistoricalDataFetcher.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                             RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                        Else
-                            _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 27, _cts)
+                            'Else
                         End If
+                        _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 0, _cts)
+                        'End If
 
                         AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
                         AddHandler _APIHistoricalDataFetcher.WaitingFor, AddressOf OnWaitingFor
@@ -534,6 +538,27 @@ Namespace Controller
                                 _cts.Token.ThrowIfCancellationRequested()
                             End If
                         Else
+                            'Now open the informationCollector
+                            If _APIInformationCollector IsNot Nothing Then
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Await _APIInformationCollector.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                RemoveHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
+                                RemoveHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
+                                RemoveHandler _APIInformationCollector.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                                'Else
+                            End If
+                            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me._UserInputs.GetInformationDelay, _cts)
+                            'End If
+                            AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
+                            AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
+                            AddHandler _APIInformationCollector.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                            AddHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await _APIInformationCollector.ConnectCollectorAsync().ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+
                             OnHeartbeat("Relogin completed, checking to see if strategy instruments need to be resubscribed")
 
                             If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
@@ -589,6 +614,27 @@ Namespace Controller
             AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
             AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+            'Now open the informationCollector
+            If _APIInformationCollector IsNot Nothing Then
+                _cts.Token.ThrowIfCancellationRequested()
+                Await _APIInformationCollector.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+                RemoveHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _APIInformationCollector.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                'Else
+            End If
+            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me._UserInputs.GetInformationDelay, _cts)
+            'End If
+            AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
+            AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
+            AddHandler _APIInformationCollector.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _APIInformationCollector.ConnectCollectorAsync().ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
 
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetInstruments
             _AllInstruments = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
@@ -748,121 +794,126 @@ Namespace Controller
         '    End If
 
         'End Function
-        Public Overrides Async Function FillOrderDetailsAsync(ByVal strategyToRun As Strategy) As Task
-            'logger.Debug("FillOrderDetailsAsync, parameters:{0}", strategyToRun.ToString())
-            Try
-                _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(0).ConfigureAwait(False)
-                Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
-                _cts.Token.ThrowIfCancellationRequested()
-                If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
-                    Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
-                                                                                     Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                                     Return y.WrappedOrder.ParentOrderId Is Nothing
-                                                                                 End Function)
-                    For Each parentOrder In parentOrders
+        Public Overrides Async Function GetOrderDetailsAsync() As Task(Of Concurrent.ConcurrentBag(Of IBusinessOrder))
+            Dim ret As Concurrent.ConcurrentBag(Of IBusinessOrder) = Nothing
+            _cts.Token.ThrowIfCancellationRequested()
+            Await Task.Delay(0).ConfigureAwait(False)
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+            If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
+                Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
+                                                                                 Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                                 Return y.WrappedOrder.ParentOrderId Is Nothing
+                                                                             End Function)
+                For Each parentOrder In parentOrders
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim wrappedParentOrder As ZerodhaOrder = CType(parentOrder, ZerodhaOrder)
+                    Dim targetOrder As IEnumerable(Of IOrder) = Nothing
+                    Dim slOrder As IEnumerable(Of IOrder) = Nothing
+                    Dim allOrder As IEnumerable(Of IOrder) = Nothing
+                    If wrappedParentOrder.WrappedOrder.TransactionType = "BUY" Then
                         _cts.Token.ThrowIfCancellationRequested()
-                        Dim wrappedParentOrder As ZerodhaOrder = CType(parentOrder, ZerodhaOrder)
-                        Dim targetOrder As IEnumerable(Of IOrder) = Nothing
-                        Dim slOrder As IEnumerable(Of IOrder) = Nothing
-                        Dim allOrder As IEnumerable(Of IOrder) = Nothing
-                        If wrappedParentOrder.WrappedOrder.TransactionType = "BUY" Then
-                            _cts.Token.ThrowIfCancellationRequested()
-                            slOrder = allOrders.ToList.FindAll(Function(x)
+                        slOrder = allOrders.ToList.FindAll(Function(x)
+                                                               Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                               If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
+                                                                   Return Nothing
+                                                               Else
+                                                                   Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                 y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                 y.WrappedOrder.TriggerPrice <> 0
+                                                               End If
+                                                           End Function)
+                        _cts.Token.ThrowIfCancellationRequested()
+                        targetOrder = allOrders.ToList.FindAll(Function(x)
                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
                                                                    If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
                                                                        Return Nothing
                                                                    Else
                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                         y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                    y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                    y.WrappedOrder.Price <> 0
                                                                    End If
                                                                End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
-                            targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                       If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
-                                                                           Return Nothing
-                                                                       Else
-                                                                           Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                            y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                            y.WrappedOrder.Price <> 0
-                                                                       End If
-                                                                   End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
-                            allOrder = allOrders.ToList.FindAll(Function(x)
-                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                    If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
-                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier
-                                                                    Else
-                                                                        Return Nothing
-                                                                    End If
-                                                                End Function)
-                        ElseIf wrappedParentOrder.WrappedOrder.TransactionType = "SELL" Then
-                            _cts.Token.ThrowIfCancellationRequested()
-                            slOrder = allOrders.ToList.FindAll(Function(x)
+                        _cts.Token.ThrowIfCancellationRequested()
+                        allOrder = allOrders.ToList.FindAll(Function(x)
+                                                                Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
+                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier
+                                                                Else
+                                                                    Return Nothing
+                                                                End If
+                                                            End Function)
+                    ElseIf wrappedParentOrder.WrappedOrder.TransactionType = "SELL" Then
+                        _cts.Token.ThrowIfCancellationRequested()
+                        slOrder = allOrders.ToList.FindAll(Function(x)
+                                                               Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                               If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
+                                                                   Return Nothing
+                                                               Else
+                                                                   Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
+                                                                y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                y.WrappedOrder.TriggerPrice <> 0
+                                                               End If
+                                                           End Function)
+                        _cts.Token.ThrowIfCancellationRequested()
+                        targetOrder = allOrders.ToList.FindAll(Function(x)
                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
                                                                    If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
                                                                        Return Nothing
                                                                    Else
                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                        y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice
+                                                                    y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                    y.WrappedOrder.Price <> 0
                                                                    End If
                                                                End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
-                            targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                       Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                       If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
-                                                                           Return Nothing
-                                                                       Else
-                                                                           Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                            y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                            y.WrappedOrder.Price <> 0
-                                                                       End If
-                                                                   End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
-                            allOrder = allOrders.ToList.FindAll(Function(x)
-                                                                    Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
-                                                                    If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
-                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier
-                                                                    Else
-                                                                        Return Nothing
-                                                                    End If
-                                                                End Function)
-                        End If
-                        For Each runningStrategyInstrument In strategyToRun.TradableStrategyInstruments
-                            _cts.Token.ThrowIfCancellationRequested()
-                            If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = wrappedParentOrder.WrappedOrder.InstrumentToken Then
-                                If wrappedParentOrder.WrappedOrder.Tag IsNot Nothing AndAlso
-                                    wrappedParentOrder.WrappedOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
-                                    Dim businessOrder As New BusinessOrder() With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
-                                                                                .ParentOrder = parentOrder,
-                                                                                .SLOrder = slOrder,
-                                                                                .AllOrder = allOrder,
-                                                                                .TargetOrder = targetOrder}
-                                    Await runningStrategyInstrument.ProcessOrderAsync(businessOrder).ConfigureAwait(False)
-                                    'logger.Debug(Utils.JsonSerialize(runningStrategyInstrument.OrderDetails))
+                        _cts.Token.ThrowIfCancellationRequested()
+                        allOrder = allOrders.ToList.FindAll(Function(x)
+                                                                Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                If y.Status = "CANCELLED" OrElse y.Status = "COMPLETE" Then
+                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier
+                                                                Else
+                                                                    Return Nothing
+                                                                End If
+                                                            End Function)
+                    End If
+                    Dim businessOrder As New BusinessOrder With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
+                                                                        .ParentOrder = parentOrder,
+                                                                        .SLOrder = slOrder,
+                                                                        .AllOrder = allOrder,
+                                                                        .TargetOrder = targetOrder}
+
+                    If ret Is Nothing Then ret = New Concurrent.ConcurrentBag(Of IBusinessOrder)
+                    ret.Add(businessOrder)
+
+
+                    'This for loop needs to be after the order is published
+                    If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
+                    _subscribedStrategyInstruments.ContainsKey(parentOrder.InstrumentIdentifier) Then
+                        For Each runningStrategyInstrument In _subscribedStrategyInstruments(parentOrder.InstrumentIdentifier)
+                            If parentOrder.Tag IsNot Nothing AndAlso parentOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
+                                Dim unionOfAllOrders As IEnumerable(Of IOrder) = businessOrder.SLOrder.Union(businessOrder.AllOrder.Union(businessOrder.TargetOrder))
+                                unionOfAllOrders = Utilities.Collections.ConcatSingle(Of IOrder)(unionOfAllOrders, businessOrder.ParentOrder)
+                                If unionOfAllOrders IsNot Nothing AndAlso unionOfAllOrders.Count > 0 Then
+                                    For Each runningOrder In unionOfAllOrders
+                                        runningStrategyInstrument.ProcessOrderAsync(runningOrder)
+                                    Next
                                 End If
                             End If
                         Next
-                    Next
-                End If
-            Catch cex As OperationCanceledException
-                logger.Error(cex)
-                OrphanException = cex
-            Catch ex As Exception
-                logger.Error("Controller:{0}, error:{1}", Me.ToString, ex.ToString)
-                Throw ex
-            End Try
+                    End If
+                Next
+            End If
+            Return ret
         End Function
 #End Region
 
 #Region "Fetcher Events"
-        Public Overrides Async Function CloseFetcherIfConnectedAsync() As Task
-            If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        Public Overrides Async Function CloseFetcherIfConnectedAsync(ByVal forceClose As Boolean) As Task
+            If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync(forceClose).ConfigureAwait(False)
         End Function
-        Dim ctr As Integer = 0
+
         Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
             'logger.Debug("OnFetcherCandlesAsync, parameteres:{0},{1}",instrumentIdentifier, Utils.JsonSerialize(historicalCandlesJSONDict))
             Await Task.Delay(0).ConfigureAwait(False)
@@ -934,7 +985,8 @@ Namespace Controller
             If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(tickData.InstrumentToken) Then
                 _rawPayloadCreators(tickData.InstrumentToken).GetChartFromTickAsync(runningTick)
             End If
-            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
+                _subscribedStrategyInstruments.ContainsKey(tickData.InstrumentToken) Then
                 'This for loop needs to be after the tick is published
                 For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
                     runningStrategyInstrument.HandleTickTriggerToUIETCAsync()
@@ -944,19 +996,49 @@ Namespace Controller
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
             'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
             Await Task.Delay(0).ConfigureAwait(False)
-            If orderData.Status = "COMPLETE" OrElse orderData.Status = "MODIFIED" OrElse orderData.Status = "CANCELLED" Then
-                If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
-                    For Each runningStrategy In _AllStrategies
-                        FillOrderDetailsAsync(runningStrategy)
-                    Next
-                End If
+            If orderData.Status = "COMPLETE" OrElse
+                orderData.Status = "MODIFIED" OrElse
+                orderData.Status = "CANCELLED" OrElse
+                orderData.Status = "OPEN" OrElse
+                orderData.Status = "TRIGGER PENDING" Then
+                FillOrderDetailsAsync()
             End If
-            'This for loop needs to be after the order is published
-            For Each runningStrategyInstrument In _subscribedStrategyInstruments(orderData.InstrumentToken)
-                If orderData.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
-                    runningStrategyInstrument.ProcessOrderAsync(New ZerodhaOrder With {.WrappedOrder = orderData})
-                End If
-            Next
+        End Sub
+#End Region
+
+#Region "Collector Events"
+        Public Overrides Async Function CloseCollectorIfConnectedAsync(ByVal forceClose As Boolean) As Task
+            If _APIInformationCollector IsNot Nothing Then Await _APIInformationCollector.CloseCollectorIfConnectedAsync(forceClose).ConfigureAwait(False)
+        End Function
+        Dim ctr As Integer = 0
+        Public Async Sub OnCollectorInformationAsync(ByVal information As Object, ByVal typeOfInformation As APIInformationCollector.InformationType)
+            'logger.Debug("OnCollectorInformationAsync, parameteres:{0},{1}",instrumentIdentifier, Utils.JsonSerialize(historicalCandlesJSONDict))
+            Await Task.Delay(0).ConfigureAwait(False)
+            If information IsNot Nothing Then
+                Select Case typeOfInformation
+                    Case APIInformationCollector.InformationType.GetOrderDetails
+                        Dim orderDetails As Concurrent.ConcurrentBag(Of IBusinessOrder) = CType(information, Concurrent.ConcurrentBag(Of IBusinessOrder))
+                        If orderDetails IsNot Nothing AndAlso orderDetails.Count > 0 Then
+                            For Each orderData In orderDetails
+                                _cts.Token.ThrowIfCancellationRequested()
+                                If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+                                    For Each strategyToRun In _AllStrategies
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        Await strategyToRun.ProcessOrderAsync(orderData).ConfigureAwait(False)
+                                    Next
+                                End If
+                            Next
+                        End If
+                    Case Else
+                        Throw New NotImplementedException
+                End Select
+            End If
+        End Sub
+
+        Public Overrides Sub OnCollectorError(ByVal errorMessage As String)
+            logger.Debug("OnCollectorError, errorMessage:{0}", errorMessage)
+            MyBase.OnCollectorError(errorMessage)
+            'If errorMessage.Contains("403") Then OnSessionExpireAsync()
         End Sub
 #End Region
 
