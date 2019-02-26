@@ -131,8 +131,8 @@ Public Class MomentumReversalStrategyInstrument
                     If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                         quantity = Me.TradableInstrument.LotSize
                     Else
-                        'quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
-                        quantity = 1
+                        quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                        'quantity = 1
                     End If
                     Dim stoploss As Decimal = GetModifiedStoploss(stoplossPrice, triggerPrice, quantity)
 

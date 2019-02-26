@@ -963,12 +963,20 @@ Public Class frmMainTabbed
         GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
         logger.Trace("*************************** Logging started ***************************")
 
+        Dim trialEndDate As Date = New Date(2019, 3, 2, 0, 0, 0)
+        If Now() >= trialEndDate Then
+            MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+            End
+        End If
+
         If Not Common.IsZerodhaUserDetailsPopulated() Then
             miUserDetails_Click(sender, e)
         End If
         EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
         EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
         EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+        'tabMain.TabPages.Remove(tabOHL)
+        'tabMain.TabPages.Remove(tabMomentumReversal)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)

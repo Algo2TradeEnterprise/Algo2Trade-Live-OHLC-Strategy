@@ -54,8 +54,6 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstOHLLog = New System.Windows.Forms.ListBox()
         Me.sfdgvOHLMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
-        Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tabAmiSignal = New System.Windows.Forms.TabPage()
         Me.pnlAmiSignalMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlAmiSignalTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
@@ -68,7 +66,10 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstAmiSignalLog = New System.Windows.Forms.ListBox()
         Me.sfdgvAmiSignalMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -92,6 +93,7 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyVerticalSplitter.SuspendLayout()
         Me.pnlAmiSignalBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvAmiSignalMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'msMainMenuStrip
@@ -100,7 +102,8 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miSecurity, Me.miAbout})
         Me.msMainMenuStrip.Location = New System.Drawing.Point(0, 0)
         Me.msMainMenuStrip.Name = "msMainMenuStrip"
-        Me.msMainMenuStrip.Size = New System.Drawing.Size(1028, 24)
+        Me.msMainMenuStrip.Padding = New System.Windows.Forms.Padding(8, 2, 0, 2)
+        Me.msMainMenuStrip.Size = New System.Drawing.Size(1371, 28)
         Me.msMainMenuStrip.TabIndex = 0
         Me.msMainMenuStrip.Text = "MenuStrip1"
         '
@@ -108,20 +111,20 @@ Partial Class frmMainTabbed
         '
         Me.miSecurity.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miUserDetails})
         Me.miSecurity.Name = "miSecurity"
-        Me.miSecurity.Size = New System.Drawing.Size(61, 20)
+        Me.miSecurity.Size = New System.Drawing.Size(73, 24)
         Me.miSecurity.Text = "Security"
         '
         'miUserDetails
         '
         Me.miUserDetails.Name = "miUserDetails"
         Me.miUserDetails.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.F2), System.Windows.Forms.Keys)
-        Me.miUserDetails.Size = New System.Drawing.Size(181, 22)
+        Me.miUserDetails.Size = New System.Drawing.Size(220, 26)
         Me.miUserDetails.Text = "User Details"
         '
         'miAbout
         '
         Me.miAbout.Name = "miAbout"
-        Me.miAbout.Size = New System.Drawing.Size(52, 20)
+        Me.miAbout.Size = New System.Drawing.Size(62, 24)
         Me.miAbout.Text = "About"
         '
         'tabMain
@@ -130,19 +133,21 @@ Partial Class frmMainTabbed
         Me.tabMain.Controls.Add(Me.tabOHL)
         Me.tabMain.Controls.Add(Me.tabAmiSignal)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tabMain.Location = New System.Drawing.Point(0, 24)
+        Me.tabMain.Location = New System.Drawing.Point(0, 28)
+        Me.tabMain.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.tabMain.Name = "tabMain"
         Me.tabMain.SelectedIndex = 0
-        Me.tabMain.Size = New System.Drawing.Size(1028, 585)
+        Me.tabMain.Size = New System.Drawing.Size(1371, 722)
         Me.tabMain.TabIndex = 1
         '
         'tabMomentumReversal
         '
         Me.tabMomentumReversal.Controls.Add(Me.pnlMomentumReversalMainPanelHorizontalSplitter)
-        Me.tabMomentumReversal.Location = New System.Drawing.Point(4, 22)
+        Me.tabMomentumReversal.Location = New System.Drawing.Point(4, 25)
+        Me.tabMomentumReversal.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.tabMomentumReversal.Name = "tabMomentumReversal"
-        Me.tabMomentumReversal.Padding = New System.Windows.Forms.Padding(3)
-        Me.tabMomentumReversal.Size = New System.Drawing.Size(1020, 559)
+        Me.tabMomentumReversal.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.tabMomentumReversal.Size = New System.Drawing.Size(1363, 693)
         Me.tabMomentumReversal.TabIndex = 0
         Me.tabMomentumReversal.Text = "Momentum Reversal"
         Me.tabMomentumReversal.UseVisualStyleBackColor = True
@@ -154,12 +159,13 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Controls.Add(Me.pnlMomentumReversalTopHeaderVerticalSplitter, 0, 0)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Controls.Add(Me.pnlMomentumReversalBodyVerticalSplitter, 0, 1)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.Name = "pnlMomentumReversalMainPanelHorizontalSplitter"
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1014, 553)
+        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 685)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.TabIndex = 0
         '
         'pnlMomentumReversalTopHeaderVerticalSplitter
@@ -185,19 +191,21 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalSettings, 9, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Name = "pnlMomentumReversalTopHeaderVerticalSplitter"
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowCount = 1
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1008, 32)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1347, 39)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.TabIndex = 0
         '
         'btnMomentumReversalStop
         '
         Me.btnMomentumReversalStop.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnMomentumReversalStop.Location = New System.Drawing.Point(69, 3)
+        Me.btnMomentumReversalStop.Location = New System.Drawing.Point(93, 4)
+        Me.btnMomentumReversalStop.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnMomentumReversalStop.Name = "btnMomentumReversalStop"
-        Me.btnMomentumReversalStop.Size = New System.Drawing.Size(60, 26)
+        Me.btnMomentumReversalStop.Size = New System.Drawing.Size(81, 31)
         Me.btnMomentumReversalStop.TabIndex = 10
         Me.btnMomentumReversalStop.Text = "Stop"
         Me.btnMomentumReversalStop.UseVisualStyleBackColor = True
@@ -205,9 +213,10 @@ Partial Class frmMainTabbed
         'btnMomentumReversalStart
         '
         Me.btnMomentumReversalStart.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnMomentumReversalStart.Location = New System.Drawing.Point(3, 3)
+        Me.btnMomentumReversalStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnMomentumReversalStart.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnMomentumReversalStart.Name = "btnMomentumReversalStart"
-        Me.btnMomentumReversalStart.Size = New System.Drawing.Size(60, 26)
+        Me.btnMomentumReversalStart.Size = New System.Drawing.Size(81, 31)
         Me.btnMomentumReversalStart.TabIndex = 2
         Me.btnMomentumReversalStart.Text = "Start"
         Me.btnMomentumReversalStart.UseVisualStyleBackColor = True
@@ -216,36 +225,40 @@ Partial Class frmMainTabbed
         '
         Me.Panel1.Controls.Add(Me.blbMomentumReversalTickerStatus)
         Me.Panel1.Controls.Add(Me.lblMomentumReversalTickerStatus)
-        Me.Panel1.Location = New System.Drawing.Point(888, 3)
+        Me.Panel1.Location = New System.Drawing.Point(1197, 4)
+        Me.Panel1.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.Panel1.Name = "Panel1"
-        Me.Panel1.Size = New System.Drawing.Size(117, 26)
+        Me.Panel1.Size = New System.Drawing.Size(146, 31)
         Me.Panel1.TabIndex = 9
         '
         'blbMomentumReversalTickerStatus
         '
         Me.blbMomentumReversalTickerStatus.Color = System.Drawing.Color.Pink
         Me.blbMomentumReversalTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
-        Me.blbMomentumReversalTickerStatus.Location = New System.Drawing.Point(82, 0)
+        Me.blbMomentumReversalTickerStatus.Location = New System.Drawing.Point(99, 0)
+        Me.blbMomentumReversalTickerStatus.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.blbMomentumReversalTickerStatus.Name = "blbMomentumReversalTickerStatus"
         Me.blbMomentumReversalTickerStatus.On = True
-        Me.blbMomentumReversalTickerStatus.Size = New System.Drawing.Size(35, 26)
+        Me.blbMomentumReversalTickerStatus.Size = New System.Drawing.Size(47, 31)
         Me.blbMomentumReversalTickerStatus.TabIndex = 7
         Me.blbMomentumReversalTickerStatus.Text = "LedBulb1"
         '
         'lblMomentumReversalTickerStatus
         '
         Me.lblMomentumReversalTickerStatus.AutoSize = True
-        Me.lblMomentumReversalTickerStatus.Location = New System.Drawing.Point(7, 7)
+        Me.lblMomentumReversalTickerStatus.Location = New System.Drawing.Point(9, 9)
+        Me.lblMomentumReversalTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMomentumReversalTickerStatus.Name = "lblMomentumReversalTickerStatus"
-        Me.lblMomentumReversalTickerStatus.Size = New System.Drawing.Size(70, 13)
+        Me.lblMomentumReversalTickerStatus.Size = New System.Drawing.Size(91, 17)
         Me.lblMomentumReversalTickerStatus.TabIndex = 9
         Me.lblMomentumReversalTickerStatus.Text = "Ticker Status"
         '
         'btnMomentumReversalSettings
         '
-        Me.btnMomentumReversalSettings.Location = New System.Drawing.Point(597, 3)
+        Me.btnMomentumReversalSettings.Location = New System.Drawing.Point(805, 4)
+        Me.btnMomentumReversalSettings.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnMomentumReversalSettings.Name = "btnMomentumReversalSettings"
-        Me.btnMomentumReversalSettings.Size = New System.Drawing.Size(60, 26)
+        Me.btnMomentumReversalSettings.Size = New System.Drawing.Size(80, 31)
         Me.btnMomentumReversalSettings.TabIndex = 11
         Me.btnMomentumReversalSettings.Text = "Settings"
         Me.btnMomentumReversalSettings.UseVisualStyleBackColor = True
@@ -257,11 +270,12 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
         Me.pnlMomentumReversalBodyVerticalSplitter.Controls.Add(Me.pnlMomentumReversalBodyHorizontalSplitter, 0, 0)
         Me.pnlMomentumReversalBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalBodyVerticalSplitter.Location = New System.Drawing.Point(3, 41)
+        Me.pnlMomentumReversalBodyVerticalSplitter.Location = New System.Drawing.Point(4, 51)
+        Me.pnlMomentumReversalBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlMomentumReversalBodyVerticalSplitter.Name = "pnlMomentumReversalBodyVerticalSplitter"
         Me.pnlMomentumReversalBodyVerticalSplitter.RowCount = 1
         Me.pnlMomentumReversalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlMomentumReversalBodyVerticalSplitter.Size = New System.Drawing.Size(1008, 509)
+        Me.pnlMomentumReversalBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 630)
         Me.pnlMomentumReversalBodyVerticalSplitter.TabIndex = 1
         '
         'pnlMomentumReversalBodyHorizontalSplitter
@@ -271,12 +285,13 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyHorizontalSplitter.Controls.Add(Me.lstMomentumReversalLog, 0, 1)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Controls.Add(Me.sfdgvMomentumReversalMainDashboard, 0, 0)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlMomentumReversalBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlMomentumReversalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Name = "pnlMomentumReversalBodyHorizontalSplitter"
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowCount = 2
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Size = New System.Drawing.Size(699, 503)
+        Me.pnlMomentumReversalBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
         Me.pnlMomentumReversalBodyHorizontalSplitter.TabIndex = 0
         '
         'lstMomentumReversalLog
@@ -284,9 +299,11 @@ Partial Class frmMainTabbed
         Me.lstMomentumReversalLog.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstMomentumReversalLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstMomentumReversalLog.FormattingEnabled = True
-        Me.lstMomentumReversalLog.Location = New System.Drawing.Point(3, 355)
+        Me.lstMomentumReversalLog.ItemHeight = 16
+        Me.lstMomentumReversalLog.Location = New System.Drawing.Point(4, 439)
+        Me.lstMomentumReversalLog.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.lstMomentumReversalLog.Name = "lstMomentumReversalLog"
-        Me.lstMomentumReversalLog.Size = New System.Drawing.Size(693, 145)
+        Me.lstMomentumReversalLog.Size = New System.Drawing.Size(926, 179)
         Me.lstMomentumReversalLog.TabIndex = 9
         '
         'sfdgvMomentumReversalMainDashboard
@@ -299,20 +316,22 @@ Partial Class frmMainTabbed
         Me.sfdgvMomentumReversalMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
         Me.sfdgvMomentumReversalMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvMomentumReversalMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.sfdgvMomentumReversalMainDashboard.Location = New System.Drawing.Point(3, 3)
+        Me.sfdgvMomentumReversalMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvMomentumReversalMainDashboard.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.sfdgvMomentumReversalMainDashboard.Name = "sfdgvMomentumReversalMainDashboard"
         Me.sfdgvMomentumReversalMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvMomentumReversalMainDashboard.Size = New System.Drawing.Size(693, 346)
+        Me.sfdgvMomentumReversalMainDashboard.Size = New System.Drawing.Size(926, 427)
         Me.sfdgvMomentumReversalMainDashboard.TabIndex = 6
         Me.sfdgvMomentumReversalMainDashboard.Text = "SfDataGrid1"
         '
         'tabOHL
         '
         Me.tabOHL.Controls.Add(Me.pnlOHLMainPanelHorizontalSplitter)
-        Me.tabOHL.Location = New System.Drawing.Point(4, 22)
+        Me.tabOHL.Location = New System.Drawing.Point(4, 25)
+        Me.tabOHL.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.tabOHL.Name = "tabOHL"
-        Me.tabOHL.Padding = New System.Windows.Forms.Padding(3)
-        Me.tabOHL.Size = New System.Drawing.Size(1020, 559)
+        Me.tabOHL.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.tabOHL.Size = New System.Drawing.Size(1363, 691)
         Me.tabOHL.TabIndex = 1
         Me.tabOHL.Text = "OHL"
         Me.tabOHL.UseVisualStyleBackColor = True
@@ -324,12 +343,13 @@ Partial Class frmMainTabbed
         Me.pnlOHLMainPanelHorizontalSplitter.Controls.Add(Me.pnlOHLTopHeaderVerticalSplitter, 0, 0)
         Me.pnlOHLMainPanelHorizontalSplitter.Controls.Add(Me.pnlOHLBodyVerticalSplitter, 0, 1)
         Me.pnlOHLMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlOHLMainPanelHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlOHLMainPanelHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlOHLMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlOHLMainPanelHorizontalSplitter.Name = "pnlOHLMainPanelHorizontalSplitter"
         Me.pnlOHLMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlOHLMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlOHLMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlOHLMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1014, 553)
+        Me.pnlOHLMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 683)
         Me.pnlOHLMainPanelHorizontalSplitter.TabIndex = 1
         '
         'pnlOHLTopHeaderVerticalSplitter
@@ -354,19 +374,21 @@ Partial Class frmMainTabbed
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.btnOHLStart, 0, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.Panel2, 14, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlOHLTopHeaderVerticalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlOHLTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlOHLTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlOHLTopHeaderVerticalSplitter.Name = "pnlOHLTopHeaderVerticalSplitter"
         Me.pnlOHLTopHeaderVerticalSplitter.RowCount = 1
         Me.pnlOHLTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlOHLTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1008, 32)
+        Me.pnlOHLTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1347, 39)
         Me.pnlOHLTopHeaderVerticalSplitter.TabIndex = 0
         '
         'btnOHLStop
         '
         Me.btnOHLStop.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnOHLStop.Location = New System.Drawing.Point(69, 3)
+        Me.btnOHLStop.Location = New System.Drawing.Point(93, 4)
+        Me.btnOHLStop.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnOHLStop.Name = "btnOHLStop"
-        Me.btnOHLStop.Size = New System.Drawing.Size(60, 26)
+        Me.btnOHLStop.Size = New System.Drawing.Size(81, 31)
         Me.btnOHLStop.TabIndex = 11
         Me.btnOHLStop.Text = "Stop"
         Me.btnOHLStop.UseVisualStyleBackColor = True
@@ -374,9 +396,10 @@ Partial Class frmMainTabbed
         'btnOHLStart
         '
         Me.btnOHLStart.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnOHLStart.Location = New System.Drawing.Point(3, 3)
+        Me.btnOHLStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnOHLStart.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnOHLStart.Name = "btnOHLStart"
-        Me.btnOHLStart.Size = New System.Drawing.Size(60, 26)
+        Me.btnOHLStart.Size = New System.Drawing.Size(81, 31)
         Me.btnOHLStart.TabIndex = 2
         Me.btnOHLStart.Text = "Start"
         Me.btnOHLStart.UseVisualStyleBackColor = True
@@ -385,28 +408,31 @@ Partial Class frmMainTabbed
         '
         Me.Panel2.Controls.Add(Me.blbOHLTickerStatus)
         Me.Panel2.Controls.Add(Me.lblOHLTickerStatus)
-        Me.Panel2.Location = New System.Drawing.Point(888, 3)
+        Me.Panel2.Location = New System.Drawing.Point(1197, 4)
+        Me.Panel2.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.Panel2.Name = "Panel2"
-        Me.Panel2.Size = New System.Drawing.Size(117, 26)
+        Me.Panel2.Size = New System.Drawing.Size(146, 31)
         Me.Panel2.TabIndex = 9
         '
         'blbOHLTickerStatus
         '
         Me.blbOHLTickerStatus.Color = System.Drawing.Color.Pink
         Me.blbOHLTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
-        Me.blbOHLTickerStatus.Location = New System.Drawing.Point(82, 0)
+        Me.blbOHLTickerStatus.Location = New System.Drawing.Point(99, 0)
+        Me.blbOHLTickerStatus.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.blbOHLTickerStatus.Name = "blbOHLTickerStatus"
         Me.blbOHLTickerStatus.On = True
-        Me.blbOHLTickerStatus.Size = New System.Drawing.Size(35, 26)
+        Me.blbOHLTickerStatus.Size = New System.Drawing.Size(47, 31)
         Me.blbOHLTickerStatus.TabIndex = 7
         Me.blbOHLTickerStatus.Text = "LedBulb1"
         '
         'lblOHLTickerStatus
         '
         Me.lblOHLTickerStatus.AutoSize = True
-        Me.lblOHLTickerStatus.Location = New System.Drawing.Point(8, 7)
+        Me.lblOHLTickerStatus.Location = New System.Drawing.Point(11, 9)
+        Me.lblOHLTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblOHLTickerStatus.Name = "lblOHLTickerStatus"
-        Me.lblOHLTickerStatus.Size = New System.Drawing.Size(70, 13)
+        Me.lblOHLTickerStatus.Size = New System.Drawing.Size(91, 17)
         Me.lblOHLTickerStatus.TabIndex = 9
         Me.lblOHLTickerStatus.Text = "Ticker Status"
         '
@@ -417,11 +443,12 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
         Me.pnlOHLBodyVerticalSplitter.Controls.Add(Me.pnlOHLBodyHorizontalSplitter, 0, 0)
         Me.pnlOHLBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlOHLBodyVerticalSplitter.Location = New System.Drawing.Point(3, 41)
+        Me.pnlOHLBodyVerticalSplitter.Location = New System.Drawing.Point(4, 51)
+        Me.pnlOHLBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlOHLBodyVerticalSplitter.Name = "pnlOHLBodyVerticalSplitter"
         Me.pnlOHLBodyVerticalSplitter.RowCount = 1
         Me.pnlOHLBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlOHLBodyVerticalSplitter.Size = New System.Drawing.Size(1008, 509)
+        Me.pnlOHLBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 628)
         Me.pnlOHLBodyVerticalSplitter.TabIndex = 1
         '
         'pnlOHLBodyHorizontalSplitter
@@ -431,12 +458,13 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyHorizontalSplitter.Controls.Add(Me.lstOHLLog, 0, 1)
         Me.pnlOHLBodyHorizontalSplitter.Controls.Add(Me.sfdgvOHLMainDashboard, 0, 0)
         Me.pnlOHLBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlOHLBodyHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlOHLBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlOHLBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlOHLBodyHorizontalSplitter.Name = "pnlOHLBodyHorizontalSplitter"
         Me.pnlOHLBodyHorizontalSplitter.RowCount = 2
         Me.pnlOHLBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlOHLBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlOHLBodyHorizontalSplitter.Size = New System.Drawing.Size(699, 503)
+        Me.pnlOHLBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 620)
         Me.pnlOHLBodyHorizontalSplitter.TabIndex = 0
         '
         'lstOHLLog
@@ -444,9 +472,11 @@ Partial Class frmMainTabbed
         Me.lstOHLLog.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstOHLLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstOHLLog.FormattingEnabled = True
-        Me.lstOHLLog.Location = New System.Drawing.Point(3, 355)
+        Me.lstOHLLog.ItemHeight = 16
+        Me.lstOHLLog.Location = New System.Drawing.Point(4, 438)
+        Me.lstOHLLog.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.lstOHLLog.Name = "lstOHLLog"
-        Me.lstOHLLog.Size = New System.Drawing.Size(693, 145)
+        Me.lstOHLLog.Size = New System.Drawing.Size(926, 178)
         Me.lstOHLLog.TabIndex = 9
         '
         'sfdgvOHLMainDashboard
@@ -459,27 +489,21 @@ Partial Class frmMainTabbed
         Me.sfdgvOHLMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
         Me.sfdgvOHLMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvOHLMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.sfdgvOHLMainDashboard.Location = New System.Drawing.Point(3, 3)
+        Me.sfdgvOHLMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvOHLMainDashboard.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.sfdgvOHLMainDashboard.Name = "sfdgvOHLMainDashboard"
         Me.sfdgvOHLMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvOHLMainDashboard.Size = New System.Drawing.Size(693, 346)
+        Me.sfdgvOHLMainDashboard.Size = New System.Drawing.Size(926, 426)
         Me.sfdgvOHLMainDashboard.TabIndex = 6
         Me.sfdgvOHLMainDashboard.Text = "SfDataGrid1"
-        '
-        'tmrMomentumReversalTickerStatus
-        '
-        Me.tmrMomentumReversalTickerStatus.Enabled = True
-        '
-        'tmrOHLTickerStatus
-        '
-        Me.tmrOHLTickerStatus.Enabled = True
         '
         'tabAmiSignal
         '
         Me.tabAmiSignal.Controls.Add(Me.pnlAmiSignalMainPanelHorizontalSplitter)
-        Me.tabAmiSignal.Location = New System.Drawing.Point(4, 22)
+        Me.tabAmiSignal.Location = New System.Drawing.Point(4, 25)
+        Me.tabAmiSignal.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.tabAmiSignal.Name = "tabAmiSignal"
-        Me.tabAmiSignal.Size = New System.Drawing.Size(1020, 559)
+        Me.tabAmiSignal.Size = New System.Drawing.Size(1363, 693)
         Me.tabAmiSignal.TabIndex = 2
         Me.tabAmiSignal.Text = "AmiBroker Signal"
         Me.tabAmiSignal.UseVisualStyleBackColor = True
@@ -492,11 +516,12 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalMainPanelHorizontalSplitter.Controls.Add(Me.pnlAmiSignalBodyVerticalSplitter, 0, 1)
         Me.pnlAmiSignalMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlAmiSignalMainPanelHorizontalSplitter.Location = New System.Drawing.Point(0, 0)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlAmiSignalMainPanelHorizontalSplitter.Name = "pnlAmiSignalMainPanelHorizontalSplitter"
         Me.pnlAmiSignalMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlAmiSignalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlAmiSignalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlAmiSignalMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1020, 559)
+        Me.pnlAmiSignalMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 693)
         Me.pnlAmiSignalMainPanelHorizontalSplitter.TabIndex = 1
         '
         'pnlAmiSignalTopHeaderVerticalSplitter
@@ -521,19 +546,21 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.btnAmiSignalStart, 0, 0)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.Panel3, 14, 0)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlAmiSignalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Name = "pnlAmiSignalTopHeaderVerticalSplitter"
         Me.pnlAmiSignalTopHeaderVerticalSplitter.RowCount = 1
         Me.pnlAmiSignalTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlAmiSignalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1014, 33)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1355, 40)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.TabIndex = 0
         '
         'btnAmiSignalStop
         '
         Me.btnAmiSignalStop.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnAmiSignalStop.Location = New System.Drawing.Point(70, 3)
+        Me.btnAmiSignalStop.Location = New System.Drawing.Point(93, 4)
+        Me.btnAmiSignalStop.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnAmiSignalStop.Name = "btnAmiSignalStop"
-        Me.btnAmiSignalStop.Size = New System.Drawing.Size(61, 27)
+        Me.btnAmiSignalStop.Size = New System.Drawing.Size(81, 32)
         Me.btnAmiSignalStop.TabIndex = 10
         Me.btnAmiSignalStop.Text = "Stop"
         Me.btnAmiSignalStop.UseVisualStyleBackColor = True
@@ -541,9 +568,10 @@ Partial Class frmMainTabbed
         'btnAmiSignalStart
         '
         Me.btnAmiSignalStart.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnAmiSignalStart.Location = New System.Drawing.Point(3, 3)
+        Me.btnAmiSignalStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnAmiSignalStart.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.btnAmiSignalStart.Name = "btnAmiSignalStart"
-        Me.btnAmiSignalStart.Size = New System.Drawing.Size(61, 27)
+        Me.btnAmiSignalStart.Size = New System.Drawing.Size(81, 32)
         Me.btnAmiSignalStart.TabIndex = 2
         Me.btnAmiSignalStart.Text = "Start"
         Me.btnAmiSignalStart.UseVisualStyleBackColor = True
@@ -552,28 +580,31 @@ Partial Class frmMainTabbed
         '
         Me.Panel3.Controls.Add(Me.blbAmiSignalTickerStatus)
         Me.Panel3.Controls.Add(Me.lblAmiSignalTickerStatus)
-        Me.Panel3.Location = New System.Drawing.Point(901, 3)
+        Me.Panel3.Location = New System.Drawing.Point(1197, 4)
+        Me.Panel3.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.Panel3.Name = "Panel3"
-        Me.Panel3.Size = New System.Drawing.Size(110, 26)
+        Me.Panel3.Size = New System.Drawing.Size(147, 32)
         Me.Panel3.TabIndex = 9
         '
         'blbAmiSignalTickerStatus
         '
         Me.blbAmiSignalTickerStatus.Color = System.Drawing.Color.Pink
         Me.blbAmiSignalTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
-        Me.blbAmiSignalTickerStatus.Location = New System.Drawing.Point(75, 0)
+        Me.blbAmiSignalTickerStatus.Location = New System.Drawing.Point(100, 0)
+        Me.blbAmiSignalTickerStatus.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.blbAmiSignalTickerStatus.Name = "blbAmiSignalTickerStatus"
         Me.blbAmiSignalTickerStatus.On = True
-        Me.blbAmiSignalTickerStatus.Size = New System.Drawing.Size(35, 26)
+        Me.blbAmiSignalTickerStatus.Size = New System.Drawing.Size(47, 32)
         Me.blbAmiSignalTickerStatus.TabIndex = 7
         Me.blbAmiSignalTickerStatus.Text = "LedBulb1"
         '
         'lblAmiSignalTickerStatus
         '
         Me.lblAmiSignalTickerStatus.AutoSize = True
-        Me.lblAmiSignalTickerStatus.Location = New System.Drawing.Point(7, 7)
+        Me.lblAmiSignalTickerStatus.Location = New System.Drawing.Point(9, 9)
+        Me.lblAmiSignalTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblAmiSignalTickerStatus.Name = "lblAmiSignalTickerStatus"
-        Me.lblAmiSignalTickerStatus.Size = New System.Drawing.Size(70, 13)
+        Me.lblAmiSignalTickerStatus.Size = New System.Drawing.Size(91, 17)
         Me.lblAmiSignalTickerStatus.TabIndex = 9
         Me.lblAmiSignalTickerStatus.Text = "Ticker Status"
         '
@@ -583,12 +614,14 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlAmiSignalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
         Me.pnlAmiSignalBodyVerticalSplitter.Controls.Add(Me.pnlAmiSignalBodyHorizontalSplitter, 0, 0)
+        Me.pnlAmiSignalBodyVerticalSplitter.Controls.Add(Me.PictureBox1, 1, 0)
         Me.pnlAmiSignalBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlAmiSignalBodyVerticalSplitter.Location = New System.Drawing.Point(3, 42)
+        Me.pnlAmiSignalBodyVerticalSplitter.Location = New System.Drawing.Point(4, 52)
+        Me.pnlAmiSignalBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlAmiSignalBodyVerticalSplitter.Name = "pnlAmiSignalBodyVerticalSplitter"
         Me.pnlAmiSignalBodyVerticalSplitter.RowCount = 1
         Me.pnlAmiSignalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlAmiSignalBodyVerticalSplitter.Size = New System.Drawing.Size(1014, 514)
+        Me.pnlAmiSignalBodyVerticalSplitter.Size = New System.Drawing.Size(1355, 637)
         Me.pnlAmiSignalBodyVerticalSplitter.TabIndex = 1
         '
         'pnlAmiSignalBodyHorizontalSplitter
@@ -598,12 +631,13 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyHorizontalSplitter.Controls.Add(Me.lstAmiSignalLog, 0, 1)
         Me.pnlAmiSignalBodyHorizontalSplitter.Controls.Add(Me.sfdgvAmiSignalMainDashboard, 0, 0)
         Me.pnlAmiSignalBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlAmiSignalBodyHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlAmiSignalBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlAmiSignalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.pnlAmiSignalBodyHorizontalSplitter.Name = "pnlAmiSignalBodyHorizontalSplitter"
         Me.pnlAmiSignalBodyHorizontalSplitter.RowCount = 2
         Me.pnlAmiSignalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlAmiSignalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlAmiSignalBodyHorizontalSplitter.Size = New System.Drawing.Size(703, 508)
+        Me.pnlAmiSignalBodyHorizontalSplitter.Size = New System.Drawing.Size(940, 629)
         Me.pnlAmiSignalBodyHorizontalSplitter.TabIndex = 0
         '
         'lstAmiSignalLog
@@ -611,9 +645,11 @@ Partial Class frmMainTabbed
         Me.lstAmiSignalLog.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstAmiSignalLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstAmiSignalLog.FormattingEnabled = True
-        Me.lstAmiSignalLog.Location = New System.Drawing.Point(3, 358)
+        Me.lstAmiSignalLog.ItemHeight = 16
+        Me.lstAmiSignalLog.Location = New System.Drawing.Point(4, 444)
+        Me.lstAmiSignalLog.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.lstAmiSignalLog.Name = "lstAmiSignalLog"
-        Me.lstAmiSignalLog.Size = New System.Drawing.Size(697, 147)
+        Me.lstAmiSignalLog.Size = New System.Drawing.Size(932, 181)
         Me.lstAmiSignalLog.TabIndex = 9
         '
         'sfdgvAmiSignalMainDashboard
@@ -626,26 +662,46 @@ Partial Class frmMainTabbed
         Me.sfdgvAmiSignalMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
         Me.sfdgvAmiSignalMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
         Me.sfdgvAmiSignalMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.sfdgvAmiSignalMainDashboard.Location = New System.Drawing.Point(3, 3)
+        Me.sfdgvAmiSignalMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvAmiSignalMainDashboard.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.sfdgvAmiSignalMainDashboard.Name = "sfdgvAmiSignalMainDashboard"
         Me.sfdgvAmiSignalMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvAmiSignalMainDashboard.Size = New System.Drawing.Size(697, 349)
+        Me.sfdgvAmiSignalMainDashboard.Size = New System.Drawing.Size(932, 432)
         Me.sfdgvAmiSignalMainDashboard.TabIndex = 6
         Me.sfdgvAmiSignalMainDashboard.Text = "SfDataGrid1"
+        '
+        'tmrMomentumReversalTickerStatus
+        '
+        Me.tmrMomentumReversalTickerStatus.Enabled = True
+        '
+        'tmrOHLTickerStatus
+        '
+        Me.tmrOHLTickerStatus.Enabled = True
         '
         'tmrAmiSignalTickerStatus
         '
         Me.tmrAmiSignalTickerStatus.Enabled = True
         '
+        'PictureBox1
+        '
+        Me.PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), System.Drawing.Image)
+        Me.PictureBox1.Location = New System.Drawing.Point(951, 3)
+        Me.PictureBox1.Name = "PictureBox1"
+        Me.PictureBox1.Size = New System.Drawing.Size(401, 631)
+        Me.PictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
+        Me.PictureBox1.TabIndex = 1
+        Me.PictureBox1.TabStop = False
+        '
         'frmMainTabbed
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1028, 609)
+        Me.ClientSize = New System.Drawing.Size(1371, 750)
         Me.Controls.Add(Me.tabMain)
         Me.Controls.Add(Me.msMainMenuStrip)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MainMenuStrip = Me.msMainMenuStrip
+        Me.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         Me.Name = "frmMainTabbed"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Algo2Trade Robot"
@@ -676,6 +732,7 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyVerticalSplitter.ResumeLayout(False)
         Me.pnlAmiSignalBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvAmiSignalMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -726,4 +783,5 @@ Partial Class frmMainTabbed
     Friend WithEvents lstAmiSignalLog As ListBox
     Friend WithEvents sfdgvAmiSignalMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrAmiSignalTickerStatus As Timer
+    Friend WithEvents PictureBox1 As PictureBox
 End Class
