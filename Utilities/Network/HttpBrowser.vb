@@ -82,7 +82,8 @@ Namespace Network
         Private _httpHandler As HttpClientHandler
         Private _proxyToBeUsed As HttpProxy
 
-        Private Shared _internetConnectionCheckerURL As String = "www.rediff.com"
+        'Private Shared _internetConnectionCheckerURL As String = "www.rediff.com"
+        Private Shared _internetConnectionCheckerURL As String = "www.wikipedia.org"
         Protected _canceller As CancellationTokenSource
 #End Region
 

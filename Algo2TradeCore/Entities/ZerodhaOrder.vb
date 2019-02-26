@@ -90,5 +90,11 @@ Namespace Entities
             End Get
         End Property
 
+        Public ReadOnly Property TimeStamp As Date Implements IOrder.TimeStamp
+            Get
+                Return WrappedOrder.OrderTimestamp
+            End Get
+        End Property
+
     End Class
 End Namespace

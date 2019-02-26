@@ -13,6 +13,7 @@
         ReadOnly Property AveragePrice As Decimal
         ReadOnly Property Tag As String
         ReadOnly Property ParentOrderIdentifier As String
+        ReadOnly Property TimeStamp As Date
         ReadOnly Property Broker As APISource
     End Interface
 End Namespace

@@ -947,7 +947,11 @@ Namespace Controller
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
             'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
             Await Task.Delay(0).ConfigureAwait(False)
-            If orderData.Status = "COMPLETE" OrElse orderData.Status = "MODIFIED" OrElse orderData.Status = "CANCELLED" Then
+            If orderData.Status = "COMPLETE" OrElse
+                orderData.Status = "MODIFIED" OrElse
+                orderData.Status = "CANCELLED" OrElse
+                orderData.Status = "OPEN" OrElse
+                orderData.Status = "TRIGGER PENDING" Then
                 If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
                     For Each runningStrategy In _AllStrategies
                         FillOrderDetailsAsync(runningStrategy)

@@ -415,37 +415,44 @@ Namespace Strategies
             Await Task.Delay(0).ConfigureAwait(False)
 
             'Delete RequestResponseForPlaceOrder collection
+            'logger.Warn("Process Order ID: {0}, Parent Order ID: {1}", orderData.OrderIdentifier, orderData.ParentOrderIdentifier)
+            'logger.Warn("Place Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
             If RequestResponseForPlaceOrder IsNot Nothing AndAlso RequestResponseForPlaceOrder.Count > 0 Then
-                Dim placeOrderParameters As IEnumerable(Of String) = RequestResponseForPlaceOrder.Where(Function(x)
-                                                                                                            Return x.Value = orderData.OrderIdentifier
-                                                                                                        End Function)
+                Dim placeOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForPlaceOrder.Where(Function(x)
+                                                                                                                                     Return x.Value = orderData.OrderIdentifier
+                                                                                                                                 End Function)
                 If placeOrderParameters IsNot Nothing AndAlso placeOrderParameters.Count > 0 Then
                     For Each placeOrderParameter In placeOrderParameters
-                        RequestResponseForPlaceOrder.TryRemove(placeOrderParameter, orderData.ParentOrderIdentifier)
+                        RequestResponseForPlaceOrder.TryRemove(placeOrderParameter.Key, placeOrderParameter.Value)
+                        'logger.Warn("Place Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
                     Next
                 End If
             End If
 
             'Delete RequestResponseForModifyOrder collection
+            'logger.Warn("Modify Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForModifyOrder))
             If RequestResponseForModifyOrder IsNot Nothing AndAlso RequestResponseForModifyOrder.Count > 0 Then
-                Dim modifyOrderParameters As IEnumerable(Of String) = RequestResponseForModifyOrder.Where(Function(x)
-                                                                                                              Return x.Key = Utilities.Strings.Encrypt(orderData.TriggerPrice, orderData.OrderIdentifier)
-                                                                                                          End Function)
+                Dim modifyOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForModifyOrder.Where(Function(x)
+                                                                                                                                       Return x.Key = Utilities.Strings.Encrypt(orderData.TriggerPrice, orderData.OrderIdentifier)
+                                                                                                                                   End Function)
                 If modifyOrderParameters IsNot Nothing AndAlso modifyOrderParameters.Count > 0 Then
                     For Each modifyOrderParameter In modifyOrderParameters
-                        RequestResponseForPlaceOrder.TryRemove(modifyOrderParameter, orderData.ParentOrderIdentifier)
+                        RequestResponseForPlaceOrder.TryRemove(modifyOrderParameter.Key, modifyOrderParameter.Value)
+                        'logger.Warn("Modify Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForModifyOrder))
                     Next
                 End If
             End If
 
             'Delete RequestResponseForCancelOrder collection
+            'logger.Warn("Cancel Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
             If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 Then
-                Dim cancelOrderParameters As IEnumerable(Of String) = RequestResponseForCancelOrder.Where(Function(x)
-                                                                                                              Return x.Key = Utilities.Strings.Encrypt(orderData.ParentOrderIdentifier, orderData.OrderIdentifier)
-                                                                                                          End Function)
+                Dim cancelOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForCancelOrder.Where(Function(x)
+                                                                                                                                       Return x.Key = Utilities.Strings.Encrypt(orderData.ParentOrderIdentifier, orderData.OrderIdentifier)
+                                                                                                                                   End Function)
                 If cancelOrderParameters IsNot Nothing AndAlso cancelOrderParameters.Count > 0 Then
                     For Each cancelOrderParameter In cancelOrderParameters
-                        RequestResponseForPlaceOrder.TryRemove(cancelOrderParameter, orderData.ParentOrderIdentifier)
+                        RequestResponseForPlaceOrder.TryRemove(cancelOrderParameter.Key, cancelOrderParameter.Value)
+                        'logger.Warn("Cancel Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
                     Next
                 End If
             End If
@@ -913,7 +920,7 @@ Namespace Strategies
             Public Property Tag As String = Nothing
             Public Property SignalCandle As IPayload = Nothing
             Public Overrides Function ToString() As String
-                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, If(SignalCandle Is Nothing, "Nothing", SignalCandle.ToString()))
+                Return String.Format("{0}{1}{2}{3}{4}{5}{6}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, Tag, If(SignalCandle Is Nothing, "Nothing", SignalCandle.SnapshotDateTime.ToString()))
             End Function
         End Class
     End Class

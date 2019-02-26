@@ -15,7 +15,6 @@ Public Class MomentumReversalStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Private _MRStrategyProtector As Integer = 0
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
@@ -41,22 +40,18 @@ Public Class MomentumReversalStrategyInstrument
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim orderDetails As Object = Nothing
+                Dim placeOrderDetails As Object = Nothing
                 Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
-                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _MRStrategyProtector = 0 Then
-                    Interlocked.Increment(_MRStrategyProtector)
-                    orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
-
+                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
+                    placeOrderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
                     'To store signal candle in order collection
                     Dim businessOrder As IBusinessOrder = New BusinessOrder With {
-                        .ParentOrderIdentifier = orderDetails("data")("order_id"),
-                        .SignalCandle = placeOrderTrigger.Item2.SignalCandle
-                    }
+                            .ParentOrderIdentifier = placeOrderDetails("data")("order_id"),
+                            .SignalCandle = placeOrderTrigger.Item2.SignalCandle
+                        }
                     businessOrder = Me.OrderDetails.GetOrAdd(businessOrder.ParentOrderIdentifier, businessOrder)
                     businessOrder.SignalCandle = placeOrderTrigger.Item2.SignalCandle
                     Me.OrderDetails.AddOrUpdate(businessOrder.ParentOrderIdentifier, businessOrder, Function(key, value) businessOrder)
-
-                    Interlocked.Decrement(_MRStrategyProtector)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 3 Then
@@ -86,12 +81,17 @@ Public Class MomentumReversalStrategyInstrument
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
         Dim tradeStartTime As Date = New Date(Now.Year, Now.Month, Now.Day, 9, 20, 0)
+        Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 14, 30, 0)
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+
+        If Now >= lastTradeEntryTime Then Exit Function
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             GetActiveOrder(APIAdapter.TransactionType.None) Is Nothing AndAlso Me.TotalTrades <= MRUserSettings.NumberOfTarde Then
-
+            If IsAnyTradeExitedInCurrentTimeframeCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) Then
+                Exit Function
+            End If
             Dim benchmarkWicksSize As Double = runningCandlePayload.PreviousPayload.CandleRange * MRUserSettings.CandleWickSizePercentage / 100
             If runningCandlePayload.PreviousPayload.CandleRangePercentage > MRUserSettings.MinCandleRangePercentage Then
                 If runningCandlePayload.PreviousPayload.CandleWicks.Top > benchmarkWicksSize Then
@@ -105,8 +105,8 @@ Public Class MomentumReversalStrategyInstrument
                     If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                         quantity = Me.TradableInstrument.LotSize
                     Else
-                        'quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
-                        quantity = 1
+                        quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                        'quantity = 1
                     End If
                     Dim stoploss As Decimal = GetModifiedStoploss(triggerPrice, stoplossPrice, quantity)
 
@@ -149,10 +149,13 @@ Public Class MomentumReversalStrategyInstrument
                 End If
             End If
         End If
-        If ret IsNot Nothing AndAlso RequestResponseForPlaceOrder IsNot Nothing AndAlso
-        RequestResponseForPlaceOrder.Count > 0 AndAlso ret.Item2 IsNot Nothing AndAlso
-        RequestResponseForPlaceOrder.ContainsKey(Utilities.Strings.Encrypt(ret.Item2.ToString, "Algo2TradePlaceOrder")) Then
-            ret = Nothing
+        Dim requestEncryption As String = Nothing
+        If ret IsNot Nothing AndAlso ret.Item2 IsNot Nothing Then
+            requestEncryption = Utilities.Strings.Encrypt(ret.Item2.ToString, "Algo2TradePlaceOrder")
+            If RequestResponseForPlaceOrder IsNot Nothing AndAlso RequestResponseForPlaceOrder.Count > 0 AndAlso
+            RequestResponseForPlaceOrder.ContainsKey(requestEncryption) Then
+                ret = Nothing
+            End If
         End If
         Return ret
     End Function
@@ -238,6 +241,36 @@ Public Class MomentumReversalStrategyInstrument
             ret = Math.Abs(entryPrice - stoplossPrice)
         End If
         ret = Math.Round(ConvertFloorCeling(ret, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+        Return ret
+    End Function
+    Private Function IsAnyTradeExitedInCurrentTimeframeCandle(ByVal timeFrame As Integer, ByVal currentTimeframeCandleTime As Date) As Boolean
+        Dim ret As Boolean = False
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            For Each parentOrderId In OrderDetails.Keys
+                Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
+                    'If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                    If Not parentBusinessOrder.ParentOrder.Status = "REJECTED" Then
+                        If parentBusinessOrder.AllOrder IsNot Nothing AndAlso parentBusinessOrder.AllOrder.Count > 0 Then
+                            For Each slOrder In parentBusinessOrder.AllOrder
+                                If slOrder.Status = "COMPLETE" OrElse slOrder.Status = "CANCELLED" Then
+                                    Dim orderExitBlockTime As Date = New Date(slOrder.TimeStamp.Year,
+                                                                            slOrder.TimeStamp.Month,
+                                                                            slOrder.TimeStamp.Day,
+                                                                            slOrder.TimeStamp.Hour,
+                                                                            Math.Floor(slOrder.TimeStamp.Minute / timeFrame) * timeFrame, 0)
+
+                                    If orderExitBlockTime = currentTimeframeCandleTime Then
+                                        ret = True
+                                        Exit For
+                                    End If
+                                End If
+                            Next
+                        End If
+                    End If
+                End If
+            Next
+        End If
         Return ret
     End Function
 

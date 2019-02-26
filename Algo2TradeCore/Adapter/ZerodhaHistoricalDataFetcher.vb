@@ -292,6 +292,7 @@ Namespace Adapter
                 End If
                 _subscribedInstruments.Add(runningInstrument)
             Next
+            _daysToGoBack = Math.Max(_daysToGoBack, maxNumberOfDays)
             If _subscribedInstruments Is Nothing OrElse _subscribedInstruments.Count = 0 Then
                 OnHeartbeat("No instruments were subscribed for historical as they may be already subscribed")
                 logger.Error("No tokens to subscribe for historical")
@@ -302,7 +303,6 @@ Namespace Adapter
                     _isFirstTimeDone = True
                 End If
             End If
-            _daysToGoBack = Math.Max(_daysToGoBack, maxNumberOfDays)
         End Function
         Protected Async Function DummyworkerAsync() As Task
             While True
