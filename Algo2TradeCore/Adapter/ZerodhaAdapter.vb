@@ -265,7 +265,8 @@ Namespace Adapter
 
             If tempRet.GetType = GetType(List(Of Order)) Then
                 If tempRet.count > 0 Then
-                    OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
+                    'OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
+                    logger.Debug(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
                     Dim zerodhaReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
                     For Each runningOrder As Order In zerodhaReturedOrders
                         _cts.Token.ThrowIfCancellationRequested()
@@ -273,7 +274,8 @@ Namespace Adapter
                         ret.Add(New ZerodhaOrder With {.WrappedOrder = runningOrder})
                     Next
                 Else
-                    OnHeartbeat(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+                    'OnHeartbeat(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+                    logger.Debug(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
                 End If
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
@@ -689,7 +691,8 @@ Namespace Adapter
             Dim ret As Dictionary(Of String, Object) = Nothing
 
             Dim lastException As Exception = Nothing
-            OnHeartbeat(String.Format("Firing Zerodha command to complete desired action, command:{0}", command.ToString))
+            'OnHeartbeat(String.Format("Firing Zerodha command to complete desired action, command:{0}", command.ToString))
+            logger.Debug(String.Format("Firing Zerodha command to complete desired action, command:{0}", command.ToString))
             Select Case command
                 Case ExecutionCommands.GetQuotes
                     Dim getQuotesResponse As Dictionary(Of String, Quote) = Nothing

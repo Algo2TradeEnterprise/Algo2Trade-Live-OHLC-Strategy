@@ -738,7 +738,10 @@ Namespace Strategies
                                                                                                     tag:=placeOrderTrigger.Item2.Tag).ConfigureAwait(False)
                                     If placeOrderResponse IsNot Nothing Then
                                         logger.Debug("Place order is completed, placeOrderResponse:{0}", Strings.JsonSerialize(placeOrderResponse))
+                                        logger.Warn("Encrypted String: {0}", Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"))
+                                        logger.Warn("Before Collection add:{0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
                                         RequestResponseForPlaceOrder.GetOrAdd(Utilities.Strings.Encrypt(placeOrderTrigger.Item2.ToString(), "Algo2TradePlaceOrder"), placeOrderResponse("data")("order_id"))
+                                        logger.Warn("After Collection add:{0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
                                         lastException = Nothing
                                         allOKWithoutException = True
                                         _cts.Token.ThrowIfCancellationRequested()

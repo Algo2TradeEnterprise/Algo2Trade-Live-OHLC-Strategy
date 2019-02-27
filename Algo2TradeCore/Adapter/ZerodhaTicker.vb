@@ -19,7 +19,7 @@ Namespace Adapter
             logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
-            Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentContoller, ZerodhaStrategyController)
+            Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
 
             If _ticker IsNot Nothing Then
                 RemoveHandler _ticker.OnTick, AddressOf currentZerodhaStrategyController.OnTickerTickAsync
@@ -34,7 +34,7 @@ Namespace Adapter
                 If _ticker.IsConnected Then _ticker.Close()
                 _cts.Token.ThrowIfCancellationRequested()
             End If
-            _ticker = New Ticker(ParentContoller.APIConnection.APIUser.APIKey, ParentContoller.APIConnection.AccessToken)
+            _ticker = New Ticker(ParentController.APIConnection.APIUser.APIKey, ParentController.APIConnection.AccessToken)
             AddHandler _ticker.OnTick, AddressOf currentZerodhaStrategyController.OnTickerTickAsync
             AddHandler _ticker.OnReconnect, AddressOf currentZerodhaStrategyController.OnTickerReconnect
             AddHandler _ticker.OnNoReconnect, AddressOf currentZerodhaStrategyController.OnTickerNoReconnect

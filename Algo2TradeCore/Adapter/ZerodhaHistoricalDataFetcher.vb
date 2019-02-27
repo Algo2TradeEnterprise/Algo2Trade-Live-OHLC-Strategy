@@ -35,6 +35,7 @@ Namespace Adapter
                        ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, daysToGoBack, canceller)
+            StartPollingAsync()
         End Sub
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal daysToGoBack As Integer,
@@ -57,13 +58,14 @@ Namespace Adapter
             'AddHandler Me.FetcherCandlesAsync, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
             'AddHandler Me.FetcherError, AddressOf currentZerodhaStrategyController.OnFetcherError
         End Function
-        Public Async Function DownloadFileAsync() As Task(Of Dictionary(Of String, Object))
+        Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
             Try
+                'If Not _isPollRunning Then Exit Function
+                _cts.Token.ThrowIfCancellationRequested()
                 Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
                                                                     _instrumentIdentifer,
                                                                     Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
                                                                     Now.ToString("yyyy-MM-dd"))
-
 
                 Console.WriteLine(historicalDataURL)
                 Using sr = New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
@@ -76,18 +78,8 @@ Namespace Adapter
                 Throw ex
             End Try
         End Function
-        Public Async Function DownloadFileAsync1(ByVal url As String) As Task(Of String)
-            Try
-                Using sr = New StreamReader(HttpWebRequest.Create(url).GetResponse().GetResponseStream())
-                    Dim x = Await sr.ReadToEndAsync.ConfigureAwait(False)
-                    Console.WriteLine(url & x.Length)
-                    Return x
-                End Using
-            Catch ex As Exception
-                Throw ex
-            End Try
-        End Function
-        Public Overrides Async Function StartPollingAsync() As Task
+
+        Protected Overrides Async Function StartPollingAsync() As Task
             'logger.Debug("{0}->StartPollingAsync, parameters:Nothing", Me.ToString)
             Try
                 ServicePointManager.DefaultConnectionLimit = 10
@@ -99,7 +91,6 @@ Namespace Adapter
                 Dim apiConnectionBeingUsed As ZerodhaConnection = Me.ParentController.APIConnection
                 While True
                     If _stopPollRunning Then
-                        _isPollRunning = False
                         Exit While
                     End If
                     Dim sw As New Stopwatch
@@ -111,11 +102,12 @@ Namespace Adapter
 
                         Dim tasks = _subscribedInstruments.Select(Async Function(x)
                                                                       Try
+                                                                          _cts.Token.ThrowIfCancellationRequested()
                                                                           Dim individualFetcher As New ZerodhaHistoricalDataFetcher(Me.ParentController,
                                                                                                               If(x.IsHistoricalCompleted, 1, _daysToGoBack),
                                                                                                               x.InstrumentIdentifier,
                                                                                                               Me._cts)
-                                                                          Dim tempRet = Await individualFetcher.DownloadFileAsync.ConfigureAwait(False)
+                                                                          Dim tempRet = Await individualFetcher.GetHistoricalCandleStickAsync.ConfigureAwait(False)
                                                                           If tempRet IsNot Nothing AndAlso tempRet.GetType Is GetType(Dictionary(Of String, Object)) Then
                                                                               Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
                                                                               If errorMessage IsNot Nothing Then
@@ -131,10 +123,13 @@ Namespace Adapter
                                                                           'Neglect error as in the next minute, it will be run again,
                                                                           'till that time tick based candles will be used
                                                                           logger.Warn(ex)
+                                                                          If Not ex.GetType Is GetType(OperationCanceledException) Then
+                                                                              OnFetcherError(Me.ToString, ex.Message)
+                                                                          End If
                                                                       End Try
                                                                       Return True
                                                                   End Function)
-                        OnHeartbeat("Polling historical candles")
+                        'OnHeartbeat("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
                         If Me.ParentController.APIConnection Is Nothing OrElse apiConnectionBeingUsed Is Nothing OrElse
                         (Me.ParentController.APIConnection IsNot Nothing AndAlso apiConnectionBeingUsed IsNot Nothing AndAlso
@@ -159,7 +154,6 @@ Namespace Adapter
                     While Now < nextTimeToDo
                         _cts.Token.ThrowIfCancellationRequested()
                         If _stopPollRunning Then
-                            _isPollRunning = False
                             Exit While
                         End If
                         Await Task.Delay(1000).ConfigureAwait(False)
@@ -169,125 +163,24 @@ Namespace Adapter
                 logger.Error("Instrument Identifier:{0}, error:{1}", _instrumentIdentifer, ex.ToString)
                 Me.ParentController.OrphanException = ex
             Finally
-                '_isPollRunning = False
+                _isPollRunning = False
             End Try
         End Function
 
-        'Public Overrides Async Function StartPollingAsync() As Task
-        '    'logger.Debug("{0}->StartPollingAsync, parameters:Nothing", Me.ToString)
-        '    Try
-        '        _stopPollRunning = False
-        '        _isPollRunning = False
-        '        ServicePointManager.DefaultConnectionLimit = 10000
-        '        Dim lastTimeWhenDone As Date = Date.MinValue
-        '        Dim nextTimeToDo As Date = Date.MinValue
-        '        Dim apiConnectionBeingUsed As ZerodhaConnection = Me.ParentController.APIConnection
-        '        While True
-        '            If _stopPollRunning Then
-        '                _isPollRunning = False
-        '                Exit While
-        '            End If
-        '            _isPollRunning = True
-        '            _cts.Token.ThrowIfCancellationRequested()
-        '            lastTimeWhenDone = Now
-        '            If _subscribedInstruments IsNot Nothing AndAlso _subscribedInstruments.Count > 0 Then
-        '                Dim tasks As New List(Of Task)()
-        '                Dim specificInstrumentsHistoricalDataFetcher As List(Of ZerodhaHistoricalDataFetcher) = Nothing
-        '                For Each subscribedInstrument In _subscribedInstruments
-        '                    _cts.Token.ThrowIfCancellationRequested()
-        '                    If specificInstrumentsHistoricalDataFetcher Is Nothing Then specificInstrumentsHistoricalDataFetcher = New List(Of ZerodhaHistoricalDataFetcher)
-        '                    If nextTimeToDo = Date.MinValue Then 'First time
-        '                        specificInstrumentsHistoricalDataFetcher.Add(New ZerodhaHistoricalDataFetcher(Me.ParentController,
-        '                                                                                                      _daysToGoBack,
-        '                                                                                                      subscribedInstrument,
-        '                                                                                                      Me._cts))
-        '                    Else
-        '                        specificInstrumentsHistoricalDataFetcher.Add(New ZerodhaHistoricalDataFetcher(Me.ParentController,
-        '                                                                                                      1,
-        '                                                                                                      subscribedInstrument,
-        '                                                                                                      Me._cts))
-        '                    End If
-        '                Next
-        '                For Each specificInstrumentHistoricalDataFetcher In specificInstrumentsHistoricalDataFetcher
-        '                    _cts.Token.ThrowIfCancellationRequested()
-
-        '                    tasks.Add(Task.Run(AddressOf specificInstrumentHistoricalDataFetcher.GetHistoricalCandleStickAsync, _cts.Token))
-        '                    'tasks.Add(Task.Run(AddressOf specificInstrumentHistoricalDataFetcher.DummyworkerAsync, _cts.Token))
-        '                Next
-        '                OnHeartbeat("Polling historical candles")
-        '                Await Task.WhenAll(tasks).ConfigureAwait(False)
-        '                'Cleanup
-        '                If Me.ParentController.APIConnection Is Nothing OrElse apiConnectionBeingUsed Is Nothing OrElse
-        '                (Me.ParentController.APIConnection IsNot Nothing AndAlso apiConnectionBeingUsed IsNot Nothing AndAlso
-        '                Not Me.ParentController.APIConnection.Equals(apiConnectionBeingUsed)) Then
-        '                    Debug.WriteLine("Exiting start polling")
-        '                    Exit While
-        '                End If
-
-        '                For Each subscribedInstrument In _subscribedInstruments
-        '                    _cts.Token.ThrowIfCancellationRequested()
-        '                    subscribedInstrument = Nothing
-        '                Next
-        '                For Each specificInstrumentHistoricalDataFetcher In specificInstrumentsHistoricalDataFetcher
-        '                    _cts.Token.ThrowIfCancellationRequested()
-        '                    specificInstrumentHistoricalDataFetcher.Dispose()
-        '                    specificInstrumentHistoricalDataFetcher = Nothing
-        '                Next
-        '                For Each task In tasks
-        '                    _cts.Token.ThrowIfCancellationRequested()
-        '                    task.Dispose()
-        '                    task = Nothing
-        '                Next
-        '                System.GC.AddMemoryPressure(1024 * 1024)
-        '                System.GC.Collect()
-        '                specificInstrumentsHistoricalDataFetcher.Clear()
-        '                specificInstrumentsHistoricalDataFetcher.TrimExcess()
-        '                specificInstrumentsHistoricalDataFetcher = Nothing
-        '                tasks.Clear()
-        '                tasks.TrimExcess()
-        '                tasks = Nothing
-        '            End If
-        '            _cts.Token.ThrowIfCancellationRequested()
-
-        '            If Utilities.Time.IsDateTimeEqualTillMinutes(lastTimeWhenDone, nextTimeToDo) Then
-        '                'Already done for this minute
-        '                lastTimeWhenDone = lastTimeWhenDone.AddMinutes(1)
-        '                nextTimeToDo = New Date(lastTimeWhenDone.Year, lastTimeWhenDone.Month, lastTimeWhenDone.Day, lastTimeWhenDone.Hour, lastTimeWhenDone.Minute, 5)
-        '            Else
-        '                nextTimeToDo = New Date(lastTimeWhenDone.Year, lastTimeWhenDone.Month, lastTimeWhenDone.Day, lastTimeWhenDone.Hour, lastTimeWhenDone.Minute, 5)
-        '            End If
-        '            Console.WriteLine(nextTimeToDo.ToLongTimeString)
-
-        '            While Now < nextTimeToDo
-        '                _cts.Token.ThrowIfCancellationRequested()
-        '                If _stopPollRunning Then
-        '                    _isPollRunning = False
-        '                    Exit While
-        '                End If
-        '                Await Task.Delay(1000).ConfigureAwait(False)
-        '            End While
-        '        End While
-        '    Catch ex As Exception
-        '        logger.Error("Instrument Identifier:{0}, error:{1}", _instrumentIdentifer, ex.ToString)
-        '        Me.ParentController.OrphanException = ex
-        '    Finally
-        '        _isPollRunning = False
-        '    End Try
-        'End Function
         Public Overrides Async Function SubscribeAsync(ByVal tradableInstruments As IEnumerable(Of IInstrument), ByVal maxNumberOfDays As Integer) As Task
             'logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0).ConfigureAwait(False)
             If _subscribedInstruments Is Nothing Then
-                _subscribedInstruments = New List(Of IInstrument)
+                _subscribedInstruments = New Concurrent.ConcurrentBag(Of IInstrument)
             End If
             For Each runningInstrument In tradableInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim existingSubscribeInstrument As IInstrument = _subscribedInstruments.Find(Function(x)
-                                                                                                 Return x.InstrumentIdentifier = runningInstrument.InstrumentIdentifier
-                                                                                             End Function)
-                If existingSubscribeInstrument IsNot Nothing Then
-                    If maxNumberOfDays > _daysToGoBack Then existingSubscribeInstrument.IsHistoricalCompleted = False
+                Dim existingSubscribeInstruments As IEnumerable(Of IInstrument) = _subscribedInstruments.Where(Function(x)
+                                                                                                                   Return x.InstrumentIdentifier = runningInstrument.InstrumentIdentifier
+                                                                                                               End Function)
+                If existingSubscribeInstruments IsNot Nothing AndAlso existingSubscribeInstruments.Count > 0 Then
+                    If maxNumberOfDays > _daysToGoBack Then existingSubscribeInstruments.FirstOrDefault.IsHistoricalCompleted = False
                     Continue For
                 End If
                 _subscribedInstruments.Add(runningInstrument)
@@ -298,83 +191,7 @@ Namespace Adapter
                 logger.Error("No tokens to subscribe for historical")
             Else
                 OnHeartbeat(String.Format("Subscribed:{0} instruments for historical", _subscribedInstruments.Count))
-                If Not _isFirstTimeDone Then
-                    StartPollingAsync()
-                    _isFirstTimeDone = True
-                End If
             End If
-        End Function
-        Protected Async Function DummyworkerAsync() As Task
-            While True
-                Await Task.Delay(5000).ConfigureAwait(False)
-                Exit Function
-            End While
-        End Function
-
-        Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task
-            logger.Debug("{0}->GetHistoricalCandleStick, parameters:Nothing", Me.ToString)
-            Try
-                If _instrumentIdentifer Is Nothing Then Exit Function
-                _cts.Token.ThrowIfCancellationRequested()
-
-                HttpBrowser.KillCookies()
-                _cts.Token.ThrowIfCancellationRequested()
-
-                Using browser As New HttpBrowser(Nothing, DecompressionMethods.GZip, TimeSpan.FromSeconds(30), _cts)
-                    AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                    AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                    AddHandler browser.Heartbeat, AddressOf OnHeartbeat
-                    AddHandler browser.WaitingFor, AddressOf OnWaitingFor
-
-                    'Keep the below headers constant for all login browser operations
-                    browser.UserAgent = GetRandomUserAgent()
-                    browser.KeepAlive = True
-
-                    Dim headers As New Dictionary(Of String, String)
-                    headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
-                    'headers.Add("Accept-Encoding", "gzip, deflate, br")
-                    headers.Add("Accept-Encoding", "*")
-                    headers.Add("Accept-Language", "en-US,en;q=0.8")
-                    headers.Add("Cookie", "session=c")
-
-
-                    Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
-                                                                    _instrumentIdentifer,
-                                                                    Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
-                                                                    Now.ToString("yyyy-MM-dd"))
-                    Console.WriteLine(historicalDataURL)
-                    logger.Debug("Opening historical candle page, GetHistoricalDataURL:{0}, headers:{1}", historicalDataURL, Utils.JsonSerialize(headers))
-                    _cts.Token.ThrowIfCancellationRequested()
-
-                    Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL,
-                                                                                          Http.HttpMethod.Get,
-                                                                                          Nothing,
-                                                                                          True,
-                                                                                          headers,
-                                                                                          False,
-                                                                                          "application/json").ConfigureAwait(False)
-
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
-                        Dim errorMessage As String = ParentController.GetErrorResponse(tempRet.Item2)
-                        If errorMessage IsNot Nothing Then
-                            OnFetcherError(_instrumentIdentifer, errorMessage)
-                        Else
-                            OnFetcherCandlesAsync(_instrumentIdentifer, tempRet.Item2)
-                        End If
-                    Else
-                        'TO DO: Uncomment this
-                        Throw New ApplicationException("Fetching of historical data failed as no return detected")
-                    End If
-                    RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                    RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                    RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
-                    RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
-                End Using
-            Catch ex As Exception
-                logger.Error("Instrument Identifier:{0}, error:{1}", _instrumentIdentifer, ex.ToString)
-                Throw ex
-            End Try
         End Function
 
         Public Overrides Function ToString() As String
@@ -386,10 +203,11 @@ Namespace Adapter
         Public Overrides Function IsConnected() As Boolean
             Return _isPollRunning
         End Function
-        Public Overrides Async Function CloseFetcherIfConnectedAsync() As Task
+        Public Overrides Async Function CloseFetcherIfConnectedAsync(ByVal forceClose As Boolean) As Task
             'Intentionally no _cts.Token.ThrowIfCancellationRequested() since we need to close the fetcher when cancellation is done
             While IsConnected()
                 _stopPollRunning = True
+                If forceClose Then Exit While
                 Await Task.Delay(100).ConfigureAwait(False)
             End While
         End Function

@@ -45,13 +45,6 @@ Public Class AmiSignalStrategyInstrument
     Public Overrides Async Function MonitorAsync() As Task
         Try
             While True
-                Dim trialEndDate As Date = New Date(2019, 3, 2, 0, 0, 0)
-                If Now() >= trialEndDate Then
-                    _cts.Cancel()
-                    MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-                    End
-                End If
-
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If

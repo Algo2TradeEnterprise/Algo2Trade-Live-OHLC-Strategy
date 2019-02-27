@@ -30,6 +30,7 @@ Namespace Controller
         Public Event TickerNoReconnect()
         Public Event TickerReconnect()
         Public Event FetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
+        Public Event CollectorError(ByVal errorMessage As String)
 
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
@@ -77,6 +78,9 @@ Namespace Controller
         Public Overridable Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
             RaiseEvent FetcherError(instrumentIdentifier, errorMessage)
         End Sub
+        Public Overridable Sub OnCollectorError(ByVal errorMessage As String)
+            RaiseEvent CollectorError(errorMessage)
+        End Sub
 #End Region
 
 #Region "Logging and Status Progress"
@@ -94,11 +98,11 @@ Namespace Controller
         Public Property APIConnection As IConnection
         Public ReadOnly Property BrokerSource As APISource
         Public Property OrphanException As Exception
-        Public Property FillOrderLastTimeWhenDone As Date
 
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
         Protected _APIHistoricalDataFetcher As APIHistoricalDataFetcher
+        Protected _APIInformationCollector As APIInformationCollector
         Protected _AllInstruments As IEnumerable(Of IInstrument)
         Protected _AllStrategyUniqueInstruments As IEnumerable(Of IInstrument)
         Protected _AllStrategies As List(Of Strategy)
@@ -114,12 +118,14 @@ Namespace Controller
         End Sub
         Public MustOverride Function GetErrorResponse(ByVal response As Object) As String
         Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
-        Public MustOverride Async Function CloseFetcherIfConnectedAsync() As Task
+        Public MustOverride Async Function CloseFetcherIfConnectedAsync(ByVal forceClose As Boolean) As Task
+        Public MustOverride Async Function CloseCollectorIfConnectedAsync(ByVal forceClose As Boolean) As Task
 
         Public Sub RefreshCancellationToken(ByVal canceller As CancellationTokenSource)
             _cts = canceller
             If _APITicker IsNot Nothing Then _APITicker.RefreshCancellationToken(canceller)
             If _APIHistoricalDataFetcher IsNot Nothing Then _APIHistoricalDataFetcher.RefreshCancellationToken(canceller)
+            If _APIInformationCollector IsNot Nothing Then _APIInformationCollector.RefreshCancellationToken(canceller)
         End Sub
         Protected Async Function ExecuteCommandAsync(ByVal command As APIAdapter.ExecutionCommands, ByVal data As Object) As Task(Of Object)
             logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
@@ -144,6 +150,7 @@ Namespace Controller
                         Await Task.Delay(500).ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                     End While
+
                     _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
 
                     logger.Debug("Firing command:{0}", command.ToString)
@@ -327,10 +334,11 @@ Namespace Controller
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
         Public MustOverride Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
-        Public MustOverride Async Function FillOrderDetailsAsync(ByVal strategyToRun As Strategy) As Task
+        Public MustOverride Overloads Async Function GetOrderDetailsAsync() As Task(Of Concurrent.ConcurrentBag(Of IBusinessOrder))
         Public Sub FillCandlestickCreator()
             If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 0 Then
                 For Each runningStrategyUniqueInstruments In _AllStrategyUniqueInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
                     If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(runningStrategyUniqueInstruments.InstrumentIdentifier) Then
                         Continue For
                     End If
@@ -344,6 +352,29 @@ Namespace Controller
                 Next
             End If
         End Sub
-
+        Protected Overridable Async Function FillOrderDetailsAsync() As Task
+            Try
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim orderDetails As Concurrent.ConcurrentBag(Of IBusinessOrder) = Await GetOrderDetailsAsync().ConfigureAwait(False)
+                If orderDetails IsNot Nothing AndAlso orderDetails.Count > 0 Then
+                    For Each orderData In orderDetails
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+                            For Each strategyToRun In _AllStrategies
+                                _cts.Token.ThrowIfCancellationRequested()
+                                Await strategyToRun.ProcessOrderAsync(orderData).ConfigureAwait(False)
+                            Next
+                        End If
+                    Next
+                End If
+            Catch cex As OperationCanceledException
+                logger.Warn(cex)
+                Me.OrphanException = cex
+            Catch ex As Exception
+                'Neglect error as in the next minute, it will be run again,
+                'till that time tick based candles will be used
+                logger.Warn(ex)
+            End Try
+        End Function
     End Class
 End Namespace

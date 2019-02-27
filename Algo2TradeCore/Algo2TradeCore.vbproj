@@ -77,9 +77,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapter\APIAdapter.vb" />
+    <Compile Include="Adapter\APIInformationCollector.vb" />
     <Compile Include="Adapter\APIHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\APITicker.vb" />
     <Compile Include="Adapter\ZerodhaAdapter.vb" />
+    <Compile Include="Adapter\ZerodhaInformationCollector.vb" />
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
     <Compile Include="Entities\IBrokerageAttributes.vb" />
@@ -132,7 +134,7 @@
     <Compile Include="Strategies\Strategy.vb" />
     <Compile Include="Strategies\StrategyInstrument.vb" />
     <Compile Include="Strategies\Trigger.vb" />
-    <Compile Include="UserSettings\UserInputs.vb" />
+    <Compile Include="UserSettings\CommonUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

@@ -16,22 +16,22 @@ Namespace Strategies
         Public Event WaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
-            If source IsNot Nothing Then source = New List(Of Object)
+            If source Is Nothing Then source = New List(Of Object)
             source.Add(Me)
             RaiseEvent DocumentDownloadCompleteEx(source)
         End Sub
         Protected Overridable Sub OnDocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
-            If source IsNot Nothing Then source = New List(Of Object)
+            If source Is Nothing Then source = New List(Of Object)
             source.Add(Me)
             RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, source)
         End Sub
         Protected Overridable Sub OnHeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
-            If source IsNot Nothing Then source = New List(Of Object)
+            If source Is Nothing Then source = New List(Of Object)
             source.Add(Me)
             RaiseEvent HeartbeatEx(msg, source)
         End Sub
         Protected Overridable Sub OnWaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
-            If source IsNot Nothing Then source = New List(Of Object)
+            If source Is Nothing Then source = New List(Of Object)
             source.Add(Me)
             RaiseEvent WaitingForEx(elapsedSecs, totalSecs, msg, source)
         End Sub
@@ -55,14 +55,14 @@ Namespace Strategies
         Public ReadOnly Property StrategyIdentifier As String
         Public Property TradableInstrumentsAsPerStrategy As IEnumerable(Of IInstrument)
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
-        Public Property UserSettings As UserInputs = Nothing
+        Public Property UserSettings As CommonUserInputs = Nothing
         Public Property ParentController As APIStrategyController
         Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
 
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal associatedStrategyIdentifier As String,
-                       ByVal userSettings As UserInputs,
+                       ByVal userSettings As CommonUserInputs,
                        ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
@@ -100,26 +100,7 @@ Namespace Strategies
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task
-        Public Overridable Async Function FillOrderDetailsAsync() As Task
-            'logger.Debug("FillOrderDetailsAsync, parameters:Nothing")
-            Try
-                While True
-                    If Me.ParentController.OrphanException IsNot Nothing Then
-                        Throw Me.ParentController.OrphanException
-                    End If
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If Now() >= Me.ParentController.FillOrderLastTimeWhenDone.AddSeconds(10) Then
-                        Await Me.ParentController.FillOrderDetailsAsync(Me).ConfigureAwait(False)
-                    End If
-                    Await Task.Delay(10000).ConfigureAwait(False)
-                End While
-            Catch ex As Exception
-                'To log exceptions getting created from this function as the bubble up of the exception
-                'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
-                logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
-                Throw ex
-            End Try
-        End Function
+
         Public Overridable Async Function ForceExitAllTradesAsync() As Task
             'logger.Debug("ForceExitAllTrades, parameters:Nothing")
             Try
@@ -148,6 +129,20 @@ Namespace Strategies
                 logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
                 Throw ex
             End Try
+        End Function
+        Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
+            'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
+            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                For Each runningTradableStrategyInstrument In TradableStrategyInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier = orderData.ParentOrder.InstrumentIdentifier Then
+                        If orderData.ParentOrder.Tag IsNot Nothing AndAlso
+                            orderData.ParentOrder.Tag.Contains(runningTradableStrategyInstrument.GenerateTag()) Then
+                            Await runningTradableStrategyInstrument.ProcessOrderAsync(orderData).ConfigureAwait(False)
+                        End If
+                    End If
+                Next
+            End If
         End Function
         Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
 

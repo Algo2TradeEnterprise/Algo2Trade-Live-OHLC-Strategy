@@ -30,7 +30,11 @@ Public Class MomentumReversalStrategyInstrument
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         RawPayloadConsumers = New List(Of IPayloadConsumer)
-        RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
+        If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
+            RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
+        Else
+            Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
+        End If
     End Sub
     Public Overrides Async Function MonitorAsync() As Task
         Try
@@ -84,14 +88,11 @@ Public Class MomentumReversalStrategyInstrument
         Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 14, 30, 0)
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
 
-        If Now >= lastTradeEntryTime Then Exit Function
-
-        If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso
+        If Now < lastTradeEntryTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            GetActiveOrder(APIAdapter.TransactionType.None) Is Nothing AndAlso Me.TotalTrades <= MRUserSettings.NumberOfTarde Then
-            If IsAnyTradeExitedInCurrentTimeframeCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) Then
-                Exit Function
-            End If
+            GetActiveOrder(APIAdapter.TransactionType.None) Is Nothing AndAlso Me.TotalTrades <= MRUserSettings.NumberOfTarde AndAlso
+            Not IsAnyTradeExitedInCurrentTimeframeCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) Then
+
             Dim benchmarkWicksSize As Double = runningCandlePayload.PreviousPayload.CandleRange * MRUserSettings.CandleWickSizePercentage / 100
             If runningCandlePayload.PreviousPayload.CandleRangePercentage > MRUserSettings.MinCandleRangePercentage Then
                 If runningCandlePayload.PreviousPayload.CandleWicks.Top > benchmarkWicksSize Then
@@ -149,11 +150,13 @@ Public Class MomentumReversalStrategyInstrument
                 End If
             End If
         End If
-        Dim requestEncryption As String = Nothing
+        Dim encryptionString As String = Nothing
         If ret IsNot Nothing AndAlso ret.Item2 IsNot Nothing Then
-            requestEncryption = Utilities.Strings.Encrypt(ret.Item2.ToString, "Algo2TradePlaceOrder")
+            logger.Warn("Before Collection checking:{0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
+            encryptionString = Utilities.Strings.Encrypt(ret.Item2.ToString, "Algo2TradePlaceOrder")
+            logger.Warn("Encryption String:{0}", encryptionString)
             If RequestResponseForPlaceOrder IsNot Nothing AndAlso RequestResponseForPlaceOrder.Count > 0 AndAlso
-            RequestResponseForPlaceOrder.ContainsKey(requestEncryption) Then
+            RequestResponseForPlaceOrder.ContainsKey(encryptionString) Then
                 ret = Nothing
             End If
         End If

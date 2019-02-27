@@ -120,6 +120,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collection\CollectionUtil.vb" />
     <Compile Include="Collection\LimitedStack.vb" />
     <Compile Include="DAL\CSVHelper.vb" />
     <Compile Include="DAL\DBHelper.vb" />

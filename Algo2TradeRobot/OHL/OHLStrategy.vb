@@ -3,6 +3,7 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.UserSettings
 Imports NLog
 Imports Utilities.Time
 Imports Utilities.DAL
@@ -15,10 +16,21 @@ Public Class OHLStrategy
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
+                   ByVal userSettings As CommonUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        'Though the TradableStrategyInstruments is being populated from inside by newing it,
+        'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
+        'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
+        'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
+    'Public Sub New(ByVal associatedParentController As APIStrategyController,
+    '               ByVal strategyIdentifier As String,
+    '               ByVal maxNumberOfDaysForHistoricalFetch As Integer,
+    '               ByVal canceller As CancellationTokenSource)
+    '    MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
+    'End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
     ''' </summary>
@@ -53,6 +65,7 @@ Public Class OHLStrategy
 
             'Get OHL Strategy Instruments
             Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
+            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
             'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
@@ -157,7 +170,6 @@ Public Class OHLStrategy
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             'Task to run order update periodically
-            tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
@@ -166,7 +178,8 @@ Public Class OHLStrategy
         End Try
         If lastException IsNot Nothing Then
             Await ParentController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            Await ParentController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+            Await ParentController.CloseFetcherIfConnectedAsync(False).ConfigureAwait(False)
+            Await ParentController.CloseCollectorIfConnectedAsync(False).ConfigureAwait(False)
             Throw lastException
         End If
     End Function

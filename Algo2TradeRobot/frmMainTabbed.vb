@@ -9,6 +9,7 @@ Imports Syncfusion.WinForms.Input.Enums
 Imports Utilities.Time
 Imports System.IO
 Imports System.Runtime.Serialization.Formatters.Binary
+Imports Algo2TradeCore.UserSettings
 
 Public Class frmMainTabbed
 
@@ -250,15 +251,19 @@ Public Class frmMainTabbed
         newForm.ShowDialog()
     End Sub
 
+    Private Sub miAbout_Click(sender As Object, e As EventArgs) Handles miAbout.Click
+        Dim newForm As New frmAbout
+        newForm.ShowDialog()
+    End Sub
 
 #Region "Momentum Reversal"
     Private _MRUserInputs As MomentumReversalUserInputs = Nothing
 
     Private Sub sfdgvMomentumReversalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMomentumReversalMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(MomentumReversalStrategy))
     End Sub
     Private Sub sfdgvMomentumReversalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMomentumReversalMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(MomentumReversalStrategy))
     End Sub
     Private Async Function MomentumReversalWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
@@ -278,12 +283,13 @@ Public Class frmMainTabbed
                 fs.Close()
                 _MRUserInputs.InstrumentsData = Nothing
                 _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts)
+                _MRUserInputs.GetInformationDelay = My.Settings.GetInformationDelay
             Else
                 Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
             End If
 
-            EnableDisableUIEx(UIMode.Active, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.BlockOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Active, GetType(MomentumReversalStrategy))
+            EnableDisableUIEx(UIMode.BlockOther, GetType(MomentumReversalStrategy))
 
             If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
@@ -307,6 +313,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -323,7 +330,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
-
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
 #Region "Login"
                 Dim loginMessage As String = Nothing
                 While True
@@ -374,7 +381,7 @@ Public Class frmMainTabbed
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(MomentumReversalStrategy))
 
             Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, 2, _MRUserInputs, 5, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
@@ -396,28 +403,30 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(MomentumReversalStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
             SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
         End Try
-        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
-        _commonController = Nothing
-        _connection = Nothing
-        _cts = Nothing
-        'End If
+        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+            If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+            If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+            _commonController = Nothing
+            _connection = Nothing
+            _cts = Nothing
+        End If
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
         Await Task.Run(AddressOf MomentumReversalWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
-        FlashTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
+        FlashTickerBulbEx(GetType(MomentumReversalStrategy))
     End Sub
     Private Async Sub btnMomentumReversalStop_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _cts.Cancel()
     End Sub
     Private Sub btnMomentumReversalSettings_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalSettings.Click
@@ -428,10 +437,10 @@ Public Class frmMainTabbed
 
 #Region "OHL"
     Private Sub sfdgvOHLMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvOHLMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(OHLStrategy))
     End Sub
     Private Sub sfdgvOHLMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvOHLMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(OHLStrategy))
     End Sub
     Private Async Function OHLStartWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
@@ -443,8 +452,12 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
-            EnableDisableUIEx(UIMode.Active, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.BlockOther, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+            Dim OHLSettings As New CommonUserInputs
+            OHLSettings.SignalTimeFrame = 5
+            OHLSettings.GetInformationDelay = My.Settings.GetInformationDelay
+
+            EnableDisableUIEx(UIMode.Active, GetType(OHLStrategy))
+            EnableDisableUIEx(UIMode.BlockOther, GetType(OHLStrategy))
 
             If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
@@ -468,6 +481,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -484,6 +498,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
 
 #Region "Login"
                 Dim loginMessage As String = Nothing
@@ -534,9 +549,9 @@ Public Class frmMainTabbed
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(OHLStrategy))
 
-            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, 0, _cts)
+            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, OHLSettings, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -556,36 +571,38 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(OHLStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(OHLStrategy))
         End Try
-        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
-        _commonController = Nothing
-        _connection = Nothing
-        _cts = Nothing
-        'End If
+        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+            If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+            If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+            _commonController = Nothing
+            _connection = Nothing
+            _cts = Nothing
+        End If
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
         Await Task.Run(AddressOf OHLStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
-        FlashTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
+        FlashTickerBulbEx(GetType(OHLStrategy))
     End Sub
     Private Async Sub btnOHLStop_Click(sender As Object, e As EventArgs) Handles btnOHLStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _cts.Cancel()
     End Sub
 #End Region
 
 #Region "AmiSignal"
     Private Sub sfdgvAmiSignalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvAmiSignalMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(AmiSignalStrategy))
     End Sub
     Private Sub sfdgvAmiSignalMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvAmiSignalMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(AmiSignalStrategy))
     End Sub
     Private Async Function AmiSignalStartWorkerAsync() As Task
         If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
@@ -599,11 +616,12 @@ Public Class frmMainTabbed
         Try
             OnHeartbeat("Validating Settings & instrument details")
             Dim amiSignalSettings As New AmiSignalUserInputs
-            amiSignalSettings.SignalTimeFrame = 1
+            'amiSignalSettings.SignalTimeFrame = 1
+            amiSignalSettings.GetInformationDelay = My.Settings.GetInformationDelay
             amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts)
 
-            EnableDisableUIEx(UIMode.Active, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.BlockOther, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.Active, GetType(AmiSignalStrategy))
+            EnableDisableUIEx(UIMode.BlockOther, GetType(AmiSignalStrategy))
 
             If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
@@ -627,6 +645,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -643,6 +662,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
 
 #Region "Login"
                 Dim loginMessage As String = Nothing
@@ -693,7 +713,7 @@ Public Class frmMainTabbed
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(AmiSignalStrategy))
 
             Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, amiSignalSettings, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
@@ -715,26 +735,28 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
-            EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(AmiSignalStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         End Try
-        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
-        _commonController = Nothing
-        _connection = Nothing
-        _cts = Nothing
-        'End If
+        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+            If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+            If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+            _commonController = Nothing
+            _connection = Nothing
+            _cts = Nothing
+        End If
     End Function
     Private Async Sub btnAmiSignalStart_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStart.Click
         Await Task.Run(AddressOf AmiSignalStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrAmiSignalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrAmiSignalTickerStatus.Tick
-        FlashTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+        FlashTickerBulbEx(GetType(AmiSignalStrategy))
     End Sub
     Private Async Sub btnAmiSignalStop_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStop.Click
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _cts.Cancel()
     End Sub
 #End Region
@@ -750,7 +772,7 @@ Public Class frmMainTabbed
         None
     End Enum
     Private Sub EnableDisableUIEx(ByVal mode As UIMode, ByVal source As Object)
-        If source.GetType Is GetType(OHLStrategy) Then
+        If source Is GetType(OHLStrategy) Then
             Select Case mode
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnOHLStart, False)
@@ -778,7 +800,7 @@ Public Class frmMainTabbed
                     SetObjectEnableDisable_ThreadSafe(btnOHLStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, Nothing)
             End Select
-        ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
+        ElseIf source Is GetType(MomentumReversalStrategy) Then
             Select Case mode
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStart, False)
@@ -806,7 +828,7 @@ Public Class frmMainTabbed
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
             End Select
-        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+        ElseIf source Is GetType(AmiSignalStrategy) Then
             Select Case mode
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnAmiSignalStart, False)
@@ -839,18 +861,25 @@ Public Class frmMainTabbed
     Private Sub FlashTickerBulbEx(ByVal source As Object)
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
         Dim tmrTickerStatusCommon As System.Windows.Forms.Timer = Nothing
-        If source.GetType Is GetType(OHLStrategy) Then
+        If source Is GetType(OHLStrategy) Then
             blbTickerStatusCommon = blbOHLTickerStatus
             tmrTickerStatusCommon = tmrOHLTickerStatus
-        ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
+        ElseIf source Is GetType(MomentumReversalStrategy) Then
             blbTickerStatusCommon = blbMomentumReversalTickerStatus
             tmrTickerStatusCommon = tmrMomentumReversalTickerStatus
-        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+        ElseIf source Is GetType(AmiSignalStrategy) Then
             blbTickerStatusCommon = blbAmiSignalTickerStatus
             tmrTickerStatusCommon = tmrAmiSignalTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
+
+        Dim trialEndDate As Date = New Date(2019, 3, 2, 0, 0, 0)
+        If Now() >= trialEndDate Then
+            MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+            End
+        End If
+
         If tmrTickerStatusCommon.Interval = 700 Then
             tmrTickerStatusCommon.Interval = 2000
             blbTickerStatusCommon.Visible = True
@@ -862,11 +891,11 @@ Public Class frmMainTabbed
     End Sub
     Private Sub ColorTickerBulbEx(ByVal source As Object, ByVal color As Color)
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
-        If source.GetType Is GetType(OHLStrategy) Then
+        If source Is GetType(OHLStrategy) Then
             blbTickerStatusCommon = blbOHLTickerStatus
-        ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
+        ElseIf source Is GetType(MomentumReversalStrategy) Then
             blbTickerStatusCommon = blbMomentumReversalTickerStatus
-        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+        ElseIf source Is GetType(AmiSignalStrategy) Then
             blbTickerStatusCommon = blbAmiSignalTickerStatus
         End If
         blbTickerStatusCommon.Color = color
@@ -879,11 +908,11 @@ Public Class frmMainTabbed
     End Enum
     Private Sub ManipulateGridEx(ByVal mode As GridMode, ByVal parameter As Object, ByVal source As Object)
         Dim sfdgvCommon As SfDataGrid = Nothing
-        If source.GetType Is GetType(OHLStrategy) Then
+        If source Is GetType(OHLStrategy) Then
             sfdgvCommon = sfdgvOHLMainDashboard
-        ElseIf source.GetType Is GetType(MomentumReversalStrategy) Then
+        ElseIf source Is GetType(MomentumReversalStrategy) Then
             sfdgvCommon = sfdgvMomentumReversalMainDashboard
-        ElseIf source.GetType Is GetType(AmiSignalStrategy) Then
+        ElseIf source Is GetType(AmiSignalStrategy) Then
             sfdgvCommon = sfdgvAmiSignalMainDashboard
         End If
 
@@ -963,38 +992,32 @@ Public Class frmMainTabbed
         GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
         logger.Trace("*************************** Logging started ***************************")
 
-        Dim trialEndDate As Date = New Date(2019, 3, 2, 0, 0, 0)
-        If Now() >= trialEndDate Then
-            MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-            End
-        End If
-
         If Not Common.IsZerodhaUserDetailsPopulated() Then
             miUserDetails_Click(sender, e)
         End If
-        EnableDisableUIEx(UIMode.Idle, New OHLStrategy(Nothing, Nothing, Nothing, Nothing))
-        EnableDisableUIEx(UIMode.Idle, New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing))
-        EnableDisableUIEx(UIMode.Idle, New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing))
+        EnableDisableUIEx(UIMode.Idle, GetType(OHLStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         'tabMain.TabPages.Remove(tabOHL)
-        'tabMain.TabPages.Remove(tabMomentumReversal)
+        'tabMain.TabPages.Remove(tabAmiSignal)
     End Sub
     Private Sub OnTickerClose()
-        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
-        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
-        ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
+        ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)
+        ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Pink)
+        ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
-        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
-        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
-        ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Lime)
+        ColorTickerBulbEx(GetType(OHLStrategy), Color.Lime)
+        ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Lime)
+        ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
         If Not isConnected Then
-            ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
-            ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
-            ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Pink)
+            ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)
+            ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Pink)
+            ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -1005,14 +1028,18 @@ Public Class frmMainTabbed
         'Nothing to do
     End Sub
     Private Sub OnTickerReconnect()
-        ColorTickerBulbEx(New OHLStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
-        ColorTickerBulbEx(New MomentumReversalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
-        ColorTickerBulbEx(New AmiSignalStrategy(Nothing, Nothing, Nothing, Nothing), Color.Yellow)
+        ColorTickerBulbEx(GetType(OHLStrategy), Color.Yellow)
+        ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Yellow)
+        ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
         'Nothing to do
         OnHeartbeat(String.Format("Historical Data Fetcher: Error:{0}, InstrumentIdentifier:{1}", errorMsg, instrumentIdentifier))
+    End Sub
+    Private Sub OnCollectorError(ByVal errorMsg As String)
+        'Nothing to do
+        OnHeartbeat(String.Format("Information Collector: Error:{0}", errorMsg))
     End Sub
     Public Sub ProgressStatus(ByVal msg As String)
         If Not msg.EndsWith("...") Then msg = String.Format("{0}...", msg)
