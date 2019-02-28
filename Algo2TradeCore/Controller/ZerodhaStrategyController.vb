@@ -821,8 +821,8 @@ Namespace Controller
                                                                    Return Nothing
                                                                Else
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                     y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                     y.WrappedOrder.TriggerPrice <> 0
+                                                                 y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                 y.WrappedOrder.TriggerPrice <> 0
                                                                End If
                                                            End Function)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -832,8 +832,8 @@ Namespace Controller
                                                                        Return Nothing
                                                                    Else
                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                        y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                        y.WrappedOrder.Price <> 0
+                                                                    y.WrappedOrder.Price > wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                    y.WrappedOrder.Price <> 0
                                                                    End If
                                                                End Function)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -853,8 +853,8 @@ Namespace Controller
                                                                    Return Nothing
                                                                Else
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                    y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                    y.WrappedOrder.TriggerPrice <> 0
+                                                                y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                y.WrappedOrder.TriggerPrice <> 0
                                                                End If
                                                            End Function)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -864,8 +864,8 @@ Namespace Controller
                                                                        Return Nothing
                                                                    Else
                                                                        Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                        y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                        y.WrappedOrder.Price <> 0
+                                                                    y.WrappedOrder.Price < wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                    y.WrappedOrder.Price <> 0
                                                                    End If
                                                                End Function)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -879,17 +879,18 @@ Namespace Controller
                                                             End Function)
                     End If
                     Dim businessOrder As New BusinessOrder With {.ParentOrderIdentifier = parentOrder.OrderIdentifier,
-                                                                            .ParentOrder = parentOrder,
-                                                                            .SLOrder = slOrder,
-                                                                            .AllOrder = allOrder,
-                                                                            .TargetOrder = targetOrder}
+                                                                        .ParentOrder = parentOrder,
+                                                                        .SLOrder = slOrder,
+                                                                        .AllOrder = allOrder,
+                                                                        .TargetOrder = targetOrder}
 
                     If ret Is Nothing Then ret = New Concurrent.ConcurrentBag(Of IBusinessOrder)
                     ret.Add(businessOrder)
 
+
                     'This for loop needs to be after the order is published
                     If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
-                        _subscribedStrategyInstruments.ContainsKey(parentOrder.InstrumentIdentifier) Then
+                    _subscribedStrategyInstruments.ContainsKey(parentOrder.InstrumentIdentifier) Then
                         For Each runningStrategyInstrument In _subscribedStrategyInstruments(parentOrder.InstrumentIdentifier)
                             If parentOrder.Tag IsNot Nothing AndAlso parentOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
                                 Dim unionOfAllOrders As IEnumerable(Of IOrder) = businessOrder.SLOrder.Union(businessOrder.AllOrder.Union(businessOrder.TargetOrder))

@@ -997,6 +997,7 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         'tabMain.TabPages.Remove(tabOHL)
+        'tabMain.TabPages.Remove(tabMomentumReversal)
         'tabMain.TabPages.Remove(tabAmiSignal)
     End Sub
     Private Sub OnTickerClose()

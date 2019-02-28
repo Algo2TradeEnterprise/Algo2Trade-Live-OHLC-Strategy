@@ -285,7 +285,7 @@ Namespace Strategies
 #End Region
 
         Private Function CalculatePL() As Decimal
-            logger.Debug("CalculatePL, parameters:Nothing")
+            'logger.Debug("CalculatePL, parameters:Nothing")
             Dim plOfDay As Decimal = 0
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
                 For Each parentOrderId In OrderDetails.Keys
@@ -446,8 +446,9 @@ Namespace Strategies
             'Delete RequestResponseForCancelOrder collection
             'logger.Warn("Cancel Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
             If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 Then
+                Dim encryptionDataString As String = If(orderData.ParentOrderIdentifier Is Nothing, "Algo2TradeParentCancel", orderData.ParentOrderIdentifier)
                 Dim cancelOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForCancelOrder.Where(Function(x)
-                                                                                                                                       Return x.Key = Utilities.Strings.Encrypt(orderData.ParentOrderIdentifier, orderData.OrderIdentifier)
+                                                                                                                                       Return x.Key = Utilities.Strings.Encrypt(encryptionDataString, orderData.OrderIdentifier)
                                                                                                                                    End Function)
                 If cancelOrderParameters IsNot Nothing AndAlso cancelOrderParameters.Count > 0 Then
                     For Each cancelOrderParameter In cancelOrderParameters
@@ -456,7 +457,6 @@ Namespace Strategies
                     Next
                 End If
             End If
-
         End Function
         Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
             'logger.Debug("CalculateBuffer, parameters:{0},{1}", price, floorOrCeiling)
