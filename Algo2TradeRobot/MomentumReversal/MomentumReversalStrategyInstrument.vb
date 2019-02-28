@@ -30,10 +30,12 @@ Public Class MomentumReversalStrategyInstrument
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         RawPayloadConsumers = New List(Of IPayloadConsumer)
-        If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
-            RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
-        Else
-            Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
+        If Me.ParentStrategy.IsStrategyCandleStickBased Then
+            If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
+                RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
+            Else
+                Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
+            End If
         End If
     End Sub
     Public Overrides Async Function MonitorAsync() As Task

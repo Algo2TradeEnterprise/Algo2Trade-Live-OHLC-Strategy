@@ -14,7 +14,7 @@ Namespace ChartHandler.ChartStyle
 
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal assoicatedParentInstrument As IInstrument,
-                       ByVal associatedStrategyInstruments As Concurrent.ConcurrentBag(Of StrategyInstrument),
+                       ByVal associatedStrategyInstruments As IEnumerable(Of StrategyInstrument),
                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, assoicatedParentInstrument, associatedStrategyInstruments, canceller)
         End Sub

@@ -346,13 +346,20 @@ Namespace Controller
                     If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(runningStrategyUniqueInstruments.InstrumentIdentifier) Then
                         Continue For
                     End If
-                    If _rawPayloadCreators Is Nothing Then _rawPayloadCreators = New Dictionary(Of String, CandleStickChart)
-                    _rawPayloadCreators.Add(runningStrategyUniqueInstruments.InstrumentIdentifier,
-                                            New CandleStickChart(Me,
-                                                                 runningStrategyUniqueInstruments,
-                                                                 _subscribedStrategyInstruments(runningStrategyUniqueInstruments.InstrumentIdentifier),
-                                                                 _cts))
-                    If runningStrategyUniqueInstruments.RawPayloads Is Nothing Then runningStrategyUniqueInstruments.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+                    Dim candleStickBasedStrategyInstruments As IEnumerable(Of StrategyInstrument) =
+                        _subscribedStrategyInstruments(runningStrategyUniqueInstruments.InstrumentIdentifier).Where(Function(x)
+                                                                                                                        Return x.ParentStrategy.IsStrategyCandleStickBased
+                                                                                                                    End Function)
+
+                    If candleStickBasedStrategyInstruments IsNot Nothing AndAlso candleStickBasedStrategyInstruments.Count > 0 Then
+                        If _rawPayloadCreators Is Nothing Then _rawPayloadCreators = New Dictionary(Of String, CandleStickChart)
+                        _rawPayloadCreators.Add(runningStrategyUniqueInstruments.InstrumentIdentifier,
+                                                New CandleStickChart(Me,
+                                                                     runningStrategyUniqueInstruments,
+                                                                     candleStickBasedStrategyInstruments,
+                                                                     _cts))
+                        If runningStrategyUniqueInstruments.RawPayloads Is Nothing Then runningStrategyUniqueInstruments.RawPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+                    End If
                 Next
             End If
         End Sub

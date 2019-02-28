@@ -58,15 +58,17 @@ Namespace Strategies
         Public Property UserSettings As StrategyUserInputs = Nothing
         Public Property ParentController As APIStrategyController
         Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
-
+        Public ReadOnly Property IsStrategyCandleStickBased As Boolean
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal associatedStrategyIdentifier As String,
+                       ByVal isStrategyCandleStickBased As Boolean,
                        ByVal userSettings As StrategyUserInputs,
                        ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
             Me.StrategyIdentifier = associatedStrategyIdentifier
+            Me.IsStrategyCandleStickBased = isStrategyCandleStickBased
             Me.UserSettings = userSettings
             Me.MaxNumberOfDaysForHistoricalFetch = maxNumberOfDaysForHistoricalFetch
             _cts = canceller
@@ -96,7 +98,24 @@ Namespace Strategies
             End Get
         End Property
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
-        Public MustOverride Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
+        Public Overridable Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
+            logger.Debug("SubscribeAsync, usableTicker:{0}, usableFetcher:{1}", usableTicker.ToString, usableFetcher.ToString)
+            _cts.Token.ThrowIfCancellationRequested()
+            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                Dim runningInstrumentIdentifiers As List(Of String) = Nothing
+                For Each runningTradableStrategyInstruments In TradableStrategyInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If runningInstrumentIdentifiers Is Nothing Then runningInstrumentIdentifiers = New List(Of String)
+                    runningInstrumentIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier)
+                Next
+                _cts.Token.ThrowIfCancellationRequested()
+                Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
+                If Me.IsStrategyCandleStickBased Then
+                    Await usableFetcher.SubscribeAsync(TradableInstrumentsAsPerStrategy, Me.MaxNumberOfDaysForHistoricalFetch).ConfigureAwait(False)
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                End If
+        End Function
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task

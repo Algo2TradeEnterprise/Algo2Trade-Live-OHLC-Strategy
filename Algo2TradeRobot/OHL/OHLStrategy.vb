@@ -19,7 +19,7 @@ Public Class OHLStrategy
                    ByVal userSettings As StrategyUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -64,8 +64,8 @@ Public Class OHLStrategy
             'End If
 
             'Get OHL Strategy Instruments
-            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
-            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
+            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
+            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
             'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
@@ -123,22 +123,6 @@ Public Class OHLStrategy
         End If
 
         Return ret
-    End Function
-    Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
-        logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
-        _cts.Token.ThrowIfCancellationRequested()
-        If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-            Dim runningInstrumentIdentifiers As List(Of String) = Nothing
-            For Each runningTradableStrategyInstruments In TradableStrategyInstruments
-                _cts.Token.ThrowIfCancellationRequested()
-                If runningInstrumentIdentifiers Is Nothing Then runningInstrumentIdentifiers = New List(Of String)
-                runningInstrumentIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier)
-            Next
-            _cts.Token.ThrowIfCancellationRequested()
-            Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
-            Await usableFetcher.SubscribeAsync(TradableInstrumentsAsPerStrategy, Me.MaxNumberOfDaysForHistoricalFetch).ConfigureAwait(False)
-            _cts.Token.ThrowIfCancellationRequested()
-        End If
     End Function
 
     Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))

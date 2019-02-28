@@ -35,6 +35,13 @@ Public Class AmiSignalStrategyInstrument
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         RawPayloadConsumers = New List(Of IPayloadConsumer)
+        If Me.ParentStrategy.IsStrategyCandleStickBased Then
+            If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
+                RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
+            Else
+                Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
+            End If
+        End If
     End Sub
     Public Overrides Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
         _cts.Token.ThrowIfCancellationRequested()
@@ -75,7 +82,9 @@ Public Class AmiSignalStrategyInstrument
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
         Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
-        If Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
+        Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 0, 0)
+
+        If Now() < lastTradeEntryTime AndAlso Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
             Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If currentEntrySignal.SignalType = TypeOfSignal.Entry AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
                 Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
