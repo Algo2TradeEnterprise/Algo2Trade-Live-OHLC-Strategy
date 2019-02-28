@@ -130,6 +130,7 @@ Namespace Adapter
                                                                       Return True
                                                                   End Function)
                         'OnHeartbeat("Polling historical candles")
+                        logger.Debug("Polling historical candles")
                         Await Task.WhenAll(tasks).ConfigureAwait(False)
                         If Me.ParentController.APIConnection Is Nothing OrElse apiConnectionBeingUsed Is Nothing OrElse
                         (Me.ParentController.APIConnection IsNot Nothing AndAlso apiConnectionBeingUsed IsNot Nothing AndAlso
