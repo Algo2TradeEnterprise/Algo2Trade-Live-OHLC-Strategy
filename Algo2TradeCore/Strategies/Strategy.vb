@@ -55,14 +55,14 @@ Namespace Strategies
         Public ReadOnly Property StrategyIdentifier As String
         Public Property TradableInstrumentsAsPerStrategy As IEnumerable(Of IInstrument)
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
-        Public Property UserSettings As CommonUserInputs = Nothing
+        Public Property UserSettings As StrategyUserInputs = Nothing
         Public Property ParentController As APIStrategyController
         Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
 
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal associatedStrategyIdentifier As String,
-                       ByVal userSettings As CommonUserInputs,
+                       ByVal userSettings As StrategyUserInputs,
                        ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController

@@ -16,7 +16,7 @@ Public Class OHLStrategy
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
-                   ByVal userSettings As CommonUserInputs,
+                   ByVal userSettings As StrategyUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedParentController, strategyIdentifier, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)

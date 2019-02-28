@@ -50,6 +50,9 @@
   <PropertyGroup>
     <ApplicationIcon>algo2tradericon 24x24.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Bulb">
       <HintPath>..\..\LEDBulb\Bulb\bin\Debug\Bulb.exe</HintPath>
@@ -176,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="My Project\app.manifest" />
     <None Include="My Project\Application.myapp">
       <Generator>MyApplicationCodeGenerator</Generator>
       <LastGenOutput>Application.Designer.vb</LastGenOutput>

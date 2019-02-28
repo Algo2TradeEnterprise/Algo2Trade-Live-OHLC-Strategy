@@ -244,6 +244,7 @@ Public Class frmMainTabbed
     Private _lastLoggedMessage As String = Nothing
     Private _commonController As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
+    Private _commonControllerUserInput As New ControllerUserInputs With {.GetInformationDelay = My.Settings.GetInformationDelay}
 #End Region
 
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
@@ -283,7 +284,6 @@ Public Class frmMainTabbed
                 fs.Close()
                 _MRUserInputs.InstrumentsData = Nothing
                 _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts)
-                _MRUserInputs.GetInformationDelay = My.Settings.GetInformationDelay
             Else
                 Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
             End If
@@ -297,7 +297,7 @@ Public Class frmMainTabbed
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
             Else
-                _commonController = New ZerodhaStrategyController(currentUser, _cts)
+                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
 
                 RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -452,9 +452,8 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
-            Dim OHLSettings As New CommonUserInputs
+            Dim OHLSettings As New StrategyUserInputs
             OHLSettings.SignalTimeFrame = 5
-            OHLSettings.GetInformationDelay = My.Settings.GetInformationDelay
 
             EnableDisableUIEx(UIMode.Active, GetType(OHLStrategy))
             EnableDisableUIEx(UIMode.BlockOther, GetType(OHLStrategy))
@@ -465,7 +464,7 @@ Public Class frmMainTabbed
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
             Else
-                _commonController = New ZerodhaStrategyController(currentUser, _cts)
+                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
 
                 RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -617,7 +616,6 @@ Public Class frmMainTabbed
             OnHeartbeat("Validating Settings & instrument details")
             Dim amiSignalSettings As New AmiSignalUserInputs
             'amiSignalSettings.SignalTimeFrame = 1
-            amiSignalSettings.GetInformationDelay = My.Settings.GetInformationDelay
             amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts)
 
             EnableDisableUIEx(UIMode.Active, GetType(AmiSignalStrategy))
@@ -629,7 +627,7 @@ Public Class frmMainTabbed
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
             Else
-                _commonController = New ZerodhaStrategyController(currentUser, _cts)
+                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
 
                 RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor

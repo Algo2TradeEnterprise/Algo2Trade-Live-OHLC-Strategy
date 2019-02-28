@@ -9,6 +9,7 @@ Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
 Imports Algo2TradeCore.ChartHandler.ChartStyle
+Imports Algo2TradeCore.UserSettings
 
 Namespace Controller
     Public MustInherit Class APIStrategyController
@@ -108,11 +109,14 @@ Namespace Controller
         Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, Concurrent.ConcurrentBag(Of StrategyInstrument))
         Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
+        Protected _UserInputs As ControllerUserInputs
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal associatedBrokerSource As APISource,
+                       ByVal associatedUserInputs As ControllerUserInputs,
                        ByVal canceller As CancellationTokenSource)
             _currentUser = validatedUser
             Me.BrokerSource = associatedBrokerSource
+            _UserInputs = associatedUserInputs
             _cts = canceller
             _LoginThreads = 0
         End Sub

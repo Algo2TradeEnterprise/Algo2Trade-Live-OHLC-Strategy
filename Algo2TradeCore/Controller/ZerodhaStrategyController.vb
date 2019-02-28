@@ -12,6 +12,7 @@ Imports Utilities
 Imports System.Net.Http
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Adapter.APIAdapter
+Imports Algo2TradeCore.UserSettings
 
 Namespace Controller
     Public Class ZerodhaStrategyController
@@ -22,8 +23,9 @@ Namespace Controller
 #End Region
 
         Public Sub New(ByVal validatedUser As ZerodhaUser,
+                       ByVal associatedUserInputs As ControllerUserInputs,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(validatedUser, APISource.Zerodha, canceller)
+            MyBase.New(validatedUser, APISource.Zerodha, associatedUserInputs, canceller)
             _LoginURL = "https://kite.trade/connect/login"
         End Sub
 
@@ -547,7 +549,7 @@ Namespace Controller
                                 RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                 'Else
                             End If
-                            _APIInformationCollector = New ZerodhaInformationCollector(Me, 10, _cts)
+                            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me._UserInputs.GetInformationDelay, _cts)
                             'End If
                             AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
                             AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
@@ -624,7 +626,7 @@ Namespace Controller
                 RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                 'Else
             End If
-            _APIInformationCollector = New ZerodhaInformationCollector(Me, 10, _cts)
+            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me._UserInputs.GetInformationDelay, _cts)
             'End If
             AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
             AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
@@ -1038,5 +1040,6 @@ Namespace Controller
             'If errorMessage.Contains("403") Then OnSessionExpireAsync()
         End Sub
 #End Region
+
     End Class
 End Namespace
