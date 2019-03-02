@@ -5,7 +5,7 @@ Imports Utilities.DAL
 
 <Serializable>
 Public Class MomentumReversalUserInputs
-    Inherits UserInputs
+    Inherits StrategyUserInputs
     Public CandleWickSizePercentage As Decimal
     Public MaxStoplossPercentage As Decimal
     Public MinCandleRangePercentage As Decimal

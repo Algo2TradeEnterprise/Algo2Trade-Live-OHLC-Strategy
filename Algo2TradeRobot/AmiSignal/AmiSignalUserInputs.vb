@@ -5,7 +5,7 @@ Imports Utilities.DAL
 
 <Serializable>
 Public Class AmiSignalUserInputs
-    Inherits UserInputs
+    Inherits StrategyUserInputs
     Public MaxStoplossPercentage As Decimal
     Public MaxCapitalPerTrade As Decimal
     Public DefaultBufferPercentage As Decimal

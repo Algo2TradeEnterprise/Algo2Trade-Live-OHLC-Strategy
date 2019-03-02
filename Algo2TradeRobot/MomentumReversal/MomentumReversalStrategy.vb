@@ -16,22 +16,20 @@ Public Class MomentumReversalStrategy
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As MomentumReversalUserInputs,
+                   ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, userSettings, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
-    Public Sub New(ByVal associatedParentController As APIStrategyController,
-                   ByVal strategyIdentifier As String,
-                   ByVal canceller As CancellationTokenSource)
-        Me.New(associatedParentController, strategyIdentifier, Nothing, canceller)
-        'Though the TradableStrategyInstruments is being populated from inside by newing it,
-        'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
-        'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
-        'TradableStrategyInstruments = New List(Of StrategyInstrument)
-    End Sub
+    'Public Sub New(ByVal associatedParentController As APIStrategyController,
+    '               ByVal strategyIdentifier As String,
+    '               ByVal maxNumberOfDaysForHistoricalFetch As Integer,
+    '               ByVal canceller As CancellationTokenSource)
+    '    MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
+    'End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
     ''' </summary>
@@ -184,22 +182,7 @@ Public Class MomentumReversalStrategy
 
         Return ret
     End Function
-    Public Overrides Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
-        logger.Debug("SubscribeAsync, usableTicker:{0}", usableTicker.ToString)
-        _cts.Token.ThrowIfCancellationRequested()
-        If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-            Dim runningInstrumentIdentifiers As List(Of String) = Nothing
-            For Each runningTradableStrategyInstruments In TradableStrategyInstruments
-                _cts.Token.ThrowIfCancellationRequested()
-                If runningInstrumentIdentifiers Is Nothing Then runningInstrumentIdentifiers = New List(Of String)
-                runningInstrumentIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier)
-            Next
-            _cts.Token.ThrowIfCancellationRequested()
-            Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
-            Await usableFetcher.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
-            _cts.Token.ThrowIfCancellationRequested()
-        End If
-    End Function
+
     Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         logger.Debug("IsTriggerReachedAsync, parameters:Nothing")
         _cts.Token.ThrowIfCancellationRequested()
@@ -240,7 +223,6 @@ Public Class MomentumReversalStrategy
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             'Task to run order update periodically
-            tasks.Add(Task.Run(AddressOf FillOrderDetailsAsync, _cts.Token))
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
@@ -249,7 +231,8 @@ Public Class MomentumReversalStrategy
         End Try
         If lastException IsNot Nothing Then
             Await ParentController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            Await ParentController.CloseFetcherIfConnectedAsync().ConfigureAwait(False)
+            Await ParentController.CloseFetcherIfConnectedAsync(False).ConfigureAwait(False)
+            Await ParentController.CloseCollectorIfConnectedAsync(False).ConfigureAwait(False)
             Throw lastException
         End If
     End Function
