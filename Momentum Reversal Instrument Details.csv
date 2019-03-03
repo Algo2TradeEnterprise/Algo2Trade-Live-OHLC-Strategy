@@ -1,5 +1,4 @@
-Instrument Name,Cash,Futures,Quantity,Capital
-ADANIENT,TRUE,,1,
-JINDALSTEL,TRUE,,1,
-SUNPHARMA,TRUE,,1,
-ZEEL,TRUE,,1,
+Instrument Name,Cash,Futures,Quantity,Capital,Number Of Trade
+ADANIENT,,TRUE,1,,6
+JINDALSTEL,,TRUE,1,,3
+PVR,,TRUE,1,,6

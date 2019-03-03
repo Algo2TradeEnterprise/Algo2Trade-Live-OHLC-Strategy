@@ -257,6 +257,11 @@ Public Class frmMainTabbed
         newForm.ShowDialog()
     End Sub
 
+    Private Sub miAdvanceOptions_Click(sender As Object, e As EventArgs) Handles miAdvancedOptions.Click
+        Dim newForm As New frmAdvancedOptions
+        newForm.ShowDialog()
+    End Sub
+
 #Region "Momentum Reversal"
     Private _MRUserInputs As MomentumReversalUserInputs = Nothing
 
@@ -872,7 +877,7 @@ Public Class frmMainTabbed
 
         tmrTickerStatusCommon.Enabled = False
 
-        Dim trialEndDate As Date = New Date(2019, 3, 2, 0, 0, 0)
+        Dim trialEndDate As Date = New Date(2019, 3, 8, 0, 0, 0)
         If Now() >= trialEndDate Then
             MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
             End

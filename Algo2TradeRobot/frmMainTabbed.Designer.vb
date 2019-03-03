@@ -25,7 +25,7 @@ Partial Class frmMainTabbed
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmMainTabbed))
         Me.msMainMenuStrip = New System.Windows.Forms.MenuStrip()
-        Me.miSecurity = New System.Windows.Forms.ToolStripMenuItem()
+        Me.miOptions = New System.Windows.Forms.ToolStripMenuItem()
         Me.miUserDetails = New System.Windows.Forms.ToolStripMenuItem()
         Me.miAbout = New System.Windows.Forms.ToolStripMenuItem()
         Me.tabMain = New System.Windows.Forms.TabControl()
@@ -72,6 +72,7 @@ Partial Class frmMainTabbed
         Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.miAdvancedOptions = New System.Windows.Forms.ToolStripMenuItem()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -103,7 +104,7 @@ Partial Class frmMainTabbed
         'msMainMenuStrip
         '
         Me.msMainMenuStrip.ImageScalingSize = New System.Drawing.Size(20, 20)
-        Me.msMainMenuStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miSecurity, Me.miAbout})
+        Me.msMainMenuStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miOptions, Me.miAbout})
         Me.msMainMenuStrip.Location = New System.Drawing.Point(0, 0)
         Me.msMainMenuStrip.Name = "msMainMenuStrip"
         Me.msMainMenuStrip.Padding = New System.Windows.Forms.Padding(8, 2, 0, 2)
@@ -111,25 +112,25 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.TabIndex = 0
         Me.msMainMenuStrip.Text = "MenuStrip1"
         '
-        'miSecurity
+        'miOptions
         '
-        Me.miSecurity.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miUserDetails})
-        Me.miSecurity.Name = "miSecurity"
-        Me.miSecurity.Size = New System.Drawing.Size(73, 24)
-        Me.miSecurity.Text = "Security"
+        Me.miOptions.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miUserDetails, Me.miAdvancedOptions})
+        Me.miOptions.Name = "miOptions"
+        Me.miOptions.Size = New System.Drawing.Size(73, 24)
+        Me.miOptions.Text = "&Options"
         '
         'miUserDetails
         '
         Me.miUserDetails.Name = "miUserDetails"
         Me.miUserDetails.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.F2), System.Windows.Forms.Keys)
-        Me.miUserDetails.Size = New System.Drawing.Size(220, 26)
-        Me.miUserDetails.Text = "User Details"
+        Me.miUserDetails.Size = New System.Drawing.Size(263, 26)
+        Me.miUserDetails.Text = "&User Details"
         '
         'miAbout
         '
         Me.miAbout.Name = "miAbout"
         Me.miAbout.Size = New System.Drawing.Size(62, 24)
-        Me.miAbout.Text = "About"
+        Me.miAbout.Text = "&About"
         '
         'tabMain
         '
@@ -724,6 +725,13 @@ Partial Class frmMainTabbed
         '
         Me.tmrAmiSignalTickerStatus.Enabled = True
         '
+        'miAdvancedOptions
+        '
+        Me.miAdvancedOptions.Name = "miAdvancedOptions"
+        Me.miAdvancedOptions.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.F7), System.Windows.Forms.Keys)
+        Me.miAdvancedOptions.Size = New System.Drawing.Size(263, 26)
+        Me.miAdvancedOptions.Text = "A&dvanced Options"
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -773,7 +781,7 @@ Partial Class frmMainTabbed
     End Sub
 
     Friend WithEvents msMainMenuStrip As MenuStrip
-    Friend WithEvents miSecurity As ToolStripMenuItem
+    Friend WithEvents miOptions As ToolStripMenuItem
     Friend WithEvents miUserDetails As ToolStripMenuItem
     Friend WithEvents miAbout As ToolStripMenuItem
     Friend WithEvents tabMain As TabControl
@@ -820,4 +828,5 @@ Partial Class frmMainTabbed
     Friend WithEvents PictureBox1 As PictureBox
     Friend WithEvents PictureBox2 As PictureBox
     Friend WithEvents PictureBox3 As PictureBox
+    Friend WithEvents miAdvancedOptions As ToolStripMenuItem
 End Class

@@ -27,6 +27,8 @@ Partial Class frmMomentumReversalSettings
         Me.btnSaveMomentumReversalSettings = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMinCandleRangePercentage = New System.Windows.Forms.TextBox()
+        Me.lblMinCandleRangePercentage = New System.Windows.Forms.Label()
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
@@ -39,10 +41,6 @@ Partial Class frmMomentumReversalSettings
         Me.lblMaxSLPercentage = New System.Windows.Forms.Label()
         Me.lblCandleWickSizePercentage = New System.Windows.Forms.Label()
         Me.opnFileMRSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.txtMinCandleRangePercentage = New System.Windows.Forms.TextBox()
-        Me.lblMinCandleRangePercentage = New System.Windows.Forms.Label()
-        Me.txtNumberOfTrade = New System.Windows.Forms.TextBox()
-        Me.lblNumberOfTrade = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -51,11 +49,11 @@ Partial Class frmMomentumReversalSettings
         Me.btnSaveMomentumReversalSettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSaveMomentumReversalSettings.ImageKey = "save-icon-36533.png"
         Me.btnSaveMomentumReversalSettings.ImageList = Me.ImageList1
-        Me.btnSaveMomentumReversalSettings.Location = New System.Drawing.Point(456, 14)
-        Me.btnSaveMomentumReversalSettings.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.btnSaveMomentumReversalSettings.Location = New System.Drawing.Point(459, 11)
+        Me.btnSaveMomentumReversalSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveMomentumReversalSettings.Name = "btnSaveMomentumReversalSettings"
         Me.btnSaveMomentumReversalSettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveMomentumReversalSettings.TabIndex = 8
+        Me.btnSaveMomentumReversalSettings.TabIndex = 7
         Me.btnSaveMomentumReversalSettings.Text = "&Save"
         Me.btnSaveMomentumReversalSettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSaveMomentumReversalSettings.UseVisualStyleBackColor = True
@@ -68,8 +66,6 @@ Partial Class frmMomentumReversalSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtNumberOfTrade)
-        Me.GroupBox1.Controls.Add(Me.lblNumberOfTrade)
         Me.GroupBox1.Controls.Add(Me.txtMinCandleRangePercentage)
         Me.GroupBox1.Controls.Add(Me.lblMinCandleRangePercentage)
         Me.GroupBox1.Controls.Add(Me.btnBrowse)
@@ -84,28 +80,46 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Controls.Add(Me.lblMaxSLPercentage)
         Me.GroupBox1.Controls.Add(Me.lblCandleWickSizePercentage)
         Me.GroupBox1.Location = New System.Drawing.Point(4, 4)
-        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 286)
+        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 253)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
+        '
+        'txtMinCandleRangePercentage
+        '
+        Me.txtMinCandleRangePercentage.Location = New System.Drawing.Point(175, 62)
+        Me.txtMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinCandleRangePercentage.Name = "txtMinCandleRangePercentage"
+        Me.txtMinCandleRangePercentage.Size = New System.Drawing.Size(256, 22)
+        Me.txtMinCandleRangePercentage.TabIndex = 2
+        '
+        'lblMinCandleRangePercentage
+        '
+        Me.lblMinCandleRangePercentage.AutoSize = True
+        Me.lblMinCandleRangePercentage.Location = New System.Drawing.Point(9, 65)
+        Me.lblMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinCandleRangePercentage.Name = "lblMinCandleRangePercentage"
+        Me.lblMinCandleRangePercentage.Size = New System.Drawing.Size(140, 17)
+        Me.lblMinCandleRangePercentage.TabIndex = 11
+        Me.lblMinCandleRangePercentage.Text = "Min Candle Range %"
         '
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 248)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 215)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 7
+        Me.btnBrowse.TabIndex = 6
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(175, 248)
-        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(175, 215)
+        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(223, 22)
@@ -114,7 +128,7 @@ Partial Class frmMomentumReversalSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 251)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 218)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -123,16 +137,16 @@ Partial Class frmMomentumReversalSettings
         '
         'txtSignalTimeFrame
         '
-        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(175, 210)
-        Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(175, 177)
+        Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
         Me.txtSignalTimeFrame.Size = New System.Drawing.Size(255, 22)
-        Me.txtSignalTimeFrame.TabIndex = 6
+        Me.txtSignalTimeFrame.TabIndex = 5
         '
         'txtTargetMultiplier
         '
         Me.txtTargetMultiplier.Location = New System.Drawing.Point(175, 138)
-        Me.txtTargetMultiplier.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtTargetMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtTargetMultiplier.Name = "txtTargetMultiplier"
         Me.txtTargetMultiplier.Size = New System.Drawing.Size(256, 22)
         Me.txtTargetMultiplier.TabIndex = 4
@@ -140,7 +154,7 @@ Partial Class frmMomentumReversalSettings
         'txtMaxSLPercentage
         '
         Me.txtMaxSLPercentage.Location = New System.Drawing.Point(175, 100)
-        Me.txtMaxSLPercentage.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtMaxSLPercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxSLPercentage.Name = "txtMaxSLPercentage"
         Me.txtMaxSLPercentage.Size = New System.Drawing.Size(256, 22)
         Me.txtMaxSLPercentage.TabIndex = 3
@@ -148,7 +162,7 @@ Partial Class frmMomentumReversalSettings
         'txtCandleWickSizePercentage
         '
         Me.txtCandleWickSizePercentage.Location = New System.Drawing.Point(175, 21)
-        Me.txtCandleWickSizePercentage.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.txtCandleWickSizePercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtCandleWickSizePercentage.Name = "txtCandleWickSizePercentage"
         Me.txtCandleWickSizePercentage.Size = New System.Drawing.Size(255, 22)
         Me.txtCandleWickSizePercentage.TabIndex = 1
@@ -156,7 +170,7 @@ Partial Class frmMomentumReversalSettings
         'lblSignalTimeFrame
         '
         Me.lblSignalTimeFrame.AutoSize = True
-        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(9, 214)
+        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(9, 181)
         Me.lblSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblSignalTimeFrame.Name = "lblSignalTimeFrame"
         Me.lblSignalTimeFrame.Size = New System.Drawing.Size(158, 17)
@@ -196,51 +210,15 @@ Partial Class frmMomentumReversalSettings
         'opnFileMRSettings
         '
         '
-        'txtMinCandleRangePercentage
-        '
-        Me.txtMinCandleRangePercentage.Location = New System.Drawing.Point(175, 62)
-        Me.txtMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinCandleRangePercentage.Name = "txtMinCandleRangePercentage"
-        Me.txtMinCandleRangePercentage.Size = New System.Drawing.Size(256, 22)
-        Me.txtMinCandleRangePercentage.TabIndex = 2
-        '
-        'lblMinCandleRangePercentage
-        '
-        Me.lblMinCandleRangePercentage.AutoSize = True
-        Me.lblMinCandleRangePercentage.Location = New System.Drawing.Point(9, 65)
-        Me.lblMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinCandleRangePercentage.Name = "lblMinCandleRangePercentage"
-        Me.lblMinCandleRangePercentage.Size = New System.Drawing.Size(140, 17)
-        Me.lblMinCandleRangePercentage.TabIndex = 11
-        Me.lblMinCandleRangePercentage.Text = "Min Candle Range %"
-        '
-        'txtNumberOfTrade
-        '
-        Me.txtNumberOfTrade.Location = New System.Drawing.Point(175, 174)
-        Me.txtNumberOfTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtNumberOfTrade.Name = "txtNumberOfTrade"
-        Me.txtNumberOfTrade.Size = New System.Drawing.Size(256, 22)
-        Me.txtNumberOfTrade.TabIndex = 5
-        '
-        'lblNumberOfTrade
-        '
-        Me.lblNumberOfTrade.AutoSize = True
-        Me.lblNumberOfTrade.Location = New System.Drawing.Point(9, 178)
-        Me.lblNumberOfTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblNumberOfTrade.Name = "lblNumberOfTrade"
-        Me.lblNumberOfTrade.Size = New System.Drawing.Size(119, 17)
-        Me.lblNumberOfTrade.TabIndex = 13
-        Me.lblNumberOfTrade.Text = "Number Of Trade"
-        '
         'frmMomentumReversalSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(575, 299)
+        Me.ClientSize = New System.Drawing.Size(575, 265)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveMomentumReversalSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
-        Me.Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
+        Me.Margin = New System.Windows.Forms.Padding(4)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmMomentumReversalSettings"
@@ -269,6 +247,4 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents opnFileMRSettings As OpenFileDialog
     Friend WithEvents txtMinCandleRangePercentage As TextBox
     Friend WithEvents lblMinCandleRangePercentage As Label
-    Friend WithEvents txtNumberOfTrade As TextBox
-    Friend WithEvents lblNumberOfTrade As Label
 End Class

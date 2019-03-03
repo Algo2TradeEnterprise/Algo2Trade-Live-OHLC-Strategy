@@ -87,43 +87,48 @@ Public Class AmiSignalStrategyInstrument
         If Now() < lastTradeEntryTime AndAlso Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
             Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If currentEntrySignal.SignalType = TypeOfSignal.Entry AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
-                Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
-                Dim amiSignalTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
-                Dim buffer As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.DefaultBufferPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
-                Dim entryPrice As Decimal = Nothing
-                Dim target As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * 0.1, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                Dim stoploss As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                Dim quantity As Integer = Nothing
-                Dim tag As String = GenerateTag()
-                If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
-                    quantity = Me.TradableInstrument.LotSize
+                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradingSymbol, Me.ParentStrategy.ActiveInstruments, If(currentEntrySignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
+                    EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentEntrySignal)
                 Else
-                    quantity = Math.Floor(amiUserSettings.MaxCapitalPerTrade * 10 / amiSignalTradePrice)
-                    'quantity = 1
-                End If
+                    Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
+                    Dim amiSignalTradePrice As Decimal = TradableInstrument.LastTick.LastPrice
+                    Dim buffer As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.DefaultBufferPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Floor), 2)
+                    Dim entryPrice As Decimal = Nothing
+                    Dim target As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * 0.1, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    Dim stoploss As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                    Dim quantity As Integer = Nothing
+                    Dim tag As String = GenerateTag()
+                    If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
+                        quantity = Me.TradableInstrument.LotSize
+                    Else
+                        quantity = Math.Floor(amiUserSettings.MaxCapitalPerTrade * 10 / amiSignalTradePrice)
+                        'quantity = 1
+                    End If
 
-                If currentEntrySignal.Direction = APIAdapter.TransactionType.Buy Then
-                    entryPrice = amiSignalTradePrice + buffer
-                    Dim parameters As New PlaceOrderParameters With
-                       {.EntryDirection = APIAdapter.TransactionType.Buy,
-                       .Quantity = quantity,
-                       .Price = entryPrice,
-                       .TriggerPrice = Nothing,
-                       .SquareOffValue = target,
-                       .StoplossValue = stoploss,
-                       .Tag = tag}
-                    ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
-                ElseIf currentEntrySignal.Direction = APIAdapter.TransactionType.Sell Then
-                    entryPrice = amiSignalTradePrice - buffer
-                    Dim parameters As New PlaceOrderParameters With
-                      {.EntryDirection = APIAdapter.TransactionType.Sell,
-                      .Quantity = quantity,
-                      .Price = entryPrice,
-                      .TriggerPrice = Nothing,
-                      .SquareOffValue = target,
-                      .StoplossValue = stoploss,
-                      .Tag = tag}
-                    ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                    If currentEntrySignal.Direction = APIAdapter.TransactionType.Buy Then
+                        entryPrice = amiSignalTradePrice + buffer
+                        Dim parameters As New PlaceOrderParameters With
+                           {.EntryDirection = APIAdapter.TransactionType.Buy,
+                           .Quantity = quantity,
+                           .Price = entryPrice,
+                           .TriggerPrice = Nothing,
+                           .SquareOffValue = target,
+                           .StoplossValue = stoploss,
+                           .Tag = tag}
+                        ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                    ElseIf currentEntrySignal.Direction = APIAdapter.TransactionType.Sell Then
+                        entryPrice = amiSignalTradePrice - buffer
+                        Dim parameters As New PlaceOrderParameters With
+                          {.EntryDirection = APIAdapter.TransactionType.Sell,
+                          .Quantity = quantity,
+                          .Price = entryPrice,
+                          .TriggerPrice = Nothing,
+                          .SquareOffValue = target,
+                          .StoplossValue = stoploss,
+                          .Tag = tag}
+                        ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                    End If
                 End If
             End If
         End If
@@ -157,7 +162,7 @@ Public Class AmiSignalStrategyInstrument
         If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 Then
             Dim entrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If orderData.ParentOrderIdentifier.ToUpper = entrySignal.OrderID.ToUpper AndAlso Not entrySignal.OrderTimestamp = Date.MinValue Then
-                logger.Info("Parent Order Quantity: {0}, Filled Quantity:{1}", orderData.ParentOrder.Quantity, orderData.ParentOrder.FilledQuantity)
+                'logger.Info("Parent Order Quantity: {0}, Filled Quantity:{1}", orderData.ParentOrder.Quantity, orderData.ParentOrder.FilledQuantity)
                 EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, entrySignal)
             End If
         End If
@@ -172,7 +177,7 @@ Public Class AmiSignalStrategyInstrument
 
 
     Public Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
-        'logger.Debug("PopulateExternalSignalAsync, parameters:{0}", signal)
+        logger.Info("PopulateExternalSignalAsync, parameters:{0}", signal)
         Await Task.Delay(0).ConfigureAwait(False)
         Dim currentSignal As AmiSignal = Nothing
         If EntrySignals Is Nothing Then EntrySignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
@@ -190,7 +195,7 @@ Public Class AmiSignalStrategyInstrument
                 End With
                 If Me.ActiveInstrument Then
                     If GetActiveOrder(APIAdapter.TransactionType.Buy) IsNot Nothing Then
-                        logger.Info(New ApplicationException(String.Format("{0} Buy signal running", Me.TradableInstrument.InstrumentIdentifier)))
+                        logger.Error(String.Format("{0} - Buy signal running", Me.TradingSymbol))
                         Exit Function
                     End If
                     Dim exitSignal As Boolean = False
@@ -202,12 +207,12 @@ Public Class AmiSignalStrategyInstrument
                     End While
                 End If
                 If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.ActiveInstruments))
                     Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                    logger.Error(String.Format("{0} - Previous signal still exists", Me.TradingSymbol))
                 End If
                 'Interlocked.Decrement(_StrategyProtector)
             Case "SELL"
@@ -221,10 +226,10 @@ Public Class AmiSignalStrategyInstrument
                 If GetAllCancelableOrders(APIAdapter.TransactionType.Buy) IsNot Nothing AndAlso GetAllCancelableOrders(APIAdapter.TransactionType.Buy).Count > 0 Then
                     returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                     If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                        logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                        logger.Error(String.Format("{0} - Previous signal still exists", Me.TradingSymbol))
                     End If
                 Else
-                    logger.Error(New ApplicationException(String.Format("{0} No BUY trade running to exit", Me.TradableInstrument.InstrumentIdentifier)))
+                    logger.Error(String.Format("{0} - No BUY trade running to exit", Me.TradingSymbol))
                 End If
             Case "SHORT"
                 currentSignal = New AmiSignal
@@ -236,7 +241,7 @@ Public Class AmiSignalStrategyInstrument
                 End With
                 If Me.ActiveInstrument Then
                     If GetActiveOrder(APIAdapter.TransactionType.Sell) IsNot Nothing Then
-                        logger.Info(New ApplicationException(String.Format("{0} Short signal running", Me.TradableInstrument.InstrumentIdentifier)))
+                        logger.Error(String.Format("{0} - Short signal running", Me.TradingSymbol))
                         Exit Function
                     End If
                     Dim exitSignal As Boolean = False
@@ -248,12 +253,12 @@ Public Class AmiSignalStrategyInstrument
                     End While
                 End If
                 If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(New ApplicationException(String.Format("{0} {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.InstrumentIdentifier, Me.ParentStrategy.ActiveInstruments, signal)))
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.ActiveInstruments))
                     Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                    logger.Error(String.Format("{0} Previous signal still exists", Me.TradingSymbol))
                 End If
                 'Interlocked.Decrement(_StrategyProtector)
             Case "COVER"
@@ -267,13 +272,13 @@ Public Class AmiSignalStrategyInstrument
                 If GetAllCancelableOrders(APIAdapter.TransactionType.Sell) IsNot Nothing AndAlso GetAllCancelableOrders(APIAdapter.TransactionType.Sell).Count > 0 Then
                     returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                     If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                        logger.Error(New ApplicationException(String.Format("{0} Previous signal still exists", Me.TradableInstrument.InstrumentIdentifier)))
+                        logger.Error(String.Format("{0} Previous signal still exists", Me.TradingSymbol))
                     End If
                 Else
-                    logger.Error(New ApplicationException(String.Format("{0} No SHORT trade running to exit", Me.TradableInstrument.InstrumentIdentifier)))
+                    logger.Error(String.Format("{0} No SHORT trade running to exit", Me.TradingSymbol))
                 End If
             Case Else
-                logger.Error(New ApplicationException(String.Format("{0} Invalid Signal Details. {1}", Me.TradableInstrument.InstrumentIdentifier, signal)))
+                logger.Error(String.Format("{0} Invalid Signal Details. {1}", Me.TradingSymbol, signal))
         End Select
     End Function
 

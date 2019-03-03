@@ -118,6 +118,12 @@
     <Compile Include="frmAbout.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="frmAdvancedOptions.Designer.vb">
+      <DependentUpon>frmAdvancedOptions.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmAdvancedOptions.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmMainTabbed.Designer.vb">
       <DependentUpon>frmMainTabbed.vb</DependentUpon>
     </Compile>
@@ -160,6 +166,9 @@
   <ItemGroup>
     <EmbeddedResource Include="frmAbout.resx">
       <DependentUpon>frmAbout.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmAdvancedOptions.resx">
+      <DependentUpon>frmAdvancedOptions.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmMainTabbed.resx">
       <DependentUpon>frmMainTabbed.vb</DependentUpon>

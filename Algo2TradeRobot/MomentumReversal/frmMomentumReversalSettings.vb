@@ -41,7 +41,6 @@ Public Class frmMomentumReversalSettings
             txtMinCandleRangePercentage.Text = _MRSettings.MinCandleRangePercentage
             txtMaxSLPercentage.Text = _MRSettings.MaxStoplossPercentage
             txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
-            txtNumberOfTrade.Text = _MRSettings.NumberOfTarde
             txtSignalTimeFrame.Text = _MRSettings.SignalTimeFrame
             txtInstrumentDetalis.Text = _MRSettings.InstrumentDetailsFilePath
         End If
@@ -51,7 +50,6 @@ Public Class frmMomentumReversalSettings
         _MRSettings.MinCandleRangePercentage = txtMinCandleRangePercentage.Text
         _MRSettings.MaxStoplossPercentage = txtMaxSLPercentage.Text
         _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
-        _MRSettings.NumberOfTarde = txtNumberOfTrade.Text
         _MRSettings.SignalTimeFrame = txtSignalTimeFrame.Text
         _MRSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 

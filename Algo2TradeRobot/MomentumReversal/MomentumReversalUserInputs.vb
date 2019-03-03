@@ -9,7 +9,6 @@ Public Class MomentumReversalUserInputs
     Public CandleWickSizePercentage As Decimal
     Public MaxStoplossPercentage As Decimal
     Public MinCandleRangePercentage As Decimal
-    Public NumberOfTarde As Integer
     Public InstrumentDetailsFilePath As String
     Public InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
@@ -18,6 +17,7 @@ Public Class MomentumReversalUserInputs
         Public MarketType As InstrumentType
         Public Quantity As Integer
         Public Capital As Decimal
+        Public NumberOfTrade As Integer
     End Class
     <Serializable>
     Public Enum InstrumentType
@@ -35,9 +35,9 @@ Public Class MomentumReversalUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL", "NUMBER OF TRADE"}
 
-                        For colCtr = 0 To 4
+                        For colCtr = 0 To 5
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -52,6 +52,7 @@ Public Class MomentumReversalUserInputs
                             Dim marketFuture As Boolean = False
                             Dim quantity As Integer = Integer.MinValue
                             Dim capital As Decimal = Decimal.MinValue
+                            Dim numberOfTrade As Integer = Integer.MinValue
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -59,7 +60,7 @@ Public Class MomentumReversalUserInputs
                                         instrumentName = instrumentDetails(rowCtr, columnCtr)
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
-                                            Throw New ApplicationException(String.Format("Instrument Name Missing or Blank Row RowNumber: {0}", rowCtr))
+                                            Throw New ApplicationException(String.Format("Instrument Name Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
                                 ElseIf columnCtr = 1 Then
@@ -99,6 +100,21 @@ Public Class MomentumReversalUserInputs
                                             Throw New ApplicationException(String.Format("Capital cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If
                                     End If
+                                ElseIf columnCtr = 5 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                    Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
+                                        Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
+                                            If Val(instrumentDetails(rowCtr, columnCtr)) < 1 Then
+                                                Throw New ApplicationException(String.Format("Number Of Trade cannot be < 1 for {0}", instrumentName))
+                                            End If
+                                            numberOfTrade = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Number Of Trade cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Number Of Trade cannot be blank for {0}", instrumentName))
+                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
@@ -118,6 +134,7 @@ Public Class MomentumReversalUserInputs
                                 End If
                                 instrumentData.Quantity = quantity
                                 instrumentData.Capital = capital
+                                instrumentData.NumberOfTrade = numberOfTrade
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, MomentumReversalUserInputs.InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.InstrumentName) Then
                                     Throw New ApplicationException(String.Format("Duplicate Instrument Name {0}", instrumentData.InstrumentName))
