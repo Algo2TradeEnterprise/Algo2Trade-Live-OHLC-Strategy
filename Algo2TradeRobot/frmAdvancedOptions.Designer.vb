@@ -26,10 +26,10 @@ Partial Class frmAdvancedOptions
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmAdvancedOptions))
         Me.tabMain = New System.Windows.Forms.TabControl()
         Me.tabDelaySettings = New System.Windows.Forms.TabPage()
-        Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
-        Me.btnSaveDelaySettings = New System.Windows.Forms.Button()
         Me.txtGetInformationDelay = New System.Windows.Forms.TextBox()
         Me.lblGetInformationDelay = New System.Windows.Forms.Label()
+        Me.btnSaveDelaySettings = New System.Windows.Forms.Button()
+        Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.tabMain.SuspendLayout()
         Me.tabDelaySettings.SuspendLayout()
         Me.SuspendLayout()
@@ -53,28 +53,8 @@ Partial Class frmAdvancedOptions
         Me.tabDelaySettings.Padding = New System.Windows.Forms.Padding(3)
         Me.tabDelaySettings.Size = New System.Drawing.Size(568, 273)
         Me.tabDelaySettings.TabIndex = 0
-        Me.tabDelaySettings.Text = "Delay Settings"
+        Me.tabDelaySettings.Text = "Delay"
         Me.tabDelaySettings.UseVisualStyleBackColor = True
-        '
-        'ImageList1
-        '
-        Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
-        Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
-        Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
-        '
-        'btnSaveDelaySettings
-        '
-        Me.btnSaveDelaySettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        Me.btnSaveDelaySettings.ImageKey = "save-icon-36533.png"
-        Me.btnSaveDelaySettings.ImageList = Me.ImageList1
-        Me.btnSaveDelaySettings.Location = New System.Drawing.Point(453, 3)
-        Me.btnSaveDelaySettings.Margin = New System.Windows.Forms.Padding(4)
-        Me.btnSaveDelaySettings.Name = "btnSaveDelaySettings"
-        Me.btnSaveDelaySettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveDelaySettings.TabIndex = 9
-        Me.btnSaveDelaySettings.Text = "&Save"
-        Me.btnSaveDelaySettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        Me.btnSaveDelaySettings.UseVisualStyleBackColor = True
         '
         'txtGetInformationDelay
         '
@@ -93,6 +73,26 @@ Partial Class frmAdvancedOptions
         Me.lblGetInformationDelay.Size = New System.Drawing.Size(181, 17)
         Me.lblGetInformationDelay.TabIndex = 10
         Me.lblGetInformationDelay.Text = "Get Information Delay (sec)"
+        '
+        'btnSaveDelaySettings
+        '
+        Me.btnSaveDelaySettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
+        Me.btnSaveDelaySettings.ImageKey = "save-icon-36533.png"
+        Me.btnSaveDelaySettings.ImageList = Me.ImageList1
+        Me.btnSaveDelaySettings.Location = New System.Drawing.Point(453, 3)
+        Me.btnSaveDelaySettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnSaveDelaySettings.Name = "btnSaveDelaySettings"
+        Me.btnSaveDelaySettings.Size = New System.Drawing.Size(112, 58)
+        Me.btnSaveDelaySettings.TabIndex = 9
+        Me.btnSaveDelaySettings.Text = "&Save"
+        Me.btnSaveDelaySettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        Me.btnSaveDelaySettings.UseVisualStyleBackColor = True
+        '
+        'ImageList1
+        '
+        Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
+        Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
+        Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
         'frmAdvancedOptions
         '

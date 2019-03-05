@@ -678,6 +678,7 @@ Namespace Controller
                 If strategyToRun.TradableStrategyInstruments IsNot Nothing AndAlso strategyToRun.TradableStrategyInstruments.Count > 0 Then
                     Dim tempList As List(Of IInstrument) = Nothing
                     For Each runningTradableStrategyInstrument In strategyToRun.TradableStrategyInstruments
+                        _cts.Token.ThrowIfCancellationRequested()
                         If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Where(Function(x)
                                                                                                                        Return x.InstrumentIdentifier = runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier
                                                                                                                    End Function).Count > 0 Then
@@ -694,6 +695,14 @@ Namespace Controller
                         _AllStrategyUniqueInstruments = tempList
                     End If
                 End If
+                _cts.Token.ThrowIfCancellationRequested()
+                If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 999 Then
+                    Throw New ApplicationException("Can not subscribe more than 999 instruments")
+                End If
+
+                _cts.Token.ThrowIfCancellationRequested()
+                'Now create instrument mapping
+                Await CreateInstrumentMappingTable().ConfigureAwait(False)
 
                 _cts.Token.ThrowIfCancellationRequested()
                 'Now we know what are the instruments as per the strategy and their corresponding workers

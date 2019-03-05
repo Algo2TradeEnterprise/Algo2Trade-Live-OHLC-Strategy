@@ -25,6 +25,12 @@
                     Throw New ApplicationException("Not Implemented")
             End Select
         End Function
+        Public Function GetMissingNumberInAP(ByVal numbers() As Double, ByVal totalCount As Integer) As Double
+            Dim expectedSum As Double = totalCount * ((totalCount + 1) / 2)
+            Dim actualSum As Integer = numbers.Sum()
+            Return (expectedSum - actualSum)
+        End Function
 #End Region
+
     End Module
 End Namespace
