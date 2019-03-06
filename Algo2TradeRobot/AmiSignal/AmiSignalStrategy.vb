@@ -117,24 +117,6 @@ Public Class AmiSignalStrategy
         Return ret
     End Function
 
-    Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
-        logger.Debug("IsTriggerReachedAsync, parameters:Nothing")
-        _cts.Token.ThrowIfCancellationRequested()
-        Await Task.Delay(0).ConfigureAwait(False)
-        Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        Dim currentTime As Date = ISTNow()
-        Dim compareTime As TimeSpan = Nothing
-        TimeSpan.TryParse("15:32:30", compareTime)
-        If IsTimeEqualTillSeconds(currentTime, compareTime) Then
-            ret = New Tuple(Of Boolean, Trigger)(True,
-                                                 New Trigger() With
-                                                 {.Category = Trigger.TriggerType.Timebased,
-                                                 .Description = String.Format("Time reached:{0}", currentTime.ToString("HH:mm:ss"))})
-        End If
-        'TO DO: remove the below hard coding
-        ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
-        Return ret
-    End Function
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
 

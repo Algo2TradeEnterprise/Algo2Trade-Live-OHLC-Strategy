@@ -57,8 +57,8 @@ Public Class AmiSignalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
-                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True Then
+                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
                     EntrySignals.FirstOrDefault.Value.OrderTimestamp = Now()
                     EntrySignals.FirstOrDefault.Value.OrderID = orderDetails("data")("order_id")
@@ -80,8 +80,9 @@ Public Class AmiSignalStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
-        Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+        Await Task.Delay(0).ConfigureAwait(False)
+        Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 0, 0)
 
         If Now() < lastTradeEntryTime AndAlso Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
@@ -98,7 +99,7 @@ Public Class AmiSignalStrategyInstrument
                     Dim target As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * 0.1, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     Dim stoploss As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     Dim quantity As Integer = Nothing
-                    Dim tag As String = GenerateTag()
+                    Dim tag As String = GenerateTag(Now)
                     If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                         quantity = Me.TradableInstrument.LotSize
                     Else
@@ -116,7 +117,7 @@ Public Class AmiSignalStrategyInstrument
                            .SquareOffValue = target,
                            .StoplossValue = stoploss,
                            .Tag = tag}
-                        ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                        ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                     ElseIf currentEntrySignal.Direction = APIAdapter.TransactionType.Sell Then
                         entryPrice = amiSignalTradePrice - buffer
                         Dim parameters As New PlaceOrderParameters With
@@ -127,15 +128,16 @@ Public Class AmiSignalStrategyInstrument
                           .SquareOffValue = target,
                           .StoplossValue = stoploss,
                           .Tag = tag}
-                        ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                        ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                     End If
                 End If
             End If
         End If
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
-        Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+        Await Task.Delay(0).ConfigureAwait(False)
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         Throw New NotImplementedException
         Return ret
     End Function

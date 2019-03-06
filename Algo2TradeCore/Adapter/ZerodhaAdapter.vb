@@ -23,11 +23,11 @@ Namespace Adapter
                              Debug:=False)
             _Kite.SetSessionExpiryHook(AddressOf associatedParentController.OnSessionExpireAsync)
         End Sub
-        Public Overrides Function CalculatePLWithBrokerage(ByVal stockName As String,
+        Public Overrides Async Function CalculatePLWithBrokerageAsync(ByVal stockName As String,
                                                            ByVal buy As Double,
                                                            ByVal sell As Double,
                                                            ByVal quantity As Integer,
-                                                           ByVal exchange As String) As Decimal
+                                                           ByVal exchange As String) As Task(Of Decimal)
             Dim ret As Decimal = Nothing
             Dim calculator As APIBrokerageCalculator = New ZerodhaBrokerageCalculator(_cts)
             Dim brokerageAttributes As IBrokerageAttributes = Nothing
@@ -38,7 +38,7 @@ Namespace Adapter
                     brokerageAttributes = calculator.GetIntradayEquityFuturesBrokerage(buy, sell, quantity)
                 Case "MCX"
                     stockName = stockName.Remove(stockName.Count - 8)
-                    brokerageAttributes = calculator.GetIntradayCommodityFuturesBrokerageAsync(stockName, buy, sell, quantity)
+                    brokerageAttributes = Await calculator.GetIntradayCommodityFuturesBrokerageAsync(stockName, buy, sell, quantity).ConfigureAwait(False)
                 Case Else
                     Throw New NotImplementedException("Calculator not implemented")
             End Select

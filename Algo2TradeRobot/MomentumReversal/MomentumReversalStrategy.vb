@@ -116,9 +116,14 @@ Public Class MomentumReversalStrategy
                 For Each instrument In futureInstrumentList.ToList
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = Nothing
+                    'Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                    '                                                                                     Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
+                    '                                                                                         x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
+                    '                                                                                 End Function)
+
                     Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
                                                                                                          Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
+                                                                                                             x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX"
                                                                                                      End Function)
 
                     Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
@@ -178,24 +183,6 @@ Public Class MomentumReversalStrategy
         Return ret
     End Function
 
-    Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
-        logger.Debug("IsTriggerReachedAsync, parameters:Nothing")
-        _cts.Token.ThrowIfCancellationRequested()
-        Await Task.Delay(0).ConfigureAwait(False)
-        Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        Dim currentTime As Date = Now
-        Dim compareTime As TimeSpan = Nothing
-        TimeSpan.TryParse("15:32:30", compareTime)
-        If Utilities.Time.IsTimeEqualTillSeconds(currentTime, compareTime) Then
-            ret = New Tuple(Of Boolean, Trigger)(True,
-                                                 New Trigger() With
-                                                 {.Category = Trigger.TriggerType.Timebased,
-                                                 .Description = String.Format("Time reached:{0}", currentTime.ToString("HH:mm:ss"))})
-        End If
-        'TO DO: remove the below hard coding
-        'ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
-        Return ret
-    End Function
     Public Overrides Async Function MonitorAsync() As Task
         'Dim ctr As Integer
         'While True

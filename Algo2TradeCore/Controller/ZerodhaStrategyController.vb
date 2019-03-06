@@ -549,7 +549,7 @@ Namespace Controller
                                 RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                 'Else
                             End If
-                            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me._UserInputs.GetInformationDelay, _cts)
+                            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me.UserInputs.GetInformationDelay, _cts)
                             'End If
                             AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
                             AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
@@ -626,7 +626,7 @@ Namespace Controller
                 RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                 'Else
             End If
-            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me._UserInputs.GetInformationDelay, _cts)
+            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me.UserInputs.GetInformationDelay, _cts)
             'End If
             AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
             AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
@@ -897,21 +897,21 @@ Namespace Controller
                     ret.Add(businessOrder)
 
 
-                    'This for loop needs to be after the order is published
-                    If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
-                    _subscribedStrategyInstruments.ContainsKey(parentOrder.InstrumentIdentifier) Then
-                        For Each runningStrategyInstrument In _subscribedStrategyInstruments(parentOrder.InstrumentIdentifier)
-                            If parentOrder.Tag IsNot Nothing AndAlso parentOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
-                                Dim unionOfAllOrders As IEnumerable(Of IOrder) = businessOrder.SLOrder.Union(businessOrder.AllOrder.Union(businessOrder.TargetOrder))
-                                unionOfAllOrders = Utilities.Collections.ConcatSingle(Of IOrder)(unionOfAllOrders, businessOrder.ParentOrder)
-                                If unionOfAllOrders IsNot Nothing AndAlso unionOfAllOrders.Count > 0 Then
-                                    For Each runningOrder In unionOfAllOrders
-                                        runningStrategyInstrument.ProcessOrderAsync(runningOrder)
-                                    Next
-                                End If
-                            End If
-                        Next
-                    End If
+                    ''This for loop needs to be after the order is published
+                    'If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
+                    '_subscribedStrategyInstruments.ContainsKey(parentOrder.InstrumentIdentifier) Then
+                    '    For Each runningStrategyInstrument In _subscribedStrategyInstruments(parentOrder.InstrumentIdentifier)
+                    '        If parentOrder.Tag IsNot Nothing AndAlso parentOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
+                    '            Dim unionOfAllOrders As IEnumerable(Of IOrder) = businessOrder.SLOrder.Union(businessOrder.AllOrder.Union(businessOrder.TargetOrder))
+                    '            unionOfAllOrders = Utilities.Collections.ConcatSingle(Of IOrder)(unionOfAllOrders, businessOrder.ParentOrder)
+                    '            If unionOfAllOrders IsNot Nothing AndAlso unionOfAllOrders.Count > 0 Then
+                    '                For Each runningOrder In unionOfAllOrders
+                    '                    runningStrategyInstrument.ProcessOrderAsync(runningOrder)
+                    '                Next
+                    '            End If
+                    '        End If
+                    '    Next
+                    'End If
                 Next
             End If
             Return ret

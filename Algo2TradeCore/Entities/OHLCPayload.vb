@@ -60,24 +60,22 @@ Namespace Entities
         Private _CandleWicks As IPayload.Wicks
         Public ReadOnly Property CandleWicks As IPayload.Wicks Implements IPayload.CandleWicks
             Get
-                If _CandleWicks Is Nothing Then
-                    _CandleWicks = New IPayload.Wicks
-                    If Me.CandleColor = Color.Green Then
-                        With _CandleWicks
-                            .Top = Me.HighPrice - Me.ClosePrice
-                            .Bottom = Me.OpenPrice - Me.LowPrice
-                        End With
-                    ElseIf Me.CandleColor = Color.Red Then
-                        With _CandleWicks
-                            .Top = Me.HighPrice - Me.OpenPrice
-                            .Bottom = Me.ClosePrice - Me.LowPrice
-                        End With
-                    Else
-                        With _CandleWicks
-                            .Top = Me.HighPrice - Me.OpenPrice
-                            .Bottom = Me.ClosePrice - Me.LowPrice
-                        End With
-                    End If
+                If _CandleWicks Is Nothing Then _CandleWicks = New IPayload.Wicks
+                If Me.CandleColor = Color.Green Then
+                    With _CandleWicks
+                        .Top = Me.HighPrice - Me.ClosePrice
+                        .Bottom = Me.OpenPrice - Me.LowPrice
+                    End With
+                ElseIf Me.CandleColor = Color.Red Then
+                    With _CandleWicks
+                        .Top = Me.HighPrice - Me.OpenPrice
+                        .Bottom = Me.ClosePrice - Me.LowPrice
+                    End With
+                Else
+                    With _CandleWicks
+                        .Top = Me.HighPrice - Me.OpenPrice
+                        .Bottom = Me.ClosePrice - Me.LowPrice
+                    End With
                 End If
                 Return _CandleWicks
             End Get

@@ -141,6 +141,10 @@ Namespace Network
                 ElseIf response.Content.Headers.ContentType.MediaType = "text/csv" Then
                     logger.Debug("Inside text/csv output conversion")
                     Throw New NotImplementedException
+                ElseIf response.Content.Headers.ContentType.MediaType = "application/javascript" Then
+                    logger.Debug("Inside application/javascript output conversion")
+                    Dim jsString As String = Await response.Content.ReadAsStringAsync().ConfigureAwait(False)
+                    Return jsString
                 Else
                     Throw New NotImplementedException
                 End If

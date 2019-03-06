@@ -112,14 +112,14 @@ Namespace Controller
         Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, Concurrent.ConcurrentBag(Of StrategyInstrument))
         Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
-        Protected _UserInputs As ControllerUserInputs
+        Public UserInputs As ControllerUserInputs
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal associatedBrokerSource As APISource,
                        ByVal associatedUserInputs As ControllerUserInputs,
                        ByVal canceller As CancellationTokenSource)
             _currentUser = validatedUser
             Me.BrokerSource = associatedBrokerSource
-            _UserInputs = associatedUserInputs
+            UserInputs = associatedUserInputs
             _cts = canceller
             _LoginThreads = 0
         End Sub
@@ -392,60 +392,69 @@ Namespace Controller
         End Function
         Protected Async Function CreateInstrumentMappingTable() As Task
             Await Task.Delay(0).ConfigureAwait(False)
-            Dim filename As String = String.Format("InstrumentMappingFile_{0}.a2t", Now.ToString("yy_MM_dd"))
+            Dim filePath As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("InstrumentMappingFile_{0}.a2t", Now.ToString("yy_MM_dd")))
             Dim mapStartNumber As Integer = 0
 
             If InstrumentMappingTable Is Nothing Then InstrumentMappingTable = New Concurrent.ConcurrentDictionary(Of String, String)
             If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 0 Then
-                If Not _AllStrategyUniqueInstruments.Count = InstrumentMappingTable.Count Then
-                    Dim tempInstrmentMappingTable As Concurrent.ConcurrentDictionary(Of String, String) = Nothing
-                    If File.Exists(filename) Then
-                        Dim fs As Stream = New FileStream(filename, FileMode.Open)
+                Dim instrumentMappingTableFromDisk As Concurrent.ConcurrentDictionary(Of String, String) = Nothing
+                If File.Exists(filePath) Then
+                    Using fs As New FileStream(filePath, FileMode.Open)
                         Dim bf As BinaryFormatter = New BinaryFormatter()
-                        tempInstrmentMappingTable = CType(bf.Deserialize(fs), Concurrent.ConcurrentDictionary(Of String, String))
+                        instrumentMappingTableFromDisk = CType(bf.Deserialize(fs), Concurrent.ConcurrentDictionary(Of String, String))
                         fs.Close()
-                        Dim needToBeMapped As List(Of IInstrument) = Nothing
-                        For Each instrument In _AllStrategyUniqueInstruments
-                            If tempInstrmentMappingTable IsNot Nothing AndAlso tempInstrmentMappingTable.Count > 0 AndAlso
-                                tempInstrmentMappingTable.ContainsKey(instrument.InstrumentIdentifier) Then
-                                InstrumentMappingTable.GetOrAdd(instrument.InstrumentIdentifier, tempInstrmentMappingTable(instrument.InstrumentIdentifier))
-                            Else
-                                If needToBeMapped Is Nothing Then needToBeMapped = New List(Of IInstrument)
-                                needToBeMapped.Add(instrument)
-                            End If
-                        Next
-                        If needToBeMapped IsNot Nothing AndAlso needToBeMapped.Count > 0 Then
-                            For Each instrument In needToBeMapped
-                                Dim mapNumber As Integer = Integer.MinValue
-                                For i = 0 To 999
-                                    Dim numberToBeChecked As Integer = i
-                                    Dim mappedData As IEnumerable(Of KeyValuePair(Of String, String)) = InstrumentMappingTable.Where(Function(x)
-                                                                                                                                         Return x.Value = numberToBeChecked
-                                                                                                                                     End Function)
-                                    If mappedData Is Nothing OrElse mappedData.Count = 0 Then
-                                        mapNumber = i
-                                        Exit For
-                                    End If
-                                Next
-                                InstrumentMappingTable.GetOrAdd(instrument.InstrumentIdentifier, mapNumber)
-                            Next
+                    End Using
+                    Dim needToBeMapped As List(Of IInstrument) = Nothing
+                    For Each runningInstrument In _AllStrategyUniqueInstruments
+                        If instrumentMappingTableFromDisk IsNot Nothing AndAlso instrumentMappingTableFromDisk.Count > 0 AndAlso
+                                instrumentMappingTableFromDisk.ContainsKey(runningInstrument.InstrumentIdentifier) Then
+                            InstrumentMappingTable.GetOrAdd(runningInstrument.InstrumentIdentifier, instrumentMappingTableFromDisk(runningInstrument.InstrumentIdentifier))
+                        Else
+                            If needToBeMapped Is Nothing Then needToBeMapped = New List(Of IInstrument)
+                            needToBeMapped.Add(runningInstrument)
                         End If
-                    Else
-                        For Each instrument In _AllStrategyUniqueInstruments
-                            If mapStartNumber > 999 Then
-                                Throw New ApplicationException("Can not subscribe more than 999 instruments")
-                            End If
-                            InstrumentMappingTable.GetOrAdd(instrument.InstrumentIdentifier, mapStartNumber)
-                            mapStartNumber += 1
+                    Next
+                    If needToBeMapped IsNot Nothing AndAlso needToBeMapped.Count > 0 Then
+                        For Each runningInstrument In needToBeMapped
+                            Dim mapNumber As Integer = Integer.MinValue
+                            For numberList = 0 To 999
+                                Dim numberToBeChecked As Integer = numberList
+                                Dim mappedData As IEnumerable(Of KeyValuePair(Of String, String)) = InstrumentMappingTable.Where(Function(x)
+                                                                                                                                     Return x.Value = numberToBeChecked
+                                                                                                                                 End Function)
+                                If mappedData Is Nothing OrElse mappedData.Count = 0 Then
+                                    mapNumber = numberToBeChecked
+                                    Exit For
+                                End If
+                            Next
+                            InstrumentMappingTable.GetOrAdd(runningInstrument.InstrumentIdentifier, mapNumber)
                         Next
                     End If
+                Else
+                    For Each runningInstrument In _AllStrategyUniqueInstruments
+                        If mapStartNumber > 999 Then
+                            Throw New ApplicationException("Can not subscribe more than 999 instruments")
+                        End If
+                        InstrumentMappingTable.GetOrAdd(runningInstrument.InstrumentIdentifier, mapStartNumber)
+                        mapStartNumber += 1
+                    Next
                 End If
-                'Serialize collection
-                Dim fss As Stream = New FileStream(filename, FileMode.OpenOrCreate)
+            End If
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "InstrumentMappingFile*.a2t")
+                Try
+                    File.Delete(runningFile)
+                Catch ex As Exception
+                    If runningFile.ToUpper.Equals(filePath.ToUpper) Then
+                        Throw New ApplicationException(String.Format("Cannot create instrument mapping file due to:{0}", ex.Message), ex)
+                    End If
+                End Try
+            Next
+            'Serialize collection
+            Using fss As New FileStream(filePath, FileMode.OpenOrCreate)
                 Dim bff As BinaryFormatter = New BinaryFormatter()
                 bff.Serialize(fss, InstrumentMappingTable)
                 fss.Close()
-            End If
+            End Using
         End Function
     End Class
 End Namespace

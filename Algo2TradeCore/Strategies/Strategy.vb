@@ -57,6 +57,7 @@ Namespace Strategies
         Public Property TradableStrategyInstruments As IEnumerable(Of StrategyInstrument)
         Public Property UserSettings As StrategyUserInputs = Nothing
         Public Property ParentController As APIStrategyController
+        Public Property SignalManager As SignalStateManager
         Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
         Public ReadOnly Property IsStrategyCandleStickBased As Boolean
         Protected _cts As CancellationTokenSource
@@ -71,6 +72,7 @@ Namespace Strategies
             Me.IsStrategyCandleStickBased = isStrategyCandleStickBased
             Me.UserSettings = userSettings
             Me.MaxNumberOfDaysForHistoricalFetch = maxNumberOfDaysForHistoricalFetch
+            Me.SignalManager = New SignalStateManager(associatedParentController, Me, _cts)
             _cts = canceller
         End Sub
         Public ReadOnly Property ActiveInstruments As Integer
@@ -114,10 +116,9 @@ Namespace Strategies
                     Await usableFetcher.SubscribeAsync(TradableInstrumentsAsPerStrategy, Me.MaxNumberOfDaysForHistoricalFetch).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                End If
+            End If
         End Function
         Public MustOverride Overrides Function ToString() As String
-        Public MustOverride Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
         Public MustOverride Async Function MonitorAsync() As Task
 
         Public Overridable Async Function ForceExitAllTradesAsync() As Task
@@ -155,9 +156,11 @@ Namespace Strategies
                 For Each runningTradableStrategyInstrument In TradableStrategyInstruments
                     _cts.Token.ThrowIfCancellationRequested()
                     If runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier = orderData.ParentOrder.InstrumentIdentifier Then
-                        If orderData.ParentOrder.Tag IsNot Nothing AndAlso
-                            orderData.ParentOrder.Tag.Contains(runningTradableStrategyInstrument.GenerateTag()) Then
-                            Await runningTradableStrategyInstrument.ProcessOrderAsync(orderData).ConfigureAwait(False)
+                        If orderData.ParentOrder.Tag IsNot Nothing Then
+                            Dim decodedTag As String = Convert.ToInt64(Val(orderData.ParentOrder.Tag), 16)
+                            If decodedTag.Substring(0, 1).Equals(Me.StrategyIdentifier) Then
+                                Await runningTradableStrategyInstrument.ProcessOrderAsync(orderData).ConfigureAwait(False)
+                            End If
                         End If
                     End If
                 Next

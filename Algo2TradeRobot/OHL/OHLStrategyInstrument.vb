@@ -71,15 +71,15 @@ Public Class OHLStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of Boolean, PlaceOrderParameters) = IsTriggerReceivedForPlaceOrder()
-                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = True AndAlso _OHLStrategyProtector = 0 Then
+                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take AndAlso _OHLStrategyProtector = 0 Then
                     Interlocked.Increment(_OHLStrategyProtector)
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If slDelayCtr = 10 Then
                     slDelayCtr = 0
-                    Dim modifyStoplossOrderTrigger As List(Of Tuple(Of Boolean, String, Decimal)) = IsTriggerReceivedForModifyStoplossOrder()
+                    Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync().ConfigureAwait(False)
                     If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                         'Interlocked.Increment(_OHLStrategyProtector)
                         Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
@@ -96,8 +96,9 @@ Public Class OHLStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Function IsTriggerReceivedForPlaceOrder() As Tuple(Of Boolean, PlaceOrderParameters)
-        Dim ret As Tuple(Of Boolean, PlaceOrderParameters) = Nothing
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+        Await Task.Delay(0).ConfigureAwait(False)
+        Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim currentTime As Date = Now
         If TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
         currentTime.Hour = 9 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 10 Then
@@ -107,7 +108,7 @@ Public Class OHLStrategyInstrument
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
             Dim quantity As Integer = Nothing
-            Dim tag As String = GenerateTag()
+            Dim tag As String = GenerateTag(Now)
             If Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.High AndAlso
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.High Then
                 entryPrice = OHLTradePrice - buffer
@@ -122,7 +123,7 @@ Public Class OHLStrategyInstrument
                 .SquareOffValue = target,
                 .StoplossValue = stoploss,
                 .Tag = tag}
-                ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
             ElseIf Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.Low AndAlso
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
                 entryPrice = OHLTradePrice + buffer
@@ -137,13 +138,14 @@ Public Class OHLStrategyInstrument
                     .SquareOffValue = target,
                     .StoplossValue = stoploss,
                     .Tag = tag}
-                ret = New Tuple(Of Boolean, PlaceOrderParameters)(True, parameters)
+                ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
             End If
         End If
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrder() As List(Of Tuple(Of Boolean, String, Decimal))
-        Dim ret As List(Of Tuple(Of Boolean, String, Decimal)) = Nothing
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+        Await Task.Delay(0).ConfigureAwait(False)
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
             Dim currentTime As Date = Now
             For Each parentOrderId In OrderDetails.Keys
@@ -175,10 +177,10 @@ Public Class OHLStrategyInstrument
                                 End If
                             End If
                             If slOrder.TriggerPrice <> triggerPrice Then
-                                If ret Is Nothing Then ret = New List(Of Tuple(Of Boolean, String, Decimal))
-                                ret.Add(New Tuple(Of Boolean, String, Decimal)(True, slOrder.OrderIdentifier, triggerPrice))
-                            Else
-                                Debug.WriteLine(String.Format("Stoploss modified {0} Quantity:{1}, ID:{2}", Me.GenerateTag(), slOrder.Quantity, slOrder.OrderIdentifier))
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal)(True, slOrder, triggerPrice))
+                                'Else
+                                '    Debug.WriteLine(String.Format("Stoploss modified {0} Quantity:{1}, ID:{2}", Me.GenerateTag(), slOrder.Quantity, slOrder.OrderIdentifier))
                             End If
                         End If
                     Next

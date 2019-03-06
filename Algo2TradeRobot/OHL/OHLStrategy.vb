@@ -65,8 +65,8 @@ Public Class OHLStrategy
 
             'Get OHL Strategy Instruments
             'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
-            Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
-            'Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
+            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
+            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
             Dim dt As DataTable = Nothing
             Using readCSV As New CSVHelper(filePath, ",", _cts)
                 dt = readCSV.GetDataTableFromCSV(0)
@@ -125,24 +125,6 @@ Public Class OHLStrategy
         Return ret
     End Function
 
-    Public Overrides Async Function IsTriggerReachedAsync() As Task(Of Tuple(Of Boolean, Trigger))
-        logger.Debug("IsTriggerReachedAsync, parameters:Nothing")
-        _cts.Token.ThrowIfCancellationRequested()
-        Await Task.Delay(0).ConfigureAwait(False)
-        Dim ret As Tuple(Of Boolean, Trigger) = Nothing
-        Dim currentTime As Date = ISTNow()
-        Dim compareTime As TimeSpan = Nothing
-        TimeSpan.TryParse("15:32:30", compareTime)
-        If IsTimeEqualTillSeconds(currentTime, compareTime) Then
-            ret = New Tuple(Of Boolean, Trigger)(True,
-                                                 New Trigger() With
-                                                 {.Category = Trigger.TriggerType.Timebased,
-                                                 .Description = String.Format("Time reached:{0}", currentTime.ToString("HH:mm:ss"))})
-        End If
-        'TO DO: remove the below hard coding
-        ret = New Tuple(Of Boolean, Trigger)(True, Nothing)
-        Return ret
-    End Function
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
 
