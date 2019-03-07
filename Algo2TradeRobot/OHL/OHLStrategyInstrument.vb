@@ -121,8 +121,7 @@ Public Class OHLStrategyInstrument
                 .Price = entryPrice,
                 .TriggerPrice = Nothing,
                 .SquareOffValue = target,
-                .StoplossValue = stoploss,
-                .Tag = tag}
+                .StoplossValue = stoploss}
                 ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
             ElseIf Math.Round(TradableInstrument.LastTick.Open, 0) = TradableInstrument.LastTick.Low AndAlso
                 TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
@@ -136,8 +135,7 @@ Public Class OHLStrategyInstrument
                     .Price = entryPrice,
                     .TriggerPrice = Nothing,
                     .SquareOffValue = target,
-                    .StoplossValue = stoploss,
-                    .Tag = tag}
+                    .StoplossValue = stoploss}
                 ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
             End If
         End If
@@ -190,8 +188,8 @@ Public Class OHLStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of Boolean, String, String))
-        Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
+    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of ExecuteCommandAction, IOrder))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
         Throw New NotImplementedException
         Return ret
     End Function

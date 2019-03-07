@@ -15,14 +15,17 @@
 
     Private Sub LoadSettings()
         txtGetInformationDelay.Text = My.Settings.GetInformationDelay
+        txtBackToBackOrderCoolOffDelay.Text = My.Settings.BackToBackOrderCoolOffTime
     End Sub
 
     Private Sub SaveSettings()
         My.Settings.GetInformationDelay = txtGetInformationDelay.Text
+        My.Settings.BackToBackOrderCoolOffTime = txtBackToBackOrderCoolOffDelay.Text
     End Sub
 
     Private Sub ValidateInputs()
         ValidateNumbers(1, 1000, txtGetInformationDelay)
+        ValidateNumbers(1, 1000, txtBackToBackOrderCoolOffDelay)
     End Sub
 
     Private Function ValidateNumbers(ByVal startNumber As Integer, ByVal endNumber As Integer, ByVal inputTB As TextBox) As Boolean

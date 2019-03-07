@@ -65,7 +65,7 @@ Public Class AmiSignalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 'Dim exitOrderDetails As Object = Nothing
-                Dim exitOrderTrigger As List(Of Tuple(Of Boolean, String, String)) = IsTriggerReceivedForExitOrder()
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = IsTriggerReceivedForExitOrder()
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
                     Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
                     ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
@@ -88,8 +88,8 @@ Public Class AmiSignalStrategyInstrument
         If Now() < lastTradeEntryTime AndAlso Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
             Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If currentEntrySignal.SignalType = TypeOfSignal.Entry AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
-                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradingSymbol, Me.ParentStrategy.ActiveInstruments, If(currentEntrySignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
+                If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments(), If(currentEntrySignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
                     EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentEntrySignal)
                 Else
                     Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
@@ -115,8 +115,7 @@ Public Class AmiSignalStrategyInstrument
                            .Price = entryPrice,
                            .TriggerPrice = Nothing,
                            .SquareOffValue = target,
-                           .StoplossValue = stoploss,
-                           .Tag = tag}
+                           .StoplossValue = stoploss}
                         ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                     ElseIf currentEntrySignal.Direction = APIAdapter.TransactionType.Sell Then
                         entryPrice = amiSignalTradePrice - buffer
@@ -126,8 +125,7 @@ Public Class AmiSignalStrategyInstrument
                           .Price = entryPrice,
                           .TriggerPrice = Nothing,
                           .SquareOffValue = target,
-                          .StoplossValue = stoploss,
-                          .Tag = tag}
+                          .StoplossValue = stoploss}
                         ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                     End If
                 End If
@@ -141,8 +139,8 @@ Public Class AmiSignalStrategyInstrument
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of Boolean, String, String))
-        Dim ret As List(Of Tuple(Of Boolean, String, String)) = Nothing
+    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of ExecuteCommandAction, IOrder))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
         If Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
             Dim currentExitSignal As AmiSignal = ExitSignals.FirstOrDefault.Value
             If currentExitSignal.Direction = APIAdapter.TransactionType.Buy AndAlso currentExitSignal.OrderTimestamp = Date.MinValue Then
@@ -195,21 +193,21 @@ Public Class AmiSignalStrategyInstrument
                     .SignalType = TypeOfSignal.Entry
                     .SignalTimestamp = Now()
                 End With
-                If Me.ActiveInstrument Then
+                If Me.IsActiveInstrument() Then
                     If GetActiveOrder(APIAdapter.TransactionType.Buy) IsNot Nothing Then
                         logger.Error(String.Format("{0} - Buy signal running", Me.TradingSymbol))
                         Exit Function
                     End If
                     Dim exitSignal As Boolean = False
-                    While Me.ActiveInstrument
+                    While Me.IsActiveInstrument()
                         If Not exitSignal Then
                             exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
                         End If
                         Await Task.Delay(100).ConfigureAwait(False)
                     End While
                 End If
-                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.ActiveInstruments))
+                If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments()))
                     Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
@@ -241,21 +239,21 @@ Public Class AmiSignalStrategyInstrument
                     .SignalType = TypeOfSignal.Entry
                     .SignalTimestamp = Now()
                 End With
-                If Me.ActiveInstrument Then
+                If Me.IsActiveInstrument() Then
                     If GetActiveOrder(APIAdapter.TransactionType.Sell) IsNot Nothing Then
                         logger.Error(String.Format("{0} - Short signal running", Me.TradingSymbol))
                         Exit Function
                     End If
                     Dim exitSignal As Boolean = False
-                    While Me.ActiveInstrument
+                    While Me.IsActiveInstrument()
                         If Not exitSignal Then
                             exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
                         End If
                         Await Task.Delay(100).ConfigureAwait(False)
                     End While
                 End If
-                If Me.ParentStrategy.ActiveInstruments >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.ActiveInstruments))
+                If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments()))
                     Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)

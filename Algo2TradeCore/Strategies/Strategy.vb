@@ -75,31 +75,32 @@ Namespace Strategies
             Me.SignalManager = New SignalStateManager(associatedParentController, Me, _cts)
             _cts = canceller
         End Sub
-        Public ReadOnly Property ActiveInstruments As Integer
-            Get
-                Dim instrumentCount As Integer = 0
-                If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-                    For Each runningStrategyInstrument In TradableStrategyInstruments
-                        If runningStrategyInstrument.ActiveInstrument Then
-                            instrumentCount += 1
-                        End If
-                    Next
-                End If
-                Return instrumentCount
-            End Get
-        End Property
-        Public ReadOnly Property TotalPL As Decimal
-            Get
-                Dim plOfDay As Decimal = 0
-                If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
-                    For Each runningStrategyInstrument In TradableStrategyInstruments
-                        plOfDay += runningStrategyInstrument.PL
-                    Next
-                End If
-                Return plOfDay
-            End Get
-        End Property
-        Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
+
+#Region "Public Functions"
+        Public Function GetNumberActiveInstruments() As Integer
+            Dim instrumentCount As Integer = 0
+            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                For Each runningStrategyInstrument In TradableStrategyInstruments
+                    If runningStrategyInstrument.IsActiveInstrument() Then
+                        instrumentCount += 1
+                    End If
+                Next
+            End If
+            Return instrumentCount
+        End Function
+
+        Public Function GetTotalPL() As Decimal
+            Dim plOfDay As Decimal = 0
+            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                For Each runningStrategyInstrument In TradableStrategyInstruments
+                    plOfDay += runningStrategyInstrument.GetTotalPL()
+                Next
+            End If
+            Return plOfDay
+        End Function
+#End Region
+
+#Region "Public Overridable Functions"
         Public Overridable Async Function SubscribeAsync(ByVal usableTicker As APITicker, ByVal usableFetcher As APIHistoricalDataFetcher) As Task
             logger.Debug("SubscribeAsync, usableTicker:{0}, usableFetcher:{1}", usableTicker.ToString, usableFetcher.ToString)
             _cts.Token.ThrowIfCancellationRequested()
@@ -118,9 +119,6 @@ Namespace Strategies
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         End Function
-        Public MustOverride Overrides Function ToString() As String
-        Public MustOverride Async Function MonitorAsync() As Task
-
         Public Overridable Async Function ForceExitAllTradesAsync() As Task
             'logger.Debug("ForceExitAllTrades, parameters:Nothing")
             Try
@@ -157,7 +155,7 @@ Namespace Strategies
                     _cts.Token.ThrowIfCancellationRequested()
                     If runningTradableStrategyInstrument.TradableInstrument.InstrumentIdentifier = orderData.ParentOrder.InstrumentIdentifier Then
                         If orderData.ParentOrder.Tag IsNot Nothing Then
-                            Dim decodedTag As String = Convert.ToInt64(Val(orderData.ParentOrder.Tag), 16)
+                            Dim decodedTag As String = Convert.ToInt64(orderData.ParentOrder.Tag, 16)
                             If decodedTag.Substring(0, 1).Equals(Me.StrategyIdentifier) Then
                                 Await runningTradableStrategyInstrument.ProcessOrderAsync(orderData).ConfigureAwait(False)
                             End If
@@ -166,7 +164,14 @@ Namespace Strategies
                 Next
             End If
         End Function
+#End Region
+
+#Region "Public MustOverride Functions"
+        Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
+        Public MustOverride Overrides Function ToString() As String
+        Public MustOverride Async Function MonitorAsync() As Task
         Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
+#End Region
 
     End Class
 End Namespace

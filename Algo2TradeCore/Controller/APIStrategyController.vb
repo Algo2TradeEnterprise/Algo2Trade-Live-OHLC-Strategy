@@ -102,6 +102,7 @@ Namespace Controller
         Public ReadOnly Property BrokerSource As APISource
         Public Property OrphanException As Exception
         Public Property InstrumentMappingTable As Concurrent.ConcurrentDictionary(Of String, String)
+        Public Property UserInputs As ControllerUserInputs
 
         Protected _APIAdapter As APIAdapter
         Protected _APITicker As APITicker
@@ -112,7 +113,7 @@ Namespace Controller
         Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, Concurrent.ConcurrentBag(Of StrategyInstrument))
         Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
-        Public UserInputs As ControllerUserInputs
+        Private _lastGetOrderTime As Date
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal associatedBrokerSource As APISource,
                        ByVal associatedUserInputs As ControllerUserInputs,
@@ -194,6 +195,10 @@ Namespace Controller
                                     Throw New ApplicationException(String.Format("Getting all quotes did not succeed"))
                                 End If
                             Case ExecutionCommands.GetOrders
+                                If DateDiff(DateInterval.Second, _lastGetOrderTime, Now) < 1 Then
+                                    Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                                End If
+                                _lastGetOrderTime = Now
                                 Dim allOrderResponse As IEnumerable(Of IOrder) = Nothing
                                 allOrderResponse = Await _APIAdapter.GetAllOrdersAsync().ConfigureAwait(False)
                                 If allOrderResponse IsNot Nothing Then

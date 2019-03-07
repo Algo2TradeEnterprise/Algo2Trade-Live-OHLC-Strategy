@@ -26,6 +26,8 @@ Partial Class frmAdvancedOptions
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmAdvancedOptions))
         Me.tabMain = New System.Windows.Forms.TabControl()
         Me.tabDelaySettings = New System.Windows.Forms.TabPage()
+        Me.txtBackToBackOrderCoolOffDelay = New System.Windows.Forms.TextBox()
+        Me.lblBackToBackOrderCoolOffDelay = New System.Windows.Forms.Label()
         Me.txtGetInformationDelay = New System.Windows.Forms.TextBox()
         Me.lblGetInformationDelay = New System.Windows.Forms.Label()
         Me.btnSaveDelaySettings = New System.Windows.Forms.Button()
@@ -45,6 +47,8 @@ Partial Class frmAdvancedOptions
         '
         'tabDelaySettings
         '
+        Me.tabDelaySettings.Controls.Add(Me.txtBackToBackOrderCoolOffDelay)
+        Me.tabDelaySettings.Controls.Add(Me.lblBackToBackOrderCoolOffDelay)
         Me.tabDelaySettings.Controls.Add(Me.txtGetInformationDelay)
         Me.tabDelaySettings.Controls.Add(Me.lblGetInformationDelay)
         Me.tabDelaySettings.Controls.Add(Me.btnSaveDelaySettings)
@@ -56,13 +60,31 @@ Partial Class frmAdvancedOptions
         Me.tabDelaySettings.Text = "Delay"
         Me.tabDelaySettings.UseVisualStyleBackColor = True
         '
+        'txtBackToBackOrderCoolOffDelay
+        '
+        Me.txtBackToBackOrderCoolOffDelay.Location = New System.Drawing.Point(268, 57)
+        Me.txtBackToBackOrderCoolOffDelay.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtBackToBackOrderCoolOffDelay.Name = "txtBackToBackOrderCoolOffDelay"
+        Me.txtBackToBackOrderCoolOffDelay.Size = New System.Drawing.Size(134, 22)
+        Me.txtBackToBackOrderCoolOffDelay.TabIndex = 2
+        '
+        'lblBackToBackOrderCoolOffDelay
+        '
+        Me.lblBackToBackOrderCoolOffDelay.AutoSize = True
+        Me.lblBackToBackOrderCoolOffDelay.Location = New System.Drawing.Point(6, 58)
+        Me.lblBackToBackOrderCoolOffDelay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblBackToBackOrderCoolOffDelay.Name = "lblBackToBackOrderCoolOffDelay"
+        Me.lblBackToBackOrderCoolOffDelay.Size = New System.Drawing.Size(255, 17)
+        Me.lblBackToBackOrderCoolOffDelay.TabIndex = 12
+        Me.lblBackToBackOrderCoolOffDelay.Text = "BackToBack Order CoolOff Delay (sec)"
+        '
         'txtGetInformationDelay
         '
-        Me.txtGetInformationDelay.Location = New System.Drawing.Point(192, 17)
+        Me.txtGetInformationDelay.Location = New System.Drawing.Point(268, 17)
         Me.txtGetInformationDelay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtGetInformationDelay.Name = "txtGetInformationDelay"
-        Me.txtGetInformationDelay.Size = New System.Drawing.Size(174, 22)
-        Me.txtGetInformationDelay.TabIndex = 11
+        Me.txtGetInformationDelay.Size = New System.Drawing.Size(134, 22)
+        Me.txtGetInformationDelay.TabIndex = 1
         '
         'lblGetInformationDelay
         '
@@ -83,7 +105,7 @@ Partial Class frmAdvancedOptions
         Me.btnSaveDelaySettings.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveDelaySettings.Name = "btnSaveDelaySettings"
         Me.btnSaveDelaySettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveDelaySettings.TabIndex = 9
+        Me.btnSaveDelaySettings.TabIndex = 0
         Me.btnSaveDelaySettings.Text = "&Save"
         Me.btnSaveDelaySettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSaveDelaySettings.UseVisualStyleBackColor = True
@@ -119,4 +141,6 @@ Partial Class frmAdvancedOptions
     Friend WithEvents btnSaveDelaySettings As Button
     Friend WithEvents txtGetInformationDelay As TextBox
     Friend WithEvents lblGetInformationDelay As Label
+    Friend WithEvents txtBackToBackOrderCoolOffDelay As TextBox
+    Friend WithEvents lblBackToBackOrderCoolOffDelay As Label
 End Class

@@ -159,7 +159,7 @@ Public Class OHLStrategy
         Else
             Return False
         End If
-        If Me.TotalPL >= 300 Then
+        If Me.GetTotalPL() >= 300 Then
             Return True
         End If
     End Function

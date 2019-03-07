@@ -5,6 +5,7 @@
         ReadOnly Property TransactionType As String
         ReadOnly Property Tradingsymbol As String
         ReadOnly Property Status As String
+        ReadOnly Property StatusMessage As String
         ReadOnly Property Quantity As Integer
         ReadOnly Property Price As Decimal
         ReadOnly Property PendingQuantity As Integer

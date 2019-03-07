@@ -244,7 +244,7 @@ Public Class frmMainTabbed
     Private _lastLoggedMessage As String = Nothing
     Private _commonController As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
-    Private _commonControllerUserInput As New ControllerUserInputs With {.GetInformationDelay = My.Settings.GetInformationDelay, .BackToBackOrderCoolOffTime = 30}
+    Private _commonControllerUserInput As New ControllerUserInputs With {.GetInformationDelay = My.Settings.GetInformationDelay, .BackToBackOrderCoolOffDelay = My.Settings.BackToBackOrderCoolOffTime}
 #End Region
 
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click

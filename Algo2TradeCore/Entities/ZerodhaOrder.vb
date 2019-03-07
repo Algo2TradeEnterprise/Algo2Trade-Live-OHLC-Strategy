@@ -42,6 +42,12 @@ Namespace Entities
             End Get
         End Property
 
+        Public ReadOnly Property StatusMessage As String Implements IOrder.StatusMessage
+            Get
+                Return WrappedOrder.StatusMessage
+            End Get
+        End Property
+
         Public ReadOnly Property Quantity As Integer Implements IOrder.Quantity
             Get
                 Return WrappedOrder.Quantity

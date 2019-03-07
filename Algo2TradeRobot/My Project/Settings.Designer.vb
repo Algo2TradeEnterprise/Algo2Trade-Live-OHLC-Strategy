@@ -115,14 +115,24 @@ Namespace My
         End Property
         
         <Global.System.Configuration.UserScopedSettingAttribute(),  _
-         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
-         Global.System.Configuration.DefaultSettingValueAttribute("10")>  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute()>  _
         Public Property GetInformationDelay() As Integer
             Get
                 Return CType(Me("GetInformationDelay"),Integer)
             End Get
             Set
                 Me("GetInformationDelay") = value
+            End Set
+        End Property
+        
+        <Global.System.Configuration.UserScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute()>  _
+        Public Property BackToBackOrderCoolOffTime() As Integer
+            Get
+                Return CType(Me("BackToBackOrderCoolOffTime"),Integer)
+            End Get
+            Set
+                Me("BackToBackOrderCoolOffTime") = value
             End Set
         End Property
     End Class
