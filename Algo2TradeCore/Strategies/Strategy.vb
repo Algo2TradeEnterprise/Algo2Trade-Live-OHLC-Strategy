@@ -72,7 +72,7 @@ Namespace Strategies
             Me.IsStrategyCandleStickBased = isStrategyCandleStickBased
             Me.UserSettings = userSettings
             Me.MaxNumberOfDaysForHistoricalFetch = maxNumberOfDaysForHistoricalFetch
-            Me.SignalManager = New SignalStateManager(associatedParentController, Me, _cts)
+            Me.SignalManager = New SignalStateManager(associatedParentController, Me, canceller)
             _cts = canceller
         End Sub
 
@@ -93,7 +93,7 @@ Namespace Strategies
             Dim plOfDay As Decimal = 0
             If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In TradableStrategyInstruments
-                    plOfDay += runningStrategyInstrument.GetTotalPL()
+                    plOfDay += runningStrategyInstrument.GetOverallPL()
                 Next
             End If
             Return plOfDay

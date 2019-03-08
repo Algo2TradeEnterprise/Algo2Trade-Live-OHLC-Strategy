@@ -116,15 +116,15 @@ Public Class MomentumReversalStrategy
                 For Each instrument In futureInstrumentList.ToList
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = Nothing
-                    'Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                    '                                                                                     Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                    '                                                                                         x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
-                    '                                                                                 End Function)
-
                     Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
                                                                                                          Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX"
+                                                                                                             x.InstrumentType = "FUT" AndAlso (x.Exchange = "NFO" OrElse x.Exchange = "MCX")
                                                                                                      End Function)
+
+                    'Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                    '                                                                                     Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
+                    '                                                                                         x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX"
+                    '                                                                                 End Function)
 
                     Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
                                                                            If Not x.Expiry.Value.Date = Now.Date Then

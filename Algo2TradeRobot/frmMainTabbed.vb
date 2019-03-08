@@ -395,7 +395,7 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(momentumReversalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            Dim dashboadList As BindingList(Of MomentumReversalStrategyInstrument) = New BindingList(Of MomentumReversalStrategyInstrument)(momentumReversalStrategyToExecute.TradableStrategyInstruments)
+            Dim dashboadList As BindingList(Of ActivityDashboard) = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
 
@@ -877,7 +877,7 @@ Public Class frmMainTabbed
 
         tmrTickerStatusCommon.Enabled = False
 
-        Dim trialEndDate As Date = New Date(2019, 3, 8, 0, 0, 0)
+        Dim trialEndDate As Date = New Date(2019, 3, 16, 0, 0, 0)
         If Now() >= trialEndDate Then
             MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
             End
