@@ -1,11 +1,23 @@
 ﻿Imports System.ComponentModel
+Imports System.IO
+Imports System.Runtime.Serialization.Formatters.Binary
 Imports System.Threading
+Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports NLog
 
 Namespace Strategies
     Public Class SignalStateManager
+
+#Region "Events/Event handlers"
+        Public Event NewItemAdded(ByVal item As ActivityDashboard)
+        Protected Overridable Sub OnNewItemAdded(ByVal item As ActivityDashboard)
+            If item IsNot Nothing Then
+                RaiseEvent NewItemAdded(item)
+            End If
+        End Sub
+#End Region
 
 #Region "Logging and Status Progress"
         Public Shared logger As Logger = LogManager.GetCurrentClassLogger
@@ -33,14 +45,16 @@ Namespace Strategies
 
 #Region "Entry Activity"
         Public Async Function HandleEntryActivity(ByVal activityTag As String,
-                                       ByVal associatedStrategyInstrument As StrategyInstrument,
-                                       ByVal associatedOrderID As String,
-                                       ByVal signalGeneratedTime As Date,
-                                       ByVal requestTime As Date) As Task
+                                                  ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                  ByVal associatedOrderID As String,
+                                                  ByVal signalGeneratedTime As Date,
+                                                  ByVal signalDirection As APIAdapter.TransactionType,
+                                                  ByVal requestTime As Date) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
                                      associatedStrategyInstrument:=associatedStrategyInstrument,
                                      associatedOrderID:=associatedOrderID,
                                      signalGeneratedTime:=signalGeneratedTime,
+                                     signalDirection:=signalDirection,
                                      requestTime:=requestTime,
                                      receivedTime:=_defaultDateValue,
                                      requestStatus:=ActivityDashboard.SignalStatusType.Handled,
@@ -301,23 +315,47 @@ Namespace Strategies
                     Dim currentInstrumentActivities As IEnumerable(Of KeyValuePair(Of String, ActivityDashboard)) =
                         Me.ActivityDetails.Where(Function(x)
                                                      Dim key As String = Convert.ToInt64(x.Key, 16)
-                                                     Return key.Substring(0, 4).Equals(String.Format("{0}{1:D3}", Me.ParentStrategy.StrategyIdentifier, Me.ParentStrategy.ParentController.InstrumentMappingTable(associatedStrategyInstrument.TradableInstrument.InstrumentIdentifier)))
+                                                     Return key.Substring(0, 4).Equals(String.Format("{0}{1}", Me.ParentStrategy.StrategyIdentifier, Me.ParentStrategy.ParentController.InstrumentMappingTable(associatedStrategyInstrument.TradableInstrument.InstrumentIdentifier).PadLeft(3, "0")))
                                                  End Function)
                     If currentInstrumentActivities IsNot Nothing AndAlso currentInstrumentActivities.Count > 0 Then
-                        currentInstrumentActivities.Select(Function(x)
-                                                               If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
-                                                               associatedStrategyInstrument.TradableInstrument.LastTick.LastPrice <> x.Value.GetDirtyLastPrice Then
-                                                                   x.Value.NotifyPropertyChanged("LastPrice")
-                                                                   x.Value.NotifyPropertyChanged("SignalPL")
-                                                                   x.Value.NotifyPropertyChanged("OverallPL")
-                                                                   x.Value.NotifyPropertyChanged("TotalExecutedOrders")
-                                                                   x.Value.NotifyPropertyChanged("ActiveInstrument")
-                                                               End If
-                                                               If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp <> x.Value.GetDirtyTimestamp Then x.Value.NotifyPropertyChanged("Timestamp")
-                                                               If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.HasValue AndAlso Utilities.Time.IsDateTimeEqualTillMinutes(associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.Value, x.Value.GetDirtyLastCandleTime) Then x.Value.NotifyPropertyChanged("LastCandleTime")
-                                                               If associatedStrategyInstrument.TradableInstrument.TradingSymbol IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.TradingSymbol <> x.Value.GetDirtyTradingSymbol Then x.Value.NotifyPropertyChanged("TradingSymbol")
-                                                               Return True
-                                                           End Function)
+                        'currentInstrumentActivities.Select(Function(x)
+                        '                                       If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
+                        '                                       associatedStrategyInstrument.TradableInstrument.LastTick.LastPrice <> x.Value.GetDirtyLastPrice Then
+                        '                                           x.Value.NotifyPropertyChanged("LastPrice")
+                        '                                           x.Value.NotifyPropertyChanged("SignalPL")
+                        '                                           x.Value.NotifyPropertyChanged("OverallPL")
+                        '                                           x.Value.NotifyPropertyChanged("TotalExecutedOrders")
+                        '                                           x.Value.NotifyPropertyChanged("ActiveInstrument")
+                        '                                       End If
+                        '                                       If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp <> x.Value.GetDirtyTimestamp Then x.Value.NotifyPropertyChanged("Timestamp")
+                        '                                       If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.HasValue AndAlso Utilities.Time.IsDateTimeEqualTillMinutes(associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.Value, x.Value.GetDirtyLastCandleTime) Then x.Value.NotifyPropertyChanged("LastCandleTime")
+                        '                                       If associatedStrategyInstrument.TradableInstrument.TradingSymbol IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.TradingSymbol <> x.Value.GetDirtyTradingSymbol Then x.Value.NotifyPropertyChanged("TradingSymbol")
+                        '                                       Return True
+                        '                                   End Function)
+                        For Each instrumentActivity In currentInstrumentActivities
+                            If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
+                               associatedStrategyInstrument.TradableInstrument.LastTick.LastPrice <> instrumentActivity.Value.GetDirtyLastPrice Then
+                                instrumentActivity.Value.NotifyPropertyChanged("LastPrice")
+                                instrumentActivity.Value.NotifyPropertyChanged("SignalPL")
+                                instrumentActivity.Value.NotifyPropertyChanged("OverallPL")
+                                instrumentActivity.Value.NotifyPropertyChanged("TotalExecutedOrders")
+                                instrumentActivity.Value.NotifyPropertyChanged("ActiveSignal")
+                            End If
+                            If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
+                                associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp <> instrumentActivity.Value.GetDirtyTimestamp Then
+                                instrumentActivity.Value.NotifyPropertyChanged("Timestamp")
+                            End If
+                            If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
+                                associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
+                                associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.HasValue AndAlso
+                                Not Utilities.Time.IsDateTimeEqualTillMinutes(associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.Value, instrumentActivity.Value.GetDirtyLastCandleTime) Then
+                                instrumentActivity.Value.NotifyPropertyChanged("LastCandleTime")
+                            End If
+                            If associatedStrategyInstrument.TradableInstrument.TradingSymbol IsNot Nothing AndAlso
+                                associatedStrategyInstrument.TradableInstrument.TradingSymbol <> instrumentActivity.Value.GetDirtyTradingSymbol Then
+                                instrumentActivity.Value.NotifyPropertyChanged("TradingSymbol")
+                            End If
+                        Next
                     End If
                 End If
             Catch cex As OperationCanceledException
@@ -371,25 +409,48 @@ Namespace Strategies
         End Function
 #End Region
 
+#Region "Serialization"
+        Public Shared Function GetActivitySignalFilename(ByVal currentStrategy As Strategy) As String
+            Return Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}{1}.ActivityDashboard.a2t", currentStrategy.ToString, Now.ToString("yy_MM_dd")))
+        End Function
+        Public Sub DeSerializeActivityCollection()
+            Try
+                Dim filename As String = GetActivitySignalFilename(Me.ParentStrategy)
+                If File.Exists(filename) Then
+                    Using fs As New FileStream(filename, FileMode.Open)
+                        Dim bf As BinaryFormatter = New BinaryFormatter()
+                        Me.ActivityDetails = CType(bf.Deserialize(fs), Concurrent.ConcurrentDictionary(Of String, ActivityDashboard))
+                        fs.Close()
+                    End Using
+                End If
+            Catch ex As Exception
+                logger.Error(ex)
+                'Error will not throw out as it is not an important error
+            End Try
+        End Sub
+#End Region
+
 #End Region
 
 #Region "Private Functions"
         Private Async Function AddOrUpdateEntryActivity(ByVal activityTag As String,
-                                             ByVal associatedStrategyInstrument As StrategyInstrument,
-                                             ByVal associatedOrderID As String,
-                                             Optional ByVal signalGeneratedTime As Date = Nothing,
-                                             Optional ByVal requestTime As Date = Nothing,
-                                             Optional ByVal receivedTime As Date = Nothing,
-                                             Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
-                                             Optional ByVal requestRemarks As String = Nothing,
-                                             Optional ByVal lastException As Exception = Nothing) As Task
+                                                         ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                         ByVal associatedOrderID As String,
+                                                         Optional ByVal signalGeneratedTime As Date = Nothing,
+                                                         Optional ByVal signalDirection As APIAdapter.TransactionType = APIAdapter.TransactionType.None,
+                                                         Optional ByVal requestTime As Date = Nothing,
+                                                         Optional ByVal receivedTime As Date = Nothing,
+                                                         Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
+                                                         Optional ByVal requestRemarks As String = Nothing,
+                                                         Optional ByVal lastException As Exception = Nothing) As Task
 
+            Dim newItemAdded As Boolean = IsNewItemAdded(activityTag)
             Dim currentActivity As New ActivityDashboard(associatedStrategyInstrument)
-
             Dim existingActivities As ActivityDashboard = Me.ActivityDetails.GetOrAdd(activityTag, currentActivity)
 
             If associatedOrderID IsNot Nothing Then existingActivities.ParentOrderID = associatedOrderID
             If signalGeneratedTime <> Nothing OrElse signalGeneratedTime <> Date.MinValue Then existingActivities.SignalGeneratedTime = signalGeneratedTime
+            If signalDirection <> APIAdapter.TransactionType.None Then existingActivities.SignalDirection = signalDirection
             If requestTime <> Nothing OrElse requestTime <> Date.MinValue Then existingActivities.EntryActivity.RequestTime = requestTime
             If receivedTime <> Nothing OrElse receivedTime <> Date.MinValue Then existingActivities.EntryActivity.ReceivedTime = If(receivedTime.Equals(_defaultDateValue), Date.MinValue, receivedTime)
             If requestStatus <> ActivityDashboard.SignalStatusType.None Then existingActivities.EntryActivity.RequestStatus = requestStatus
@@ -397,18 +458,24 @@ Namespace Strategies
             If lastException IsNot Nothing Then existingActivities.EntryActivity.LastException = If(lastException.Equals(_defaultExceptionValue), Nothing, lastException)
 
             Me.ActivityDetails.AddOrUpdate(activityTag, existingActivities, Function(key, value) existingActivities)
+            If newItemAdded Then OnNewItemAdded(ActivityDetails(activityTag))
             Await UIRefresh(Me.ActivityDetails(activityTag).EntryActivity).ConfigureAwait(False)
+            If ActivityDetails(activityTag).EntryActivity.ActivityChanged Then
+                ActivityDetails(activityTag).EntryActivity.ActivityChanged = False
+                SerializeActivityCollection()
+            End If
         End Function
         Private Async Function AddOrUpdateTargetModifyActivity(ByVal activityTag As String,
-                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                    ByVal associatedOrderID As String,
-                                                    Optional ByVal requestTime As Date = Nothing,
-                                                    Optional ByVal receivedTime As Date = Nothing,
-                                                    Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
-                                                    Optional ByVal requestRemarks As String = Nothing,
-                                                    Optional ByVal lastException As Exception = Nothing,
-                                                    Optional ByVal price As Decimal = Decimal.MinValue) As Task
+                                                                ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                                ByVal associatedOrderID As String,
+                                                                Optional ByVal requestTime As Date = Nothing,
+                                                                Optional ByVal receivedTime As Date = Nothing,
+                                                                Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
+                                                                Optional ByVal requestRemarks As String = Nothing,
+                                                                Optional ByVal lastException As Exception = Nothing,
+                                                                Optional ByVal price As Decimal = Decimal.MinValue) As Task
 
+            Dim newItemAdded As Boolean = IsNewItemAdded(activityTag)
             Dim currentActivity As New ActivityDashboard(associatedStrategyInstrument)
             Dim existingActivities As ActivityDashboard = Me.ActivityDetails.GetOrAdd(activityTag, currentActivity)
 
@@ -420,18 +487,24 @@ Namespace Strategies
             If lastException IsNot Nothing Then existingActivities.TargetModifyActivity.LastException = If(lastException.Equals(_defaultExceptionValue), Nothing, lastException)
 
             Me.ActivityDetails.AddOrUpdate(activityTag, existingActivities, Function(key, value) existingActivities)
+            If newItemAdded Then OnNewItemAdded(ActivityDetails(activityTag))
             Await UIRefresh(Me.ActivityDetails(activityTag).TargetModifyActivity).ConfigureAwait(False)
+            If ActivityDetails(activityTag).TargetModifyActivity.ActivityChanged Then
+                ActivityDetails(activityTag).TargetModifyActivity.ActivityChanged = False
+                SerializeActivityCollection()
+            End If
         End Function
         Private Async Function AddOrUpdateStoplossModifyActivity(ByVal activityTag As String,
-                                                      ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                      ByVal associatedOrderID As String,
-                                                      Optional ByVal requestTime As Date = Nothing,
-                                                      Optional ByVal receivedTime As Date = Nothing,
-                                                      Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
-                                                      Optional ByVal requestRemarks As String = Nothing,
-                                                      Optional ByVal lastException As Exception = Nothing,
-                                                      Optional ByVal triggerPrice As Decimal = Decimal.MinValue) As Task
+                                                                  ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                                  ByVal associatedOrderID As String,
+                                                                  Optional ByVal requestTime As Date = Nothing,
+                                                                  Optional ByVal receivedTime As Date = Nothing,
+                                                                  Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
+                                                                  Optional ByVal requestRemarks As String = Nothing,
+                                                                  Optional ByVal lastException As Exception = Nothing,
+                                                                  Optional ByVal triggerPrice As Decimal = Decimal.MinValue) As Task
 
+            Dim newItemAdded As Boolean = IsNewItemAdded(activityTag)
             Dim currentActivity As New ActivityDashboard(associatedStrategyInstrument)
             Dim existingActivities As ActivityDashboard = Me.ActivityDetails.GetOrAdd(activityTag, currentActivity)
 
@@ -444,17 +517,23 @@ Namespace Strategies
             If triggerPrice <> Decimal.MinValue Then existingActivities.StoplossModifyActivity.Supporting = triggerPrice
 
             Me.ActivityDetails.AddOrUpdate(activityTag, existingActivities, Function(key, value) existingActivities)
+            If newItemAdded Then OnNewItemAdded(ActivityDetails(activityTag))
             Await UIRefresh(Me.ActivityDetails(activityTag).StoplossModifyActivity).ConfigureAwait(False)
+            If ActivityDetails(activityTag).StoplossModifyActivity.ActivityChanged Then
+                ActivityDetails(activityTag).StoplossModifyActivity.ActivityChanged = False
+                SerializeActivityCollection()
+            End If
         End Function
         Private Async Function AddOrUpdateCancelActivity(ByVal activityTag As String,
-                                              ByVal associatedStrategyInstrument As StrategyInstrument,
-                                              ByVal associatedOrderID As String,
-                                              Optional ByVal requestTime As Date = Nothing,
-                                              Optional ByVal receivedTime As Date = Nothing,
-                                              Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
-                                              Optional ByVal requestRemarks As String = Nothing,
-                                              Optional ByVal lastException As Exception = Nothing) As Task
+                                                          ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                          ByVal associatedOrderID As String,
+                                                          Optional ByVal requestTime As Date = Nothing,
+                                                          Optional ByVal receivedTime As Date = Nothing,
+                                                          Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
+                                                          Optional ByVal requestRemarks As String = Nothing,
+                                                          Optional ByVal lastException As Exception = Nothing) As Task
 
+            Dim newItemAdded As Boolean = IsNewItemAdded(activityTag)
             Dim currentActivity As New ActivityDashboard(associatedStrategyInstrument)
             Dim existingActivities As ActivityDashboard = Me.ActivityDetails.GetOrAdd(activityTag, currentActivity)
 
@@ -466,7 +545,36 @@ Namespace Strategies
             If lastException IsNot Nothing Then existingActivities.CancelActivity.LastException = If(lastException.Equals(_defaultExceptionValue), Nothing, lastException)
 
             Me.ActivityDetails.AddOrUpdate(activityTag, existingActivities, Function(key, value) existingActivities)
+            If newItemAdded Then OnNewItemAdded(ActivityDetails(activityTag))
             Await UIRefresh(Me.ActivityDetails(activityTag).CancelActivity).ConfigureAwait(False)
+            If ActivityDetails(activityTag).CancelActivity.ActivityChanged Then
+                ActivityDetails(activityTag).CancelActivity.ActivityChanged = False
+                SerializeActivityCollection()
+            End If
+        End Function
+        Private Function IsNewItemAdded(ByVal activityTag As String) As Boolean
+            Dim ret As Boolean = False
+            If ActivityDetails IsNot Nothing AndAlso ActivityDetails.Count > 0 Then
+                If Not ActivityDetails.ContainsKey(activityTag) Then
+                    ret = True
+                End If
+            Else
+                ret = True
+            End If
+            Return ret
+        End Function
+        Private Async Function SerializeActivityCollection() As Task
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+            Try
+                Using fs As New FileStream(GetActivitySignalFilename(Me.ParentStrategy), FileMode.OpenOrCreate)
+                    Dim bf As BinaryFormatter = New BinaryFormatter()
+                    bf.Serialize(fs, ActivityDetails)
+                    fs.Close()
+                End Using
+            Catch ex As Exception
+                logger.Error(ex)
+                'Error will not throw out as it is not an important error
+            End Try
         End Function
 #End Region
 

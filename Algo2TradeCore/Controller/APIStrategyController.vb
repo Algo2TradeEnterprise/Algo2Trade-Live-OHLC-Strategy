@@ -34,6 +34,7 @@ Namespace Controller
         Public Event TickerReconnect()
         Public Event FetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
         Public Event CollectorError(ByVal errorMessage As String)
+        Public Event NewItemAdded(ByVal item As ActivityDashboard)
 
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
@@ -83,6 +84,11 @@ Namespace Controller
         End Sub
         Public Overridable Sub OnCollectorError(ByVal errorMessage As String)
             RaiseEvent CollectorError(errorMessage)
+        End Sub
+        Protected Overridable Sub OnNewItemAdded(ByVal item As ActivityDashboard)
+            If item IsNot Nothing Then
+                RaiseEvent NewItemAdded(item)
+            End If
         End Sub
 #End Region
 

@@ -1,8 +1,12 @@
 ﻿Imports System.ComponentModel
 Imports System.ComponentModel.DataAnnotations
+Imports System.Web.Script.Serialization
+Imports System.Xml.Serialization
+Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Strategies
 
 Namespace Entities
+    <Serializable>
     Public Class ActivityDashboard
         Implements INotifyPropertyChanged
         Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
@@ -21,6 +25,7 @@ Namespace Entities
             CancelActivity = New Activity(ActivityType.Cancel, Me) With {
                 .PreviousActivityAttributes = New Activity(ActivityType.Cancel, Me)
             }
+            Me.SignalDirection = APIAdapter.TransactionType.None
         End Sub
 
         Private _TradingSymbol As String
@@ -35,52 +40,8 @@ Namespace Entities
             Return _TradingSymbol
         End Function
 
-        <Display(Name:="Signal Generated Time", Order:=1)>
-        Public Property SignalGeneratedTime As Date
-
-        Private _SignalDirection As String
-        <Display(Name:="Signal Direction", Order:=2)>
-        Public ReadOnly Property SignalDirection As String
-            Get
-                If ParentOrderID IsNot Nothing AndAlso ParentStrategyInstrument.OrderDetails IsNot Nothing AndAlso
-                    ParentStrategyInstrument.OrderDetails.Count > 0 AndAlso ParentStrategyInstrument.OrderDetails.ContainsKey(ParentOrderID) Then
-                    _SignalDirection = ParentStrategyInstrument.OrderDetails(ParentOrderID).ParentOrder.TransactionType
-                End If
-                Return _SignalDirection
-            End Get
-        End Property
-        Public Function GetDirtySignalDirection() As String
-            Return _SignalDirection
-        End Function
-
-        Private _SignalPL As Decimal
-        <Display(Name:="Signal PL", Order:=3)>
-        Public ReadOnly Property SignalPL As Decimal
-            Get
-                If ParentOrderID IsNot Nothing Then
-                    _SignalPL = ParentStrategyInstrument.GetTotalPLOfAnOrder(ParentOrderID)
-                End If
-                Return _SignalPL
-            End Get
-        End Property
-        Public Function GetDirtySignalPL() As Decimal
-            Return _SignalPL
-        End Function
-
-        Private _ActiveInstrument As Boolean
-        <Display(Name:="Active Instrument", Order:=4)>
-        Public ReadOnly Property ActiveInstrument As Boolean
-            Get
-                _ActiveInstrument = ParentStrategyInstrument.IsActiveInstrument()
-                Return _ActiveInstrument
-            End Get
-        End Property
-        Public Function GetDirtyActiveInstrument() As Boolean
-            Return _ActiveInstrument
-        End Function
-
         Private _TotalExecutedOrders As Integer
-        <Display(Name:="Total Executed Orders", Order:=5)>
+        <Display(Name:="Total Executed Orders", Order:=1)>
         Public ReadOnly Property TotalExecutedOrders As Integer
             Get
                 _TotalExecutedOrders = ParentStrategyInstrument.GetTotalExecutedOrders()
@@ -92,7 +53,7 @@ Namespace Entities
         End Function
 
         Private _OverallPL As Decimal
-        <Display(Name:="Overall PL", Order:=6)>
+        <Display(Name:="Overall PL", Order:=2)>
         Public ReadOnly Property OverallPL As Decimal
             Get
                 _OverallPL = ParentStrategyInstrument.GetOverallPL()
@@ -103,20 +64,58 @@ Namespace Entities
             Return _OverallPL
         End Function
 
+        Private _ActiveSignal As Boolean
+        <Display(Name:="Active Signal", Order:=3)>
+        Public ReadOnly Property ActiveSignal As Boolean
+            Get
+                If ParentStrategyInstrument.IsActiveInstrument() Then
+                    If Me.EntryActivity.RequestStatus = SignalStatusType.Handled OrElse
+                       Me.EntryActivity.RequestStatus = SignalStatusType.Activated OrElse
+                       Me.EntryActivity.RequestStatus = SignalStatusType.Running Then
+                        _ActiveSignal = True
+                    End If
+                End If
+                Return _ActiveSignal
+            End Get
+        End Property
+        Public Function GetDirtyActiveSignal() As Boolean
+            Return _ActiveSignal
+        End Function
+
+        <Display(Name:="Signal Generated Time", Order:=4)>
+        Public Property SignalGeneratedTime As Date
+
+        <Display(Name:="Signal Direction", Order:=5)>
+        Public Property SignalDirection As APIAdapter.TransactionType
+
         <System.ComponentModel.Browsable(False)>
         Public Property EntryActivity As Activity
-        <Display(Name:="Entry Request Time", Order:=7)>
+        <Display(Name:="Entry Request Time", Order:=6)>
         Public ReadOnly Property EntryRequestTime As Date
             Get
                 Return EntryActivity.RequestTime
             End Get
         End Property
-        <Display(Name:="Entry Request Status", Order:=8)>
+        <Display(Name:="Entry Request Status", Order:=7)>
         Public ReadOnly Property EntryRequestStatus As SignalStatusType
             Get
                 Return EntryActivity.RequestStatus
             End Get
         End Property
+
+        Private _SignalPL As Decimal
+        <Display(Name:="Signal PL", Order:=8)>
+        Public ReadOnly Property SignalPL As Decimal
+            Get
+                If ParentOrderID IsNot Nothing Then
+                    _SignalPL = ParentStrategyInstrument.GetTotalPLOfAnOrder(ParentOrderID)
+                End If
+                Return _SignalPL
+            End Get
+        End Property
+        Public Function GetDirtySignalPL() As Decimal
+            Return _SignalPL
+        End Function
 
         <System.ComponentModel.Browsable(False)>
         Public Property TargetModifyActivity As Activity
@@ -208,20 +207,32 @@ Namespace Entities
             Return _LastCandleTime
         End Function
 
-        <System.ComponentModel.Browsable(False)>
+        <Display(Name:="Parent Order ID", Order:=18)>
         Public Property ParentOrderID As String
 
+        <NonSerialized>
+        Private _ParentStrategyInstrument As StrategyInstrument
         <System.ComponentModel.Browsable(False)>
-        Public ReadOnly Property ParentStrategyInstrument As StrategyInstrument
+        Public Property ParentStrategyInstrument As StrategyInstrument
+            Get
+                Return _ParentStrategyInstrument
+            End Get
+            Set(value As StrategyInstrument)
+                _ParentStrategyInstrument = value
+            End Set
+        End Property
 
 #Region "Activity"
+        <Serializable>
         Public Class Activity
             Public Sub New(ByVal typeOfActivity As ActivityType, ByVal parentActivityDashboard As ActivityDashboard)
                 Me.TypeOfActivity = typeOfActivity
                 Me.ParentActivityDashboard = parentActivityDashboard
+                Me.RequestStatus = SignalStatusType.None
             End Sub
             Public ReadOnly Property TypeOfActivity As ActivityType
             Public ReadOnly Property ParentActivityDashboard As ActivityDashboard
+            Public Property ActivityChanged As Boolean
 
             Private _RequestTime As Date
             Public Property RequestTime As Date
@@ -231,6 +242,7 @@ Namespace Entities
                 Set(value As Date)
                     If PreviousActivityAttributes IsNot Nothing Then PreviousActivityAttributes.RequestTime = _RequestTime
                     _RequestTime = value
+                    Me.ActivityChanged = True
                 End Set
             End Property
 
@@ -242,6 +254,7 @@ Namespace Entities
                 Set(value As Date)
                     If PreviousActivityAttributes IsNot Nothing Then PreviousActivityAttributes.ReceivedTime = _ReceivedTime
                     _ReceivedTime = value
+                    Me.ActivityChanged = True
                 End Set
             End Property
 
@@ -253,6 +266,7 @@ Namespace Entities
                 Set(value As SignalStatusType)
                     If PreviousActivityAttributes IsNot Nothing Then PreviousActivityAttributes.RequestStatus = _RequestStatus
                     _RequestStatus = value
+                    Me.ActivityChanged = True
                 End Set
             End Property
 
@@ -268,6 +282,7 @@ Namespace Entities
             End Property
 
             Private _LastException As Exception
+            <ScriptIgnore()>
             Public Property LastException As Exception
                 Get
                     Return _LastException

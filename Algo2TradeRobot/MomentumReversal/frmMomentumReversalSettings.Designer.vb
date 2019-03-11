@@ -41,6 +41,8 @@ Partial Class frmMomentumReversalSettings
         Me.lblMaxSLPercentage = New System.Windows.Forms.Label()
         Me.lblCandleWickSizePercentage = New System.Windows.Forms.Label()
         Me.opnFileMRSettings = New System.Windows.Forms.OpenFileDialog()
+        Me.txtMaxLossPerDay = New System.Windows.Forms.TextBox()
+        Me.lblMaxLossPerDay = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -53,7 +55,7 @@ Partial Class frmMomentumReversalSettings
         Me.btnSaveMomentumReversalSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveMomentumReversalSettings.Name = "btnSaveMomentumReversalSettings"
         Me.btnSaveMomentumReversalSettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveMomentumReversalSettings.TabIndex = 7
+        Me.btnSaveMomentumReversalSettings.TabIndex = 8
         Me.btnSaveMomentumReversalSettings.Text = "&Save"
         Me.btnSaveMomentumReversalSettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSaveMomentumReversalSettings.UseVisualStyleBackColor = True
@@ -66,6 +68,8 @@ Partial Class frmMomentumReversalSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtMaxLossPerDay)
+        Me.GroupBox1.Controls.Add(Me.lblMaxLossPerDay)
         Me.GroupBox1.Controls.Add(Me.txtMinCandleRangePercentage)
         Me.GroupBox1.Controls.Add(Me.lblMinCandleRangePercentage)
         Me.GroupBox1.Controls.Add(Me.btnBrowse)
@@ -83,7 +87,7 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 253)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 288)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
         '
@@ -108,17 +112,17 @@ Partial Class frmMomentumReversalSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 215)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 253)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 6
+        Me.btnBrowse.TabIndex = 7
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(175, 215)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(175, 253)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -128,7 +132,7 @@ Partial Class frmMomentumReversalSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 218)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 256)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -210,11 +214,29 @@ Partial Class frmMomentumReversalSettings
         'opnFileMRSettings
         '
         '
+        'txtMaxLossPerDay
+        '
+        Me.txtMaxLossPerDay.Location = New System.Drawing.Point(175, 215)
+        Me.txtMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxLossPerDay.Name = "txtMaxLossPerDay"
+        Me.txtMaxLossPerDay.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxLossPerDay.TabIndex = 6
+        '
+        'lblMaxLossPerDay
+        '
+        Me.lblMaxLossPerDay.AutoSize = True
+        Me.lblMaxLossPerDay.Location = New System.Drawing.Point(9, 219)
+        Me.lblMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxLossPerDay.Name = "lblMaxLossPerDay"
+        Me.lblMaxLossPerDay.Size = New System.Drawing.Size(122, 17)
+        Me.lblMaxLossPerDay.TabIndex = 18
+        Me.lblMaxLossPerDay.Text = "Max Loss Per Day"
+        '
         'frmMomentumReversalSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(575, 265)
+        Me.ClientSize = New System.Drawing.Size(575, 299)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveMomentumReversalSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -247,4 +269,6 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents opnFileMRSettings As OpenFileDialog
     Friend WithEvents txtMinCandleRangePercentage As TextBox
     Friend WithEvents lblMinCandleRangePercentage As Label
+    Friend WithEvents txtMaxLossPerDay As TextBox
+    Friend WithEvents lblMaxLossPerDay As Label
 End Class

@@ -39,6 +39,18 @@ Public Class frmMainTabbed
         End If
     End Sub
 
+    Delegate Sub BindingListAdd_Delegate(ByVal [src] As BindingList(Of ActivityDashboard), ByVal [value] As ActivityDashboard)
+    Public Sub BindingListAdd_ThreadSafe(ByVal [src] As BindingList(Of ActivityDashboard), ByVal [value] As ActivityDashboard)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If Me.InvokeRequired Then
+            Dim MyDelegate As New BindingListAdd_Delegate(AddressOf BindingListAdd_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[src], [value]})
+        Else
+            [src].Add([value])
+        End If
+    End Sub
+
     Delegate Sub SetSFGridFreezFirstColumn_Delegate(ByVal [grd] As SfDataGrid)
     Public Async Sub SetSFGridFreezFirstColumn_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
@@ -264,7 +276,7 @@ Public Class frmMainTabbed
 
 #Region "Momentum Reversal"
     Private _MRUserInputs As MomentumReversalUserInputs = Nothing
-
+    Private _MRdashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private Sub sfdgvMomentumReversalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMomentumReversalMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(MomentumReversalStrategy))
     End Sub
@@ -319,6 +331,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
                 RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -336,6 +349,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
                 AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
 #Region "Login"
                 Dim loginMessage As String = Nothing
                 While True
@@ -395,8 +409,8 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(momentumReversalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            Dim dashboadList As BindingList(Of ActivityDashboard) = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
-            SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, dashboadList)
+            _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
 
             Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
@@ -441,6 +455,7 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "OHL"
+    Private _OHLdashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private Sub sfdgvOHLMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvOHLMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(OHLStrategy))
     End Sub
@@ -486,6 +501,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
                 RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -503,6 +519,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
                 AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
 
 #Region "Login"
                 Dim loginMessage As String = Nothing
@@ -562,8 +579,8 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(ohlStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            Dim dashboadList As BindingList(Of OHLStrategyInstrument) = New BindingList(Of OHLStrategyInstrument)(ohlStrategyToExecute.TradableStrategyInstruments)
-            SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, dashboadList)
+            _OHLdashboadList = New BindingList(Of ActivityDashboard)(ohlStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, _OHLdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
 
             Await ohlStrategyToExecute.MonitorAsync().ConfigureAwait(False)
@@ -602,6 +619,7 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "AmiSignal"
+    Private _AmidashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private Sub sfdgvAmiSignalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvAmiSignalMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(AmiSignalStrategy))
     End Sub
@@ -649,6 +667,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
                 RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -666,6 +685,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
                 AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
 
 #Region "Login"
                 Dim loginMessage As String = Nothing
@@ -725,8 +745,8 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            Dim dashboadList As BindingList(Of AmiSignalStrategyInstrument) = New BindingList(Of AmiSignalStrategyInstrument)(AmiSignalStrategyToExecute.TradableStrategyInstruments)
-            SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, dashboadList)
+            _AmidashboadList = New BindingList(Of ActivityDashboard)(AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmidashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
 
             Await AmiSignalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
@@ -1079,6 +1099,15 @@ Public Class frmMainTabbed
         'ProgressStatusEx(String.Format("Try #{0}/{1}: Connecting", currentTry, totalTries), source)
     End Sub
     Private Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
+    End Sub
+    Protected Overridable Sub OnNewItemAdded(ByVal item As ActivityDashboard)
+        If item IsNot Nothing Then
+            'Select Case item.ParentStrategyInstrument.ParentStrategy
+            '    Case MomentumReversalStrategy
+            '_MRdashboadList.Add(item)
+            BindingListAdd_ThreadSafe(_MRdashboadList, item)
+            'End Select
+        End If
     End Sub
 
 #End Region

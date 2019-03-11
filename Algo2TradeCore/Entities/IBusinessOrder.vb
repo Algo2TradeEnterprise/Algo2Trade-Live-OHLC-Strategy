@@ -5,6 +5,6 @@
         Property TargetOrder As IEnumerable(Of IOrder)
         Property SLOrder As IEnumerable(Of IOrder)
         Property AllOrder As IEnumerable(Of IOrder)
-        Property SignalCandle As IPayload
+        'Property SignalCandle As IPayload
     End Interface
 End Namespace

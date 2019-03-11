@@ -21,9 +21,9 @@ Public Class OHLStrategyInstrument
     <Display(Name:="OHL", Order:=14)>
     Public ReadOnly Property OHL As String
         Get
-            If Me.OpenPrice = Me.LowPrice Then
+            If Me.TradableInstrument.LastTick.Open = Me.TradableInstrument.LastTick.Low Then
                 Return "O=L"
-            ElseIf Me.OpenPrice = Me.HighPrice Then
+            ElseIf Me.TradableInstrument.LastTick.Open = Me.TradableInstrument.LastTick.High Then
                 Return "O=H"
             Else
                 Return Nothing
@@ -58,7 +58,7 @@ Public Class OHLStrategyInstrument
         'logger.Debug("ProcessTickAsync, tickData:{0}", Utilities.Strings.JsonSerialize(tickData))
         _cts.Token.ThrowIfCancellationRequested()
         '_LastTick = tickData
-        NotifyPropertyChanged("OHL")
+        'NotifyPropertyChanged("OHL")
         Await MyBase.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
     End Function
@@ -153,7 +153,7 @@ Public Class OHLStrategyInstrument
                     'If parentBusinessOrder.ParentOrder.Tag.Substring(GenerateTag().Count + 1) = "1" Then
                     Dim parentOrderPrice As Decimal = parentBusinessOrder.ParentOrder.AveragePrice
                     Dim triggerPrice As Decimal = TradableInstrument.LastTick.Open
-                    Dim buffer As Decimal = CalculateBuffer(triggerPrice, RoundOfType.Floor)
+                    Dim buffer As Decimal = CalculateBuffer(triggerPrice, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                         triggerPrice -= buffer
                     ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then

@@ -13,11 +13,6 @@ Imports Algo2TradeCore.ChartHandler.ChartStyle
 
 Namespace Strategies
     Public MustInherit Class StrategyInstrument
-        Implements INotifyPropertyChanged
-        Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
-        Protected Sub NotifyPropertyChanged(ByVal p As String)
-            RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(p))
-        End Sub
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadCompleteEx(ByVal source As List(Of Object))
@@ -118,182 +113,12 @@ Namespace Strategies
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
         Public Property RawPayloadConsumers As List(Of IPayloadConsumer)
 
-#Region "UI Properties"
-        <Display(Name:="Symbol", Order:=0)>
-        Public Overridable ReadOnly Property TradingSymbol As String
-            Get
-                If TradableInstrument IsNot Nothing Then
-                    Return TradableInstrument.TradingSymbol
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _OpenPrice As Decimal
-        <Display(Name:="Open", Order:=1)>
-        Public Overridable ReadOnly Property OpenPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _OpenPrice = TradableInstrument.LastTick.Open
-                    Return _OpenPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _HighPrice As Decimal
-        <Display(Name:="High", Order:=2)>
-        Public Overridable ReadOnly Property HighPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _HighPrice = TradableInstrument.LastTick.High
-                    Return _HighPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _LowPrice As Decimal
-        <Display(Name:="Low", Order:=3)>
-        Public Overridable ReadOnly Property LowPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _LowPrice = TradableInstrument.LastTick.Low
-                    Return _LowPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _Volume As Long
-        <Display(Name:="Volume", Order:=4)>
-        Public Overridable ReadOnly Property Volume As Long
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _Volume = TradableInstrument.LastTick.Volume
-                    Return _Volume
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _AveragePrice As Decimal
-        <Display(Name:="Average Price", Order:=5)>
-        Public Overridable ReadOnly Property AveragePrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _AveragePrice = TradableInstrument.LastTick.AveragePrice
-                    Return _AveragePrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _LastPrice As Decimal
-        <Display(Name:="Last Price", Order:=6)>
-        Public Overridable ReadOnly Property LastPrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _LastPrice = TradableInstrument.LastTick.LastPrice
-                    Return _LastPrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-        Private _Timestamp As Date?
-        <Display(Name:="Timestamp", Order:=7)>
-        Public Overridable ReadOnly Property Timestamp As Date?
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _Timestamp = TradableInstrument.LastTick.Timestamp
-                    Return _Timestamp
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-
-        <Display(Name:="Last Candle Time", Order:=8)>
-        Public ReadOnly Property LastCandleTime As Date
-            Get
-                If TradableInstrument.RawPayloads IsNot Nothing AndAlso TradableInstrument.RawPayloads.Count > 0 Then
-                    Return TradableInstrument.RawPayloads.Keys.Max
-                Else
-                    Return New Date
-                End If
-            End Get
-        End Property
-        <Display(Name:="Active Instrument", Order:=9)>
-        Public ReadOnly Property ActiveInstrument As Boolean
-            Get
-                'Dim ret As Boolean = False
-                'Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
-                'ret = allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0
-                'Return ret
-                Return IsActiveInstrument()
-            End Get
-        End Property
-        <Display(Name:="Total Trades", Order:=10)>
-        Public ReadOnly Property TotalTrades As Integer
-            Get
-                'Dim tradeCount As Integer = 0
-                'If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-                '    For Each parentOrderId In OrderDetails.Keys
-                '        Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                '        If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
-                '            tradeCount += 1
-                '        End If
-                '    Next
-                'End If
-                'Return tradeCount
-                Return GetTotalExecutedOrders()
-            End Get
-        End Property
-
-        Private _PL As Decimal
-        <Display(Name:="Profit & Loss", Order:=11)>
-        Public ReadOnly Property PL As Decimal
-            Get
-                _PL = GetOverallPL()
-                Return _PL
-            End Get
-        End Property
-
-        Private _Tradabale As Boolean
-        <Display(Name:="Tradable", Order:=12)>
-        Public Overridable ReadOnly Property Tradabale As Boolean
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _Tradabale = TradableInstrument.LastTick.Tradable
-                    Return _Tradabale
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-
-        Private _ClosePrice As Decimal
-        <Display(Name:="Previous Close", Order:=13)>
-        Public Overridable ReadOnly Property ClosePrice As Decimal
-            Get
-                If TradableInstrument.LastTick IsNot Nothing Then
-                    _ClosePrice = TradableInstrument.LastTick.Close
-                    Return _ClosePrice
-                Else
-                    Return Nothing
-                End If
-            End Get
-        End Property
-
-#End Region
-
 #Region "Required Functions"
-        Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
+        Protected Function CalculateBuffer(ByVal price As Double, ByVal tickSize As Decimal, ByVal floorOrCeiling As RoundOfType) As Double
             'logger.Debug("CalculateBuffer, parameters:{0},{1}", price, floorOrCeiling)
             Dim bufferPrice As Double = Nothing
             'Assuming 1% target, we can afford to have buffer as 2.5% of that 1% target
-            bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, 0.05, floorOrCeiling)
+            bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, tickSize, floorOrCeiling)
             Return bufferPrice
         End Function
         Protected Overridable Function GetAllActiveOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of IOrder)
@@ -420,12 +245,52 @@ Namespace Strategies
             End If
             Return ret
         End Function
+        Protected Function GetSignalCandleOfAnOrder(ByVal parentOrderID As String, ByVal timeFrame As Integer) As OHLCPayload
+            Dim ret As OHLCPayload = Nothing
+            If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 AndAlso Me.OrderDetails.ContainsKey(parentOrderID) Then
+                Dim currentBussinessOrder As IBusinessOrder = Me.OrderDetails(parentOrderID)
+                If currentBussinessOrder.ParentOrder IsNot Nothing Then
+                    Dim activityTag As String = currentBussinessOrder.ParentOrder.Tag
+                    If Me.ParentStrategy.SignalManager.ActivityDetails IsNot Nothing AndAlso
+                        Me.ParentStrategy.SignalManager.ActivityDetails.Count > 0 AndAlso
+                        Me.ParentStrategy.SignalManager.ActivityDetails.ContainsKey(activityTag) Then
+                        If Me.ParentStrategy.SignalManager.ActivityDetails(activityTag).ParentOrderID = parentOrderID Then
+                            Dim signalCandleTime As Date = Me.ParentStrategy.SignalManager.ActivityDetails(activityTag).SignalGeneratedTime
+                            If timeFrame = 1 Then
+                                If Me.TradableInstrument.RawPayloads IsNot Nothing AndAlso Me.TradableInstrument.RawPayloads.Count > 0 AndAlso
+                                    Me.TradableInstrument.RawPayloads.ContainsKey(signalCandleTime) Then
+                                    ret = Me.TradableInstrument.RawPayloads(signalCandleTime)
+                                End If
+                            Else
+                                If Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
+                                    Dim XMinutePayloadConsumers As IEnumerable(Of IPayloadConsumer) = RawPayloadConsumers.Where(Function(x)
+                                                                                                                                    Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
+                                                                                                                                          CType(x, PayloadToChartConsumer).Timeframe = timeFrame
+                                                                                                                                End Function)
+                                    Dim XMinutePayloadConsumer As PayloadToChartConsumer = Nothing
+                                    If XMinutePayloadConsumers IsNot Nothing AndAlso XMinutePayloadConsumers.Count > 0 Then
+                                        XMinutePayloadConsumer = XMinutePayloadConsumers.FirstOrDefault
+                                    End If
+
+                                    If XMinutePayloadConsumer IsNot Nothing AndAlso
+                                        XMinutePayloadConsumer.ChartPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ChartPayloads.Count > 0 AndAlso
+                                        XMinutePayloadConsumer.ChartPayloads.ContainsKey(signalCandleTime) Then
+                                        ret = XMinutePayloadConsumer.ChartPayloads(signalCandleTime)
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+            Return ret
+        End Function
 #End Region
 
 #Region "Public Functions"
         Public Function GetTotalPLOfAnOrder(ByVal parentOrderId As String) As Decimal
             Dim plOfDay As Decimal = 0
-            If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 AndAlso OrderDetails.ContainsKey(parentOrderId) Then
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
                 Dim calculateWithLTP As Boolean = False
                 If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
@@ -458,9 +323,9 @@ Namespace Strategies
                 End If
                 If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
                     If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                        plOfDay += Me.LastPrice * parentBusinessOrder.ParentOrder.Quantity
+                        plOfDay += Me.TradableInstrument.LastTick.LastPrice * parentBusinessOrder.ParentOrder.Quantity
                     ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                        plOfDay += Me.LastPrice * parentBusinessOrder.ParentOrder.Quantity * -1
+                        plOfDay += Me.TradableInstrument.LastTick.LastPrice * parentBusinessOrder.ParentOrder.Quantity * -1
                     End If
                 End If
                 Return plOfDay
@@ -520,29 +385,7 @@ Namespace Strategies
             'Date.Parse(timeOfOrder).Subtract(Date.Parse(Now.Date)).TotalSeconds)))
         End Function
         Public Overridable Async Function HandleTickTriggerToUIETCAsync() As Task
-            'logger.Debug("HandleTickTriggerToUIETCAsync, parameters:Nothing")
-            Try
-                Await Task.Delay(0).ConfigureAwait(False)
-
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("LastPrice")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Tradable <> _Tradabale Then NotifyPropertyChanged("Tradable")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Open <> _OpenPrice Then NotifyPropertyChanged("OpenPrice")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.High <> _HighPrice Then NotifyPropertyChanged("HighPrice")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Low <> _LowPrice Then NotifyPropertyChanged("LowPrice")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Close <> _ClosePrice Then NotifyPropertyChanged("ClosePrice")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Volume <> _Volume Then NotifyPropertyChanged("Volume")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.AveragePrice <> _AveragePrice Then NotifyPropertyChanged("AveragePrice")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp <> _Timestamp Then NotifyPropertyChanged("Timestamp")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.LastPrice <> _LastPrice Then NotifyPropertyChanged("PL")
-                If TradableInstrument.LastTick IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso TradableInstrument.LastTick.Timestamp.HasValue AndAlso Utilities.Time.IsDateTimeEqualTillMinutes(TradableInstrument.LastTick.Timestamp.Value, Me.LastCandleTime) Then NotifyPropertyChanged("LastCandleTime")
-                Await Me.ParentStrategy.SignalManager.UIRefresh(Me).ConfigureAwait(False)
-            Catch cex As OperationCanceledException
-                logger.Error(cex)
-                Me.ParentStrategy.ParentController.OrphanException = cex
-            Catch ex As Exception
-                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                Throw ex
-            End Try
+            Await Me.ParentStrategy.SignalManager.UIRefresh(Me).ConfigureAwait(False)
         End Function
         Public Overridable Async Function PopulateChartAndIndicatorsAsync(ByVal candleCreator As Chart, ByVal currentCandle As OHLCPayload) As Task
             'logger.Debug("PopulateChartAndIndicatorsAsync, parameters:{0},{1}", candleCreator.ToString, currentCandle.ToString)
@@ -560,9 +403,9 @@ Namespace Strategies
             'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
             Await Task.Delay(0).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If OrderDetails.ContainsKey(orderData.ParentOrderIdentifier) Then
-                orderData.SignalCandle = OrderDetails(orderData.ParentOrderIdentifier).SignalCandle
-            End If
+            'If OrderDetails.ContainsKey(orderData.ParentOrderIdentifier) Then
+            '    orderData.SignalCandle = OrderDetails(orderData.ParentOrderIdentifier).SignalCandle
+            'End If
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
 
             'Modify Activity Details
@@ -797,11 +640,11 @@ Namespace Strategies
 
                                     If placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
 
-                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, Now).ConfigureAwait(False)
+                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
-                                                                                                       tradingSymbol:=TradingSymbol,
+                                                                                                       tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                        transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                        quantity:=placeOrderTrigger.Item2.Quantity,
                                                                                                        price:=placeOrderTrigger.Item2.Price,
@@ -981,11 +824,11 @@ Namespace Strategies
 
                                     If placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
 
-                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, Now).ConfigureAwait(False)
+                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
-                                                                                                    tradingSymbol:=TradingSymbol,
+                                                                                                    tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                     transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                     quantity:=placeOrderTrigger.Item2.Quantity,
                                                                                                     price:=placeOrderTrigger.Item2.Price,
@@ -1020,11 +863,11 @@ Namespace Strategies
 
                                     If placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
 
-                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, Now).ConfigureAwait(False)
+                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
-                                                                                                    tradingSymbol:=TradingSymbol,
+                                                                                                    tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                     transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                     quantity:=placeOrderTrigger.Item2.Quantity,
                                                                                                     triggerPrice:=placeOrderTrigger.Item2.TriggerPrice,

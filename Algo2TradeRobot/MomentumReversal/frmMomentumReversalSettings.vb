@@ -43,6 +43,7 @@ Public Class frmMomentumReversalSettings
             txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
             txtSignalTimeFrame.Text = _MRSettings.SignalTimeFrame
             txtInstrumentDetalis.Text = _MRSettings.InstrumentDetailsFilePath
+            txtMaxLossPerDay.Text = _MRSettings.MaxLossPerDay
         End If
     End Sub
     Private Sub SaveSettings()
@@ -52,13 +53,14 @@ Public Class frmMomentumReversalSettings
         _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
         _MRSettings.SignalTimeFrame = txtSignalTimeFrame.Text
         _MRSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _MRSettings.MaxLossPerDay = txtMaxLossPerDay.Text
 
         Dim fs As Stream = New FileStream(_MRSettingsFilename, FileMode.OpenOrCreate)
         Dim bf As BinaryFormatter = New BinaryFormatter()
         bf.Serialize(fs, _MRSettings)
         fs.Close()
     End Sub
-    Private Function ValidateNumbers(ByVal startNumber As Integer, ByVal endNumber As Integer, ByVal inputTB As TextBox) As Boolean
+    Private Function ValidateNumbers(ByVal startNumber As Decimal, ByVal endNumber As Decimal, ByVal inputTB As TextBox) As Boolean
         Dim ret As Boolean = False
         If IsNumeric(inputTB.Text) Then
             If Val(inputTB.Text) >= startNumber And Val(inputTB.Text) <= endNumber Then
@@ -77,6 +79,7 @@ Public Class frmMomentumReversalSettings
         ValidateNumbers(0, 100, txtMaxSLPercentage)
         ValidateNumbers(0, 999, txtTargetMultiplier)
         ValidateNumbers(1, 60, txtSignalTimeFrame)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerDay)
         ValidateFile()
     End Sub
 

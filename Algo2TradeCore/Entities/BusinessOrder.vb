@@ -12,7 +12,7 @@
 
         Public Property AllOrder As IEnumerable(Of IOrder) Implements IBusinessOrder.AllOrder
 
-        Public Property SignalCandle As IPayload Implements IBusinessOrder.SignalCandle
+        'Public Property SignalCandle As IPayload Implements IBusinessOrder.SignalCandle
 
     End Class
 End Namespace

@@ -225,6 +225,8 @@ Public Class MomentumReversalStrategy
         Dim currentTime As Date = Now
         If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
             Return True
+        ElseIf Me.GetTotalPL <= Math.Abs(CType(Me.UserSettings, MomentumReversalUserInputs).MaxLossPerDay) * -1 Then
+            Return True
         Else
             Return False
         End If

@@ -89,7 +89,7 @@ Public Class AmiSignalStrategyInstrument
             Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
             If currentEntrySignal.SignalType = TypeOfSignal.Entry AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
                 If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments(), If(currentEntrySignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments(), If(currentEntrySignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
                     EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentEntrySignal)
                 Else
                     Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
@@ -195,7 +195,7 @@ Public Class AmiSignalStrategyInstrument
                 End With
                 If Me.IsActiveInstrument() Then
                     If GetActiveOrder(APIAdapter.TransactionType.Buy) IsNot Nothing Then
-                        logger.Error(String.Format("{0} - Buy signal running", Me.TradingSymbol))
+                        logger.Error(String.Format("{0} - Buy signal running", Me.TradableInstrument.TradingSymbol))
                         Exit Function
                     End If
                     Dim exitSignal As Boolean = False
@@ -207,12 +207,12 @@ Public Class AmiSignalStrategyInstrument
                     End While
                 End If
                 If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments()))
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradableInstrument.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments()))
                     Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error(String.Format("{0} - Previous signal still exists", Me.TradingSymbol))
+                    logger.Error(String.Format("{0} - Previous signal still exists", Me.TradableInstrument.TradingSymbol))
                 End If
                 'Interlocked.Decrement(_StrategyProtector)
             Case "SELL"
@@ -226,10 +226,10 @@ Public Class AmiSignalStrategyInstrument
                 If GetAllCancelableOrders(APIAdapter.TransactionType.Buy) IsNot Nothing AndAlso GetAllCancelableOrders(APIAdapter.TransactionType.Buy).Count > 0 Then
                     returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                     If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                        logger.Error(String.Format("{0} - Previous signal still exists", Me.TradingSymbol))
+                        logger.Error(String.Format("{0} - Previous signal still exists", Me.TradableInstrument.TradingSymbol))
                     End If
                 Else
-                    logger.Error(String.Format("{0} - No BUY trade running to exit", Me.TradingSymbol))
+                    logger.Error(String.Format("{0} - No BUY trade running to exit", Me.TradableInstrument.TradingSymbol))
                 End If
             Case "SHORT"
                 currentSignal = New AmiSignal
@@ -241,7 +241,7 @@ Public Class AmiSignalStrategyInstrument
                 End With
                 If Me.IsActiveInstrument() Then
                     If GetActiveOrder(APIAdapter.TransactionType.Sell) IsNot Nothing Then
-                        logger.Error(String.Format("{0} - Short signal running", Me.TradingSymbol))
+                        logger.Error(String.Format("{0} - Short signal running", Me.TradableInstrument.TradingSymbol))
                         Exit Function
                     End If
                     Dim exitSignal As Boolean = False
@@ -253,12 +253,12 @@ Public Class AmiSignalStrategyInstrument
                     End While
                 End If
                 If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
-                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments()))
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute.", Me.TradableInstrument.TradingSymbol, Me.ParentStrategy.GetNumberActiveInstruments()))
                     Exit Function
                 End If
                 returnedSignal = EntrySignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                 If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                    logger.Error(String.Format("{0} Previous signal still exists", Me.TradingSymbol))
+                    logger.Error(String.Format("{0} Previous signal still exists", Me.TradableInstrument.TradingSymbol))
                 End If
                 'Interlocked.Decrement(_StrategyProtector)
             Case "COVER"
@@ -272,13 +272,13 @@ Public Class AmiSignalStrategyInstrument
                 If GetAllCancelableOrders(APIAdapter.TransactionType.Sell) IsNot Nothing AndAlso GetAllCancelableOrders(APIAdapter.TransactionType.Sell).Count > 0 Then
                     returnedSignal = ExitSignals.GetOrAdd(currentSignal.InstrumentIdentifier, currentSignal)
                     If Not returnedSignal.SignalTimestamp = currentSignal.SignalTimestamp Then
-                        logger.Error(String.Format("{0} Previous signal still exists", Me.TradingSymbol))
+                        logger.Error(String.Format("{0} Previous signal still exists", Me.TradableInstrument.TradingSymbol))
                     End If
                 Else
-                    logger.Error(String.Format("{0} No SHORT trade running to exit", Me.TradingSymbol))
+                    logger.Error(String.Format("{0} No SHORT trade running to exit", Me.TradableInstrument.TradingSymbol))
                 End If
             Case Else
-                logger.Error(String.Format("{0} Invalid Signal Details. {1}", Me.TradingSymbol, signal))
+                logger.Error(String.Format("{0} Invalid Signal Details. {1}", Me.TradableInstrument.TradingSymbol, signal))
         End Select
     End Function
 
@@ -287,12 +287,12 @@ Public Class AmiSignalStrategyInstrument
         Dim ret As Boolean = False
         Dim runningOrder As IBusinessOrder = GetActiveOrder(APIAdapter.TransactionType.Buy)
         If runningOrder IsNot Nothing Then
-            Await PopulateExternalSignalAsync(String.Format("SELL {0}", Me.TradingSymbol)).ConfigureAwait(False)
+            Await PopulateExternalSignalAsync(String.Format("SELL {0}", Me.TradableInstrument.TradingSymbol)).ConfigureAwait(False)
             ret = True
         Else
             runningOrder = GetActiveOrder(APIAdapter.TransactionType.Sell)
             If runningOrder IsNot Nothing Then
-                Await PopulateExternalSignalAsync(String.Format("COVER {0}", Me.TradingSymbol)).ConfigureAwait(False)
+                Await PopulateExternalSignalAsync(String.Format("COVER {0}", Me.TradableInstrument.TradingSymbol)).ConfigureAwait(False)
                 ret = True
             End If
         End If

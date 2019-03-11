@@ -50,14 +50,14 @@ Public Class MomentumReversalStrategyInstrument
                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
                     placeOrderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
-                    'To store signal candle in order collection
-                    Dim businessOrder As IBusinessOrder = New BusinessOrder With {
-                            .ParentOrderIdentifier = placeOrderDetails("data")("order_id"),
-                            .SignalCandle = placeOrderTrigger.Item2.SignalCandle
-                        }
-                    businessOrder = Me.OrderDetails.GetOrAdd(businessOrder.ParentOrderIdentifier, businessOrder)
-                    businessOrder.SignalCandle = placeOrderTrigger.Item2.SignalCandle
-                    Me.OrderDetails.AddOrUpdate(businessOrder.ParentOrderIdentifier, businessOrder, Function(key, value) businessOrder)
+                    ''To store signal candle in order collection
+                    'Dim businessOrder As IBusinessOrder = New BusinessOrder With {
+                    '        .ParentOrderIdentifier = placeOrderDetails("data")("order_id"),
+                    '        .SignalCandle = placeOrderTrigger.Item2.SignalCandle
+                    '    }
+                    'businessOrder = Me.OrderDetails.GetOrAdd(businessOrder.ParentOrderIdentifier, businessOrder)
+                    'businessOrder.SignalCandle = placeOrderTrigger.Item2.SignalCandle
+                    'Me.OrderDetails.AddOrUpdate(businessOrder.ParentOrderIdentifier, businessOrder, Function(key, value) businessOrder)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 'If slDelayCtr = 3 Then
@@ -91,10 +91,10 @@ Public Class MomentumReversalStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(MRUserSettings.SignalTimeFrame)
 
         Dim instrumentName As String = Nothing
-        If Me.TradingSymbol.Contains("FUT") Then
-            instrumentName = Me.TradingSymbol.Remove(TradingSymbol.Count - 8)
+        If Me.TradableInstrument.TradingSymbol.Contains("FUT") Then
+            instrumentName = Me.TradableInstrument.TradingSymbol.Remove(Me.TradableInstrument.TradingSymbol.Count - 8)
         Else
-            instrumentName = Me.TradingSymbol
+            instrumentName = Me.TradableInstrument.TradingSymbol
         End If
 
         Dim parameters As PlaceOrderParameters = Nothing
@@ -113,7 +113,7 @@ Public Class MomentumReversalStrategyInstrument
             If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
                 quantity = Me.TradableInstrument.LotSize
             Else
-                quantity = MRUserSettings.InstrumentsData(Me.TradingSymbol).Quantity
+                quantity = MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity
             End If
 
             Dim benchmarkWicksSize As Double = runningCandlePayload.PreviousPayload.CandleRange * MRUserSettings.CandleWickSizePercentage / 100
@@ -121,12 +121,12 @@ Public Class MomentumReversalStrategyInstrument
                 If runningCandlePayload.PreviousPayload.CandleWicks.Top > benchmarkWicksSize Then
                     MRTradePrice = runningCandlePayload.PreviousPayload.HighPrice
                     price = MRTradePrice + Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                    triggerPrice = MRTradePrice + CalculateBuffer(MRTradePrice, RoundOfType.Celing)
-                    stoplossPrice = runningCandlePayload.PreviousPayload.LowPrice - CalculateBuffer(runningCandlePayload.PreviousPayload.LowPrice, RoundOfType.Celing)
+                    triggerPrice = MRTradePrice + CalculateBuffer(MRTradePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    stoplossPrice = runningCandlePayload.PreviousPayload.LowPrice - CalculateBuffer(runningCandlePayload.PreviousPayload.LowPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     target = Math.Round(ConvertFloorCeling((triggerPrice - stoplossPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     stoploss = Await GetModifiedStoplossAsync(triggerPrice, stoplossPrice, quantity).ConfigureAwait(False)
 
-                    If Me.LastPrice < triggerPrice Then
+                    If Me.TradableInstrument.LastTick.LastPrice < triggerPrice Then
                         parameters = New PlaceOrderParameters With
                                        {.EntryDirection = APIAdapter.TransactionType.Buy,
                                        .Quantity = quantity,
@@ -139,12 +139,12 @@ Public Class MomentumReversalStrategyInstrument
                 ElseIf runningCandlePayload.PreviousPayload.CandleWicks.Bottom > benchmarkWicksSize Then
                     MRTradePrice = runningCandlePayload.PreviousPayload.LowPrice
                     price = MRTradePrice - Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                    triggerPrice = MRTradePrice - CalculateBuffer(MRTradePrice, RoundOfType.Celing)
-                    stoplossPrice = runningCandlePayload.PreviousPayload.HighPrice + CalculateBuffer(runningCandlePayload.PreviousPayload.HighPrice, RoundOfType.Celing)
+                    triggerPrice = MRTradePrice - CalculateBuffer(MRTradePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    stoplossPrice = runningCandlePayload.PreviousPayload.HighPrice + CalculateBuffer(runningCandlePayload.PreviousPayload.HighPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     target = Math.Round(ConvertFloorCeling((stoplossPrice - triggerPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     stoploss = Await GetModifiedStoplossAsync(stoplossPrice, triggerPrice, quantity).ConfigureAwait(False)
 
-                    If Me.LastPrice > triggerPrice Then
+                    If Me.TradableInstrument.LastTick.LastPrice > triggerPrice Then
                         parameters = New PlaceOrderParameters With
                                        {.EntryDirection = APIAdapter.TransactionType.Sell,
                                        .Quantity = quantity,
@@ -169,7 +169,7 @@ Public Class MomentumReversalStrategyInstrument
                 ElseIf currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded Then
                     ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                 ElseIf currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
-                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
+                    'ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                 Else
                     ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.DonotTake, Nothing)
                 End If
@@ -187,18 +187,19 @@ Public Class MomentumReversalStrategyInstrument
             Dim currentTime As Date = Now
             For Each parentOrderId In OrderDetails.Keys
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.SignalCandle IsNot Nothing AndAlso
+                If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso
                     parentBusinessOrder.ParentOrder.Status = "COMPLETE" AndAlso
                     parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
                     Dim parentOrderPrice As Decimal = parentBusinessOrder.ParentOrder.AveragePrice
                     Dim potentialSLPrice As Decimal = Nothing
                     Dim triggerPrice As Decimal = Nothing
+                    Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrderId, Me.ParentStrategy.UserSettings.SignalTimeFrame)
                     If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                        potentialSLPrice = parentBusinessOrder.SignalCandle.LowPrice - CalculateBuffer(parentBusinessOrder.SignalCandle.LowPrice, RoundOfType.Celing)
+                        potentialSLPrice = signalCandle.LowPrice - CalculateBuffer(signalCandle.LowPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                         triggerPrice = Await GetModifiedStoplossAsync(parentOrderPrice, potentialSLPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
                         triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                        potentialSLPrice = parentBusinessOrder.SignalCandle.HighPrice + CalculateBuffer(parentBusinessOrder.SignalCandle.HighPrice, RoundOfType.Celing)
+                        potentialSLPrice = signalCandle.HighPrice + CalculateBuffer(signalCandle.HighPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                         triggerPrice = Await GetModifiedStoplossAsync(potentialSLPrice, parentOrderPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
                         triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     End If
@@ -242,8 +243,9 @@ Public Class MomentumReversalStrategyInstrument
                     Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
                     If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso
                         runningCandle.PreviousPayload IsNot Nothing AndAlso runningCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
-                        If parentBussinessOrder.SignalCandle IsNot Nothing AndAlso
-                            parentBussinessOrder.SignalCandle.SnapshotDateTime = runningCandle.PreviousPayload.PreviousPayload.SnapshotDateTime Then
+                        Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrder.OrderIdentifier, Me.ParentStrategy.UserSettings.SignalTimeFrame)
+                        If signalCandle IsNot Nothing AndAlso
+                            signalCandle.SnapshotDateTime = runningCandle.PreviousPayload.PreviousPayload.SnapshotDateTime Then
                             'Below portion have to be done in every cancel order trigger
                             Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(parentOrder.Tag)
                             If currentSignalActivities IsNot Nothing Then
@@ -263,12 +265,30 @@ Public Class MomentumReversalStrategyInstrument
         Return ret
     End Function
     Private Async Function GetModifiedStoplossAsync(ByVal entryPrice As Decimal, ByVal stoplossPrice As Decimal, ByVal quantity As Integer) As Task(Of Decimal)
+        'Dim ret As Decimal = Nothing
+        'Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
+        'Dim capitalRequiredWithMargin As Decimal = (entryPrice * quantity / 30)
+        'Dim pl As Decimal = Await Me._APIAdapter.CalculatePLWithBrokerageAsync(Me.TradingSymbol, entryPrice, stoplossPrice, quantity, Me.TradableInstrument.Exchange).ConfigureAwait(False)
+        'If Math.Abs(pl) > capitalRequiredWithMargin * MRUserSettings.MaxStoplossPercentage / 100 Then
+        '    ret = capitalRequiredWithMargin * MRUserSettings.MaxStoplossPercentage / 100 / quantity
+        'Else
+        '    ret = Math.Abs(entryPrice - stoplossPrice)
+        'End If
+        'ret = Math.Round(ConvertFloorCeling(ret, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+        'Return ret
         Dim ret As Decimal = Nothing
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
+        Dim instrumentName As String = Nothing
+        If Me.TradableInstrument.TradingSymbol.Contains("FUT") Then
+            instrumentName = Me.TradableInstrument.TradingSymbol.Remove(Me.TradableInstrument.TradingSymbol.Count - 8)
+        Else
+            instrumentName = Me.TradableInstrument.TradingSymbol
+        End If
         Dim capitalRequiredWithMargin As Decimal = (entryPrice * quantity / 30)
-        Dim pl As Decimal = Await Me._APIAdapter.CalculatePLWithBrokerageAsync(Me.TradingSymbol, entryPrice, stoplossPrice, quantity, Me.TradableInstrument.Exchange).ConfigureAwait(False)
-        If Math.Abs(pl) > capitalRequiredWithMargin * MRUserSettings.MaxStoplossPercentage / 100 Then
-            ret = capitalRequiredWithMargin * MRUserSettings.MaxStoplossPercentage / 100 / quantity
+        Dim pl As Decimal = Await Me._APIAdapter.CalculatePLWithBrokerageAsync(Me.TradableInstrument.TradingSymbol, entryPrice, stoplossPrice, quantity, Me.TradableInstrument.Exchange).ConfigureAwait(False)
+        Dim stoplossTobeCalculateFrom As Decimal = Math.Min(Math.Abs(pl), Math.Min(capitalRequiredWithMargin * MRUserSettings.MaxStoplossPercentage / 100, Math.Abs(MRUserSettings.InstrumentsData(instrumentName).MaxLossPerTrade)))
+        If Math.Abs(pl) <> stoplossTobeCalculateFrom Then
+            ret = stoplossTobeCalculateFrom / quantity
         Else
             ret = Math.Abs(entryPrice - stoplossPrice)
         End If

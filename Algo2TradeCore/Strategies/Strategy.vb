@@ -1,4 +1,6 @@
-﻿Imports System.Threading
+﻿Imports System.IO
+Imports System.Runtime.Serialization.Formatters.Binary
+Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
@@ -14,6 +16,7 @@ Namespace Strategies
         Public Event DocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
         Public Event HeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
         Public Event WaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
+        Public Event NewItemAdded(ByVal item As ActivityDashboard)
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
             If source Is Nothing Then source = New List(Of Object)
@@ -47,6 +50,11 @@ Namespace Strategies
         Protected Overridable Sub OnWaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
             RaiseEvent WaitingForEx(elapsedSecs, totalSecs, msg, New List(Of Object) From {Me})
         End Sub
+        Protected Overridable Sub OnNewItemAdded(ByVal item As ActivityDashboard)
+            If item IsNot Nothing Then
+                RaiseEvent NewItemAdded(item)
+            End If
+        End Sub
 #End Region
 
 #Region "Logging and Status Progress"
@@ -73,6 +81,7 @@ Namespace Strategies
             Me.UserSettings = userSettings
             Me.MaxNumberOfDaysForHistoricalFetch = maxNumberOfDaysForHistoricalFetch
             Me.SignalManager = New SignalStateManager(associatedParentController, Me, canceller)
+            AddHandler Me.SignalManager.NewItemAdded, AddressOf OnNewItemAdded
             _cts = canceller
         End Sub
 
@@ -117,6 +126,34 @@ Namespace Strategies
                     Await usableFetcher.SubscribeAsync(TradableInstrumentsAsPerStrategy, Me.MaxNumberOfDaysForHistoricalFetch).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
+
+                'Activity Dashboard modify
+                Me.SignalManager.DeSerializeActivityCollection()
+                If Me.SignalManager IsNot Nothing AndAlso
+                    Me.SignalManager.ActivityDetails IsNot Nothing AndAlso Me.SignalManager.ActivityDetails.Count > 0 Then
+                    For Each instrumentActivity In Me.SignalManager.ActivityDetails
+                        Dim activityTag As String = Convert.ToInt64(instrumentActivity.Key, 16)
+                        Dim instrumentMappedNumber As String = activityTag.Substring(1, 3)
+                        Dim instrumentIdentifiers As IEnumerable(Of KeyValuePair(Of String, String)) =
+                            Me.ParentController.InstrumentMappingTable.Where(Function(x)
+                                                                                 Return x.Value = Val(instrumentMappedNumber)
+                                                                             End Function)
+                        If instrumentIdentifiers IsNot Nothing AndAlso instrumentIdentifiers.Count > 0 Then
+                            Dim currentStrategyInstruments As IEnumerable(Of StrategyInstrument) =
+                                Me.TradableStrategyInstruments.Where(Function(x)
+                                                                         Return x.TradableInstrument.InstrumentIdentifier = instrumentIdentifiers.FirstOrDefault.Key
+                                                                     End Function)
+                            If currentStrategyInstruments IsNot Nothing AndAlso currentStrategyInstruments.Count > 0 Then
+                                instrumentActivity.Value.ParentStrategyInstrument = currentStrategyInstruments.FirstOrDefault
+                            Else
+                                Me.SignalManager.ActivityDetails.TryRemove(instrumentActivity.Key, instrumentActivity.Value)
+                            End If
+                        Else
+                            Me.SignalManager.ActivityDetails.TryRemove(instrumentActivity.Key, instrumentActivity.Value)
+                        End If
+                    Next
+
+                End If
             End If
         End Function
         Public Overridable Async Function ForceExitAllTradesAsync() As Task
