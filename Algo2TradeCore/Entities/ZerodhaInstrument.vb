@@ -26,7 +26,7 @@ Namespace Entities
             End Get
         End Property
 
-        Public ReadOnly Property InstrumentType As String Implements IInstrument.InstrumentType
+        Public ReadOnly Property RawInstrumentType As String Implements IInstrument.RawInstrumentType
             Get
                 Return WrappedInstrument.InstrumentType
             End Get
@@ -81,5 +81,19 @@ Namespace Entities
 
         Public Property IsHistoricalCompleted As Boolean Implements IInstrument.IsHistoricalCompleted
 
+        Public ReadOnly Property InstrumentType As IInstrument.TypeOfInstrument Implements IInstrument.InstrumentType
+            Get
+                Select Case RawInstrumentType
+                    Case "EQ"
+                        Return IInstrument.TypeOfInstrument.Cash
+                    Case "FUT"
+                        Return IInstrument.TypeOfInstrument.Futures
+                    Case "OPT"
+                        Return IInstrument.TypeOfInstrument.Options
+                    Case Else
+                        Return IInstrument.TypeOfInstrument.None
+                End Select
+            End Get
+        End Property
     End Class
 End Namespace

@@ -192,16 +192,16 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalStop, 0, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalStart, 0, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalSettings, 9, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblMomentumReversalTradableInstrument, 3, 0)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblMomentumReversalTradableInstrument, 10, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -237,7 +237,7 @@ Partial Class frmMainTabbed
         '
         Me.Panel1.Controls.Add(Me.blbMomentumReversalTickerStatus)
         Me.Panel1.Controls.Add(Me.lblMomentumReversalTickerStatus)
-        Me.Panel1.Location = New System.Drawing.Point(1197, 4)
+        Me.Panel1.Location = New System.Drawing.Point(1189, 4)
         Me.Panel1.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel1.Name = "Panel1"
         Me.Panel1.Size = New System.Drawing.Size(146, 31)
@@ -279,13 +279,15 @@ Partial Class frmMainTabbed
         'linklblMomentumReversalTradableInstrument
         '
         Me.linklblMomentumReversalTradableInstrument.AutoSize = True
+        Me.linklblMomentumReversalTradableInstrument.Dock = System.Windows.Forms.DockStyle.Fill
         Me.linklblMomentumReversalTradableInstrument.Enabled = False
-        Me.linklblMomentumReversalTradableInstrument.Location = New System.Drawing.Point(270, 0)
+        Me.linklblMomentumReversalTradableInstrument.Location = New System.Drawing.Point(893, 0)
         Me.linklblMomentumReversalTradableInstrument.Name = "linklblMomentumReversalTradableInstrument"
-        Me.linklblMomentumReversalTradableInstrument.Size = New System.Drawing.Size(81, 39)
+        Me.linklblMomentumReversalTradableInstrument.Size = New System.Drawing.Size(219, 39)
         Me.linklblMomentumReversalTradableInstrument.TabIndex = 12
         Me.linklblMomentumReversalTradableInstrument.TabStop = True
         Me.linklblMomentumReversalTradableInstrument.Text = "Tradable Instruments: 0"
+        Me.linklblMomentumReversalTradableInstrument.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
         'pnlMomentumReversalBodyVerticalSplitter
         '

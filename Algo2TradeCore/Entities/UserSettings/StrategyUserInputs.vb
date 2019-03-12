@@ -33,5 +33,7 @@
 
         Public Property SignalTimeFrame As Integer
         Public Property TargetMultiplier As Decimal
+        Public Property MaxLossPerDay As Decimal
+        Public Property MaxProfitPerDay As Decimal
     End Class
 End Namespace

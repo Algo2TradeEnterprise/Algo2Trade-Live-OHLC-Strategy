@@ -2,31 +2,25 @@
 Imports System.Threading
 Imports Algo2TradeCore.Entities.UserSettings
 Imports Utilities.DAL
+Imports Algo2TradeCore.Entities
 
 <Serializable>
 Public Class MomentumReversalUserInputs
     Inherits StrategyUserInputs
     Public CandleWickSizePercentage As Decimal
-    Public MaxStoplossPercentage As Decimal
+    Public MaxCapitalProtectionPercentage As Decimal
     Public MinCandleRangePercentage As Decimal
-    Public MaxLossPerDay As Decimal
     Public InstrumentDetailsFilePath As String
     Public InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
     Public Class InstrumentDetails
         Public InstrumentName As String
-        Public MarketType As InstrumentType
+        Public MarketType As IInstrument.TypeOfInstrument
         Public Quantity As Integer
         Public Capital As Decimal
         Public NumberOfTrade As Integer
         Public MaxLossPerTrade As Decimal
     End Class
-    <Serializable>
-    Public Enum InstrumentType
-        Cash = 1
-        Futures
-        Both
-    End Enum
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
@@ -134,12 +128,12 @@ Public Class MomentumReversalUserInputs
                             If instrumentName IsNot Nothing Then
                                 Dim instrumentData As New MomentumReversalUserInputs.InstrumentDetails
                                 instrumentData.InstrumentName = instrumentName.ToUpper
-                                If marketFuture AndAlso marketCash Then
-                                    instrumentData.MarketType = MomentumReversalUserInputs.InstrumentType.Both
+                                If marketCash AndAlso marketFuture Then
+                                    instrumentData.MarketType = IInstrument.TypeOfInstrument.None
                                 ElseIf marketCash Then
-                                    instrumentData.MarketType = MomentumReversalUserInputs.InstrumentType.Cash
+                                    instrumentData.MarketType = IInstrument.TypeOfInstrument.Cash
                                 ElseIf marketFuture Then
-                                    instrumentData.MarketType = MomentumReversalUserInputs.InstrumentType.Futures
+                                    instrumentData.MarketType = IInstrument.TypeOfInstrument.Futures
                                 Else
                                     Throw New ApplicationException(String.Format("Intrument Type not mentioned for {0}", instrumentName))
                                 End If

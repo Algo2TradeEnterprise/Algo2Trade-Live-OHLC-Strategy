@@ -39,11 +39,12 @@ Public Class frmMomentumReversalSettings
             dtpckrLastTradeEntryTime.Value = _MRSettings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _MRSettings.EODExitTime
             txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
+            txtMaxLossPerDay.Text = _MRSettings.MaxLossPerDay
+            txtMaxProfitPerDay.Text = _MRSettings.MaxProfitPerDay
             txtCandleWickSizePercentage.Text = _MRSettings.CandleWickSizePercentage
             txtMinCandleRangePercentage.Text = _MRSettings.MinCandleRangePercentage
-            txtMaxSLPercentage.Text = _MRSettings.MaxStoplossPercentage
+            txtMaxSLPercentage.Text = _MRSettings.MaxCapitalProtectionPercentage
             txtInstrumentDetalis.Text = _MRSettings.InstrumentDetailsFilePath
-            txtMaxLossPerDay.Text = _MRSettings.MaxLossPerDay
         End If
     End Sub
     Private Sub SaveSettings()
@@ -52,11 +53,12 @@ Public Class frmMomentumReversalSettings
         _MRSettings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _MRSettings.EODExitTime = dtpckrEODExitTime.Value
         _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
+        _MRSettings.MaxLossPerDay = txtMaxLossPerDay.Text
+        _MRSettings.MaxProfitPerDay = txtMaxProfitPerDay.Text
         _MRSettings.CandleWickSizePercentage = txtCandleWickSizePercentage.Text
         _MRSettings.MinCandleRangePercentage = txtMinCandleRangePercentage.Text
-        _MRSettings.MaxStoplossPercentage = txtMaxSLPercentage.Text
+        _MRSettings.MaxCapitalProtectionPercentage = txtMaxSLPercentage.Text
         _MRSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-        _MRSettings.MaxLossPerDay = txtMaxLossPerDay.Text
 
         Utilities.Strings.SerializeFromCollection(Of MomentumReversalUserInputs)(_MRSettingsFilename, _MRSettings)
     End Sub
@@ -80,6 +82,7 @@ Public Class frmMomentumReversalSettings
         ValidateNumbers(0, 999, txtTargetMultiplier)
         ValidateNumbers(1, 60, txtSignalTimeFrame)
         ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerDay)
+        ValidateNumbers(0, Decimal.MaxValue, txtMaxProfitPerDay)
         ValidateFile()
     End Sub
 

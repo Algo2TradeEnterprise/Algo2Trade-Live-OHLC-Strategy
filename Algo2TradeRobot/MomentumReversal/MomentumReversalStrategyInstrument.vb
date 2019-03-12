@@ -108,7 +108,7 @@ Public Class MomentumReversalStrategyInstrument
             Dim target As Decimal = Nothing
             Dim stoploss As Decimal = Nothing
             Dim quantity As Integer = Nothing
-            If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
+            If Me.TradableInstrument.RawInstrumentType.ToUpper = "FUT" Then
                 quantity = Me.TradableInstrument.LotSize
             Else
                 quantity = MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity
@@ -286,7 +286,7 @@ Public Class MomentumReversalStrategyInstrument
         End If
         Dim capitalRequiredWithMargin As Decimal = (entryPrice * quantity / 30)
         Dim pl As Decimal = Await Me._APIAdapter.CalculatePLWithBrokerageAsync(Me.TradableInstrument.TradingSymbol, entryPrice, stoplossPrice, quantity, Me.TradableInstrument.Exchange).ConfigureAwait(False)
-        Dim stoplossTobeCalculateFrom As Decimal = Math.Min(Math.Abs(pl), Math.Min(capitalRequiredWithMargin * MRUserSettings.MaxStoplossPercentage / 100, Math.Abs(MRUserSettings.InstrumentsData(instrumentName).MaxLossPerTrade)))
+        Dim stoplossTobeCalculateFrom As Decimal = Math.Min(Math.Abs(pl), Math.Min(capitalRequiredWithMargin * MRUserSettings.MaxCapitalProtectionPercentage / 100, Math.Abs(MRUserSettings.InstrumentsData(instrumentName).MaxLossPerTrade)))
         If Math.Abs(pl) <> stoplossTobeCalculateFrom Then
             ret = stoplossTobeCalculateFrom / quantity
         Else

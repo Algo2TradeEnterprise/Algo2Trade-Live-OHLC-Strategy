@@ -100,7 +100,7 @@ Public Class AmiSignalStrategyInstrument
                     Dim stoploss As Decimal = Math.Round(ConvertFloorCeling(amiSignalTradePrice * amiUserSettings.MaxStoplossPercentage / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     Dim quantity As Integer = Nothing
                     Dim tag As String = GenerateTag(Now)
-                    If Me.TradableInstrument.InstrumentType.ToUpper = "FUT" Then
+                    If Me.TradableInstrument.RawInstrumentType.ToUpper = "FUT" Then
                         quantity = Me.TradableInstrument.LotSize
                     Else
                         quantity = Math.Floor(amiUserSettings.MaxCapitalPerTrade * 10 / amiSignalTradePrice)

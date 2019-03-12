@@ -4,7 +4,6 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
-Imports Algo2TradeCore.UserSettings
 Imports NLog
 
 Public Class MomentumReversalStrategy
@@ -95,13 +94,13 @@ Public Class MomentumReversalStrategy
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 Dim cashInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
                     mrUserInputs.InstrumentsData.Where(Function(x)
-                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Cash OrElse
-                                                                                 x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
+                                                           Return x.Value.MarketType = IInstrument.TypeOfInstrument.Cash OrElse
+                                                           x.Value.MarketType = IInstrument.TypeOfInstrument.None
                                                        End Function)
                 Dim futureInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
                     mrUserInputs.InstrumentsData.Where(Function(x)
-                                                           Return x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Futures OrElse
-                                                                                 x.Value.MarketType = MomentumReversalUserInputs.InstrumentType.Both
+                                                           Return x.Value.MarketType = IInstrument.TypeOfInstrument.Futures OrElse
+                                                           x.Value.MarketType = IInstrument.TypeOfInstrument.None
                                                        End Function)
                 For Each instrument In cashInstrumentList.ToList
                     _cts.Token.ThrowIfCancellationRequested()
@@ -118,7 +117,7 @@ Public Class MomentumReversalStrategy
                     Dim runningTradableInstrument As IInstrument = Nothing
                     Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
                                                                                                          Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.InstrumentType = "FUT" AndAlso (x.Exchange = "NFO" OrElse x.Exchange = "MCX")
+                                                                                                             x.RawInstrumentType = "FUT" AndAlso (x.Exchange = "NFO" OrElse x.Exchange = "MCX")
                                                                                                      End Function)
 
                     'Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
