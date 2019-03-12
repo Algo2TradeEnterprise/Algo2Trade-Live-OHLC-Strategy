@@ -351,10 +351,6 @@ Namespace Strategies
                                 Not Utilities.Time.IsDateTimeEqualTillMinutes(associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.Value, instrumentActivity.Value.GetDirtyLastCandleTime) Then
                                 instrumentActivity.Value.NotifyPropertyChanged("LastCandleTime")
                             End If
-                            If associatedStrategyInstrument.TradableInstrument.TradingSymbol IsNot Nothing AndAlso
-                                associatedStrategyInstrument.TradableInstrument.TradingSymbol <> instrumentActivity.Value.GetDirtyTradingSymbol Then
-                                instrumentActivity.Value.NotifyPropertyChanged("TradingSymbol")
-                            End If
                         Next
                     End If
                 End If
@@ -417,11 +413,7 @@ Namespace Strategies
             Try
                 Dim filename As String = GetActivitySignalFilename(Me.ParentStrategy)
                 If File.Exists(filename) Then
-                    Using fs As New FileStream(filename, FileMode.Open)
-                        Dim bf As BinaryFormatter = New BinaryFormatter()
-                        Me.ActivityDetails = CType(bf.Deserialize(fs), Concurrent.ConcurrentDictionary(Of String, ActivityDashboard))
-                        fs.Close()
-                    End Using
+                    Me.ActivityDetails = Utilities.Strings.DeserializeToCollection(Of Concurrent.ConcurrentDictionary(Of String, ActivityDashboard))(filename)
                 End If
             Catch ex As Exception
                 logger.Error(ex)
@@ -448,6 +440,7 @@ Namespace Strategies
             Dim currentActivity As New ActivityDashboard(associatedStrategyInstrument)
             Dim existingActivities As ActivityDashboard = Me.ActivityDetails.GetOrAdd(activityTag, currentActivity)
 
+            If associatedStrategyInstrument IsNot Nothing Then existingActivities.TradingSymbol = associatedStrategyInstrument.TradableInstrument.TradingSymbol
             If associatedOrderID IsNot Nothing Then existingActivities.ParentOrderID = associatedOrderID
             If signalGeneratedTime <> Nothing OrElse signalGeneratedTime <> Date.MinValue Then existingActivities.SignalGeneratedTime = signalGeneratedTime
             If signalDirection <> APIAdapter.TransactionType.None Then existingActivities.SignalDirection = signalDirection
@@ -566,11 +559,7 @@ Namespace Strategies
         Private Async Function SerializeActivityCollection() As Task
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
-                Using fs As New FileStream(GetActivitySignalFilename(Me.ParentStrategy), FileMode.OpenOrCreate)
-                    Dim bf As BinaryFormatter = New BinaryFormatter()
-                    bf.Serialize(fs, ActivityDetails)
-                    fs.Close()
-                End Using
+                Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of String, ActivityDashboard))(GetActivitySignalFilename(Me.ParentStrategy), ActivityDetails)
             Catch ex As Exception
                 logger.Error(ex)
                 'Error will not throw out as it is not an important error

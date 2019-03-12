@@ -7,7 +7,7 @@ Public Class frmMomentumReversalSettings
 
     Private _cts As CancellationTokenSource = Nothing
     Private _MRSettings As MomentumReversalUserInputs = Nothing
-    Private _MRSettingsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, "MomentumReversalSettings.a2t")
+    Private _MRSettingsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, "MomentumReversalSettings.Strategy.a2t")
 
     Public Sub New(ByRef MRUserInputs As MomentumReversalUserInputs)
         ' This call is required by the designer.
@@ -33,32 +33,32 @@ Public Class frmMomentumReversalSettings
     End Sub
     Private Sub LoadSettings()
         If File.Exists(_MRSettingsFilename) Then
-            Dim fs As Stream = New FileStream(_MRSettingsFilename, FileMode.Open)
-            Dim bf As BinaryFormatter = New BinaryFormatter()
-            _MRSettings = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
-            fs.Close()
+            _MRSettings = Utilities.Strings.DeserializeToCollection(Of MomentumReversalUserInputs)(_MRSettingsFilename)
+            txtSignalTimeFrame.Text = _MRSettings.SignalTimeFrame
+            dtpckrTradeStartTime.Value = _MRSettings.TradeStartTime
+            dtpckrLastTradeEntryTime.Value = _MRSettings.LastTradeEntryTime
+            dtpckrEODExitTime.Value = _MRSettings.EODExitTime
+            txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
             txtCandleWickSizePercentage.Text = _MRSettings.CandleWickSizePercentage
             txtMinCandleRangePercentage.Text = _MRSettings.MinCandleRangePercentage
             txtMaxSLPercentage.Text = _MRSettings.MaxStoplossPercentage
-            txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
-            txtSignalTimeFrame.Text = _MRSettings.SignalTimeFrame
             txtInstrumentDetalis.Text = _MRSettings.InstrumentDetailsFilePath
             txtMaxLossPerDay.Text = _MRSettings.MaxLossPerDay
         End If
     End Sub
     Private Sub SaveSettings()
+        _MRSettings.SignalTimeFrame = txtSignalTimeFrame.Text
+        _MRSettings.TradeStartTime = dtpckrTradeStartTime.Value
+        _MRSettings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
+        _MRSettings.EODExitTime = dtpckrEODExitTime.Value
+        _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
         _MRSettings.CandleWickSizePercentage = txtCandleWickSizePercentage.Text
         _MRSettings.MinCandleRangePercentage = txtMinCandleRangePercentage.Text
         _MRSettings.MaxStoplossPercentage = txtMaxSLPercentage.Text
-        _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
-        _MRSettings.SignalTimeFrame = txtSignalTimeFrame.Text
         _MRSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
         _MRSettings.MaxLossPerDay = txtMaxLossPerDay.Text
 
-        Dim fs As Stream = New FileStream(_MRSettingsFilename, FileMode.OpenOrCreate)
-        Dim bf As BinaryFormatter = New BinaryFormatter()
-        bf.Serialize(fs, _MRSettings)
-        fs.Close()
+        Utilities.Strings.SerializeFromCollection(Of MomentumReversalUserInputs)(_MRSettingsFilename, _MRSettings)
     End Sub
     Private Function ValidateNumbers(ByVal startNumber As Decimal, ByVal endNumber As Decimal, ByVal inputTB As TextBox) As Boolean
         Dim ret As Boolean = False

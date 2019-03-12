@@ -1,6 +1,6 @@
 ﻿Imports System.IO
 Imports System.Threading
-Imports Algo2TradeCore.UserSettings
+Imports Algo2TradeCore.Entities.UserSettings
 Imports Utilities.DAL
 
 <Serializable>

@@ -1,4 +1,14 @@
-﻿Public Class frmAdvancedOptions
+﻿Imports Algo2TradeCore.Entities.UserSettings
+
+Public Class frmAdvancedOptions
+
+    Private _UserInputs As ControllerUserInputs
+
+    Public Sub New(ByVal userInputs As ControllerUserInputs)
+        InitializeComponent()
+        Me._UserInputs = userInputs
+    End Sub
+
     Private Sub frmAdvancedOptions_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LoadSettings()
     End Sub
@@ -14,13 +24,17 @@
     End Sub
 
     Private Sub LoadSettings()
-        txtGetInformationDelay.Text = My.Settings.GetInformationDelay
-        txtBackToBackOrderCoolOffDelay.Text = My.Settings.BackToBackOrderCoolOffTime
+        If _UserInputs IsNot Nothing Then
+            txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
+            txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
+        End If
     End Sub
 
     Private Sub SaveSettings()
-        My.Settings.GetInformationDelay = txtGetInformationDelay.Text
-        My.Settings.BackToBackOrderCoolOffTime = txtBackToBackOrderCoolOffDelay.Text
+        If _UserInputs Is Nothing Then _UserInputs = New ControllerUserInputs
+        _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
+        _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
+        Utilities.Strings.SerializeFromCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename, _UserInputs)
     End Sub
 
     Private Sub ValidateInputs()

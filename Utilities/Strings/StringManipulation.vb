@@ -414,14 +414,15 @@ Namespace Strings
         Public Sub SerializeFromCollection(Of T)(ByVal outputFilePath As String, ByVal collectionToBeSerialized As T)
             logger.Debug("Serialize from collection")
             'serialize
-            Using stream As Stream = File.Open(outputFilePath, FileMode.Create)
+            Using stream As Stream = File.Open(outputFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite)
                 Dim bformatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
                 bformatter.Serialize(stream, collectionToBeSerialized)
+                stream.Close()
             End Using
         End Sub
         Public Function DeserializeToCollection(Of T)(ByVal inputFilePath As String) As T
             logger.Debug("Deserialize to collection")
-            Using stream As Stream = File.Open(inputFilePath, FileMode.Open)
+            Using stream As Stream = File.Open(inputFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
                 Dim binaryFormatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
                 Return DirectCast(binaryFormatter.Deserialize(stream), T)
             End Using

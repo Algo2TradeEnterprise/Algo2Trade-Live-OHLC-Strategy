@@ -12,7 +12,7 @@ Imports Utilities
 Imports System.Net.Http
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Adapter.APIAdapter
-Imports Algo2TradeCore.UserSettings
+Imports Algo2TradeCore.Entities.UserSettings
 
 Namespace Controller
     Public Class ZerodhaStrategyController
@@ -567,6 +567,8 @@ Namespace Controller
                                     OnHeartbeatEx(String.Format("Resubscribing strategy instruments, strategy:{0}", runningStrategy.ToString), New List(Of Object) From {runningStrategy})
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Await runningStrategy.SubscribeAsync(_APITicker, _APIHistoricalDataFetcher).ConfigureAwait(False)
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    OnSessionExpiry(runningStrategy)
                                     _cts.Token.ThrowIfCancellationRequested()
                                 Next
                             End If

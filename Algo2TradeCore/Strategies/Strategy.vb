@@ -4,7 +4,7 @@ Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
-Imports Algo2TradeCore.UserSettings
+Imports Algo2TradeCore.Entities.UserSettings
 Imports NLog
 
 Namespace Strategies
@@ -68,6 +68,7 @@ Namespace Strategies
         Public Property SignalManager As SignalStateManager
         Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
         Public ReadOnly Property IsStrategyCandleStickBased As Boolean
+
         Protected _cts As CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal associatedStrategyIdentifier As String,
@@ -144,7 +145,11 @@ Namespace Strategies
                                                                          Return x.TradableInstrument.InstrumentIdentifier = instrumentIdentifiers.FirstOrDefault.Key
                                                                      End Function)
                             If currentStrategyInstruments IsNot Nothing AndAlso currentStrategyInstruments.Count > 0 Then
-                                instrumentActivity.Value.ParentStrategyInstrument = currentStrategyInstruments.FirstOrDefault
+                                If instrumentActivity.Value.TradingSymbol = currentStrategyInstruments.FirstOrDefault.TradableInstrument.TradingSymbol Then
+                                    instrumentActivity.Value.ParentStrategyInstrument = currentStrategyInstruments.FirstOrDefault
+                                Else
+                                    Me.SignalManager.ActivityDetails.TryRemove(instrumentActivity.Key, instrumentActivity.Value)
+                                End If
                             Else
                                 Me.SignalManager.ActivityDetails.TryRemove(instrumentActivity.Key, instrumentActivity.Value)
                             End If

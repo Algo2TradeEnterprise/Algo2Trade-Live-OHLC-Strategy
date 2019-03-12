@@ -136,8 +136,8 @@
     <Compile Include="Strategies\StrategyInstrument.vb" />
     <Compile Include="Strategies\SignalStateManager.vb" />
     <Compile Include="Entities\ActivityDashboard.vb" />
-    <Compile Include="UserSettings\ControllerUserInputs.vb" />
-    <Compile Include="UserSettings\StrategyUserInputs.vb" />
+    <Compile Include="Entities\UserSettings\ControllerUserInputs.vb" />
+    <Compile Include="Entities\UserSettings\StrategyUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

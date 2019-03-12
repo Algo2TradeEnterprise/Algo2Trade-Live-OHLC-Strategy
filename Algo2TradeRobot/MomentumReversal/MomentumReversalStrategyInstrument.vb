@@ -86,8 +86,6 @@ Public Class MomentumReversalStrategyInstrument
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
-        Dim tradeStartTime As Date = New Date(Now.Year, Now.Month, Now.Day, 9, 20, 0)
-        Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 14, 30, 0)
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(MRUserSettings.SignalTimeFrame)
 
         Dim instrumentName As String = Nothing
@@ -98,7 +96,7 @@ Public Class MomentumReversalStrategyInstrument
         End If
 
         Dim parameters As PlaceOrderParameters = Nothing
-        If Now < lastTradeEntryTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= tradeStartTime AndAlso
+        If Now < MRUserSettings.LastTradeEntryTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= MRUserSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Not IsActiveInstrument() AndAlso Me.GetTotalExecutedOrders() < MRUserSettings.InstrumentsData(instrumentName.ToUpper).NumberOfTrade AndAlso
             Not IsAnyTradeExitedInCurrentTimeframeCandle(MRUserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) Then
@@ -169,7 +167,7 @@ Public Class MomentumReversalStrategyInstrument
                 ElseIf currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded Then
                     ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                 ElseIf currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
-                    'ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
+                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                 Else
                     ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.DonotTake, Nothing)
                 End If
@@ -194,36 +192,38 @@ Public Class MomentumReversalStrategyInstrument
                     Dim potentialSLPrice As Decimal = Nothing
                     Dim triggerPrice As Decimal = Nothing
                     Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrderId, Me.ParentStrategy.UserSettings.SignalTimeFrame)
-                    If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                        potentialSLPrice = signalCandle.LowPrice - CalculateBuffer(signalCandle.LowPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        triggerPrice = Await GetModifiedStoplossAsync(parentOrderPrice, potentialSLPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
-                        triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                    ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                        potentialSLPrice = signalCandle.HighPrice + CalculateBuffer(signalCandle.HighPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        triggerPrice = Await GetModifiedStoplossAsync(potentialSLPrice, parentOrderPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
-                        triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
-                    End If
+                    If signalCandle IsNot Nothing Then
+                        If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                            potentialSLPrice = signalCandle.LowPrice - CalculateBuffer(signalCandle.LowPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                            triggerPrice = Await GetModifiedStoplossAsync(parentOrderPrice, potentialSLPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
+                            triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                        ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                            potentialSLPrice = signalCandle.HighPrice + CalculateBuffer(signalCandle.HighPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                            triggerPrice = Await GetModifiedStoplossAsync(potentialSLPrice, parentOrderPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
+                            triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
+                        End If
 
-                    Dim potentialStoplossPrice As Decimal = Nothing
-                    For Each slOrder In parentBusinessOrder.SLOrder
-                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "REJECTED" Then
-                            If slOrder.TriggerPrice <> triggerPrice Then
-                                'Below portion have to be done in every modify stoploss order trigger
-                                Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(slOrder.Tag)
-                                If currentSignalActivities IsNot Nothing Then
-                                    If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                        Dim potentialStoplossPrice As Decimal = Nothing
+                        For Each slOrder In parentBusinessOrder.SLOrder
+                            If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "REJECTED" Then
+                                If slOrder.TriggerPrice <> triggerPrice Then
+                                    'Below portion have to be done in every modify stoploss order trigger
+                                    Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(slOrder.Tag)
+                                    If currentSignalActivities IsNot Nothing Then
+                                        If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
                                         currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
                                         currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
-                                        Continue For
+                                            Continue For
+                                        End If
                                     End If
+                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal))
+                                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal)(ExecuteCommandAction.Take, slOrder, triggerPrice))
+                                    'Else
+                                    '    Debug.WriteLine(String.Format("Stoploss modified {0} Quantity:{1}, ID:{2}", Me.GenerateTag(), slOrder.Quantity, slOrder.OrderIdentifier))
                                 End If
-                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal)(ExecuteCommandAction.Take, slOrder, triggerPrice))
-                                'Else
-                                '    Debug.WriteLine(String.Format("Stoploss modified {0} Quantity:{1}, ID:{2}", Me.GenerateTag(), slOrder.Quantity, slOrder.OrderIdentifier))
                             End If
-                        End If
-                    Next
+                        Next
+                    End If
                 End If
             Next
         End If

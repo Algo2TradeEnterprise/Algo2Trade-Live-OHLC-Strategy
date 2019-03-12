@@ -1,5 +1,6 @@
 ﻿Imports KiteConnect
 Namespace Entities
+    <Serializable>
     Public Class ZerodhaUser
         Implements IUser
 
@@ -11,7 +12,17 @@ Namespace Entities
         Public Property APIVersion As String Implements IUser.APIVersion
         Public Property API2FAPin As String Implements IUser.API2FAPin
 
+        <NonSerialized>
+        Private _WrappedUser As User
         Public Property WrappedUser As User
+            Get
+                Return _WrappedUser
+            End Get
+            Set(value As User)
+                _WrappedUser = value
+            End Set
+        End Property
+
         Public ReadOnly Property Broker As APISource Implements IUser.Broker
             Get
                 Return APISource.Zerodha

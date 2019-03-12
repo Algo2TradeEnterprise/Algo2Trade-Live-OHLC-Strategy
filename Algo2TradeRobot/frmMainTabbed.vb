@@ -9,7 +9,8 @@ Imports Syncfusion.WinForms.Input.Enums
 Imports Utilities.Time
 Imports System.IO
 Imports System.Runtime.Serialization.Formatters.Binary
-Imports Algo2TradeCore.UserSettings
+Imports Algo2TradeCore.Entities.UserSettings
+Imports Algo2TradeCore.Strategies
 
 Public Class frmMainTabbed
 
@@ -256,12 +257,15 @@ Public Class frmMainTabbed
     Private _lastLoggedMessage As String = Nothing
     Private _commonController As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
-    Private _commonControllerUserInput As New ControllerUserInputs With {.GetInformationDelay = My.Settings.GetInformationDelay, .BackToBackOrderCoolOffDelay = My.Settings.BackToBackOrderCoolOffTime}
+    Private _commonControllerUserInput As ControllerUserInputs = Nothing
 #End Region
 
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
-        Dim newForm As New frmZerodhaUserDetails
+        Dim newForm As New frmZerodhaUserDetails(_commonControllerUserInput)
         newForm.ShowDialog()
+        If File.Exists(ControllerUserInputs.Filename) Then
+            _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
+        End If
     End Sub
 
     Private Sub miAbout_Click(sender As Object, e As EventArgs) Handles miAbout.Click
@@ -270,13 +274,17 @@ Public Class frmMainTabbed
     End Sub
 
     Private Sub miAdvanceOptions_Click(sender As Object, e As EventArgs) Handles miAdvancedOptions.Click
-        Dim newForm As New frmAdvancedOptions
+        Dim newForm As New frmAdvancedOptions(_commonControllerUserInput)
         newForm.ShowDialog()
+        If File.Exists(ControllerUserInputs.Filename) Then
+            _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
+        End If
     End Sub
 
 #Region "Momentum Reversal"
     Private _MRUserInputs As MomentumReversalUserInputs = Nothing
     Private _MRdashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _MRTradableInstruments As IEnumerable(Of MomentumReversalStrategyInstrument) = Nothing
     Private Sub sfdgvMomentumReversalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMomentumReversalMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(MomentumReversalStrategy))
     End Sub
@@ -293,9 +301,12 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
+            EnableDisableUIEx(UIMode.Active, GetType(MomentumReversalStrategy))
+            EnableDisableUIEx(UIMode.BlockOther, GetType(MomentumReversalStrategy))
+
             OnHeartbeat("Validating user settings")
-            If File.Exists("MomentumReversalSettings.a2t") Then
-                Dim fs As Stream = New FileStream("MomentumReversalSettings.a2t", FileMode.Open)
+            If File.Exists("MomentumReversalSettings.Strategy.a2t") Then
+                Dim fs As Stream = New FileStream("MomentumReversalSettings.Strategy.a2t", FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
                 _MRUserInputs = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
                 fs.Close()
@@ -305,11 +316,8 @@ Public Class frmMainTabbed
                 Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
             End If
 
-            EnableDisableUIEx(UIMode.Active, GetType(MomentumReversalStrategy))
-            EnableDisableUIEx(UIMode.BlockOther, GetType(MomentumReversalStrategy))
-
-            If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
+            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
@@ -332,6 +340,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
                 RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
                 RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -350,6 +359,8 @@ Public Class frmMainTabbed
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
                 AddHandler _commonController.CollectorError, AddressOf OnCollectorError
                 AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+
 #Region "Login"
                 Dim loginMessage As String = Nothing
                 While True
@@ -409,6 +420,10 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(momentumReversalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
+            _MRTradableInstruments = momentumReversalStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblMomentumReversalTradableInstrument, String.Format("Tradable Instruments: {0}", _MRTradableInstruments.Count))
+            SetObjectEnableDisable_ThreadSafe(linklblMomentumReversalTradableInstrument, True)
+
             _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
@@ -424,7 +439,6 @@ Public Class frmMainTabbed
             ProgressStatus("No pending actions")
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(MomentumReversalStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
-            SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
         End Try
         If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
             If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
@@ -436,7 +450,6 @@ Public Class frmMainTabbed
         End If
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
-        SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
         Await Task.Run(AddressOf MomentumReversalWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
@@ -452,6 +465,11 @@ Public Class frmMainTabbed
         Dim newForm As New frmMomentumReversalSettings(_MRUserInputs)
         newForm.ShowDialog()
     End Sub
+    Private Sub linklblMomentumReversalTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblMomentumReversalTradableInstrument.LinkClicked
+        Dim newForm As New frmMomentumReversalTradableInstrumentList(_MRTradableInstruments)
+        newForm.ShowDialog()
+    End Sub
+
 #End Region
 
 #Region "OHL"
@@ -478,8 +496,8 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.Active, GetType(OHLStrategy))
             EnableDisableUIEx(UIMode.BlockOther, GetType(OHLStrategy))
 
-            If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
+            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
@@ -502,6 +520,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
                 RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
                 RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -520,6 +539,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
                 AddHandler _commonController.CollectorError, AddressOf OnCollectorError
                 AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
 
 #Region "Login"
                 Dim loginMessage As String = Nothing
@@ -644,8 +664,8 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.Active, GetType(AmiSignalStrategy))
             EnableDisableUIEx(UIMode.BlockOther, GetType(AmiSignalStrategy))
 
-            If Not Common.IsZerodhaUserDetailsPopulated() Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings
+            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
@@ -668,6 +688,7 @@ Public Class frmMainTabbed
                 RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
                 RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
                 RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
 
                 AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -686,6 +707,7 @@ Public Class frmMainTabbed
                 AddHandler _commonController.FetcherError, AddressOf OnFetcherError
                 AddHandler _commonController.CollectorError, AddressOf OnCollectorError
                 AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
 
 #Region "Login"
                 Dim loginMessage As String = Nothing
@@ -828,6 +850,7 @@ Public Class frmMainTabbed
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStart, False)
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStop, True)
+                    SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
                         SetObjectText_ThreadSafe(btnOHLStart, Common.LOGIN_PENDING)
@@ -849,6 +872,8 @@ Public Class frmMainTabbed
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStop, False)
+                    SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
+                    SetObjectEnableDisable_ThreadSafe(linklblMomentumReversalTradableInstrument, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
             End Select
         ElseIf source Is GetType(AmiSignalStrategy) Then
@@ -1015,7 +1040,10 @@ Public Class frmMainTabbed
         GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
         logger.Trace("*************************** Logging started ***************************")
 
-        If Not Common.IsZerodhaUserDetailsPopulated() Then
+        If File.Exists(ControllerUserInputs.Filename) Then
+            _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
+        End If
+        If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then
             miUserDetails_Click(sender, e)
         End If
         EnableDisableUIEx(UIMode.Idle, GetType(OHLStrategy))
@@ -1108,6 +1136,13 @@ Public Class frmMainTabbed
             BindingListAdd_ThreadSafe(_MRdashboadList, item)
             'End Select
         End If
+    End Sub
+    Protected Sub OnSessionExpiry(ByVal runningStrategy As Strategy)
+        SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
+        _MRdashboadList = Nothing
+        _MRdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+        SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
+        SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
     End Sub
 
 #End Region

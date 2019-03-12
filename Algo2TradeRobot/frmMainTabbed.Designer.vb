@@ -27,6 +27,7 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip = New System.Windows.Forms.MenuStrip()
         Me.miOptions = New System.Windows.Forms.ToolStripMenuItem()
         Me.miUserDetails = New System.Windows.Forms.ToolStripMenuItem()
+        Me.miAdvancedOptions = New System.Windows.Forms.ToolStripMenuItem()
         Me.miAbout = New System.Windows.Forms.ToolStripMenuItem()
         Me.tabMain = New System.Windows.Forms.TabControl()
         Me.tabMomentumReversal = New System.Windows.Forms.TabPage()
@@ -38,8 +39,8 @@ Partial Class frmMainTabbed
         Me.blbMomentumReversalTickerStatus = New Bulb.LedBulb()
         Me.lblMomentumReversalTickerStatus = New System.Windows.Forms.Label()
         Me.btnMomentumReversalSettings = New System.Windows.Forms.Button()
+        Me.linklblMomentumReversalTradableInstrument = New System.Windows.Forms.LinkLabel()
         Me.pnlMomentumReversalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
-        Me.PictureBox2 = New System.Windows.Forms.PictureBox()
         Me.pnlMomentumReversalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstMomentumReversalLog = New System.Windows.Forms.ListBox()
         Me.sfdgvMomentumReversalMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
@@ -72,7 +73,6 @@ Partial Class frmMainTabbed
         Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.miAdvancedOptions = New System.Windows.Forms.ToolStripMenuItem()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -80,7 +80,6 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.SuspendLayout()
         Me.Panel1.SuspendLayout()
         Me.pnlMomentumReversalBodyVerticalSplitter.SuspendLayout()
-        CType(Me.PictureBox2, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.pnlMomentumReversalBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvMomentumReversalMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.tabOHL.SuspendLayout()
@@ -125,6 +124,13 @@ Partial Class frmMainTabbed
         Me.miUserDetails.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.F2), System.Windows.Forms.Keys)
         Me.miUserDetails.Size = New System.Drawing.Size(263, 26)
         Me.miUserDetails.Text = "&User Details"
+        '
+        'miAdvancedOptions
+        '
+        Me.miAdvancedOptions.Name = "miAdvancedOptions"
+        Me.miAdvancedOptions.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.F7), System.Windows.Forms.Keys)
+        Me.miAdvancedOptions.Size = New System.Drawing.Size(263, 26)
+        Me.miAdvancedOptions.Text = "A&dvanced Options"
         '
         'miAbout
         '
@@ -195,6 +201,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalStart, 0, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnMomentumReversalSettings, 9, 0)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblMomentumReversalTradableInstrument, 3, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -269,12 +276,22 @@ Partial Class frmMainTabbed
         Me.btnMomentumReversalSettings.Text = "Settings"
         Me.btnMomentumReversalSettings.UseVisualStyleBackColor = True
         '
+        'linklblMomentumReversalTradableInstrument
+        '
+        Me.linklblMomentumReversalTradableInstrument.AutoSize = True
+        Me.linklblMomentumReversalTradableInstrument.Enabled = False
+        Me.linklblMomentumReversalTradableInstrument.Location = New System.Drawing.Point(270, 0)
+        Me.linklblMomentumReversalTradableInstrument.Name = "linklblMomentumReversalTradableInstrument"
+        Me.linklblMomentumReversalTradableInstrument.Size = New System.Drawing.Size(81, 39)
+        Me.linklblMomentumReversalTradableInstrument.TabIndex = 12
+        Me.linklblMomentumReversalTradableInstrument.TabStop = True
+        Me.linklblMomentumReversalTradableInstrument.Text = "Tradable Instruments: 0"
+        '
         'pnlMomentumReversalBodyVerticalSplitter
         '
         Me.pnlMomentumReversalBodyVerticalSplitter.ColumnCount = 2
         Me.pnlMomentumReversalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlMomentumReversalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlMomentumReversalBodyVerticalSplitter.Controls.Add(Me.PictureBox2, 0, 0)
         Me.pnlMomentumReversalBodyVerticalSplitter.Controls.Add(Me.pnlMomentumReversalBodyHorizontalSplitter, 0, 0)
         Me.pnlMomentumReversalBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalBodyVerticalSplitter.Location = New System.Drawing.Point(4, 51)
@@ -282,21 +299,9 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyVerticalSplitter.Name = "pnlMomentumReversalBodyVerticalSplitter"
         Me.pnlMomentumReversalBodyVerticalSplitter.RowCount = 1
         Me.pnlMomentumReversalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlMomentumReversalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
         Me.pnlMomentumReversalBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 630)
         Me.pnlMomentumReversalBodyVerticalSplitter.TabIndex = 1
-        '
-        'PictureBox2
-        '
-        Me.PictureBox2.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
-            Or System.Windows.Forms.AnchorStyles.Left) _
-            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.PictureBox2.Image = CType(resources.GetObject("PictureBox2.Image"), System.Drawing.Image)
-        Me.PictureBox2.Location = New System.Drawing.Point(945, 3)
-        Me.PictureBox2.Name = "PictureBox2"
-        Me.PictureBox2.Size = New System.Drawing.Size(399, 624)
-        Me.PictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
-        Me.PictureBox2.TabIndex = 2
-        Me.PictureBox2.TabStop = False
         '
         'pnlMomentumReversalBodyHorizontalSplitter
         '
@@ -725,13 +730,6 @@ Partial Class frmMainTabbed
         '
         Me.tmrAmiSignalTickerStatus.Enabled = True
         '
-        'miAdvancedOptions
-        '
-        Me.miAdvancedOptions.Name = "miAdvancedOptions"
-        Me.miAdvancedOptions.ShortcutKeys = CType((System.Windows.Forms.Keys.Control Or System.Windows.Forms.Keys.F7), System.Windows.Forms.Keys)
-        Me.miAdvancedOptions.Size = New System.Drawing.Size(263, 26)
-        Me.miAdvancedOptions.Text = "A&dvanced Options"
-        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -751,10 +749,10 @@ Partial Class frmMainTabbed
         Me.tabMomentumReversal.ResumeLayout(False)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.ResumeLayout(False)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.PerformLayout()
         Me.Panel1.ResumeLayout(False)
         Me.Panel1.PerformLayout()
         Me.pnlMomentumReversalBodyVerticalSplitter.ResumeLayout(False)
-        CType(Me.PictureBox2, System.ComponentModel.ISupportInitialize).EndInit()
         Me.pnlMomentumReversalBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvMomentumReversalMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.tabOHL.ResumeLayout(False)
@@ -826,7 +824,7 @@ Partial Class frmMainTabbed
     Friend WithEvents sfdgvAmiSignalMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrAmiSignalTickerStatus As Timer
     Friend WithEvents PictureBox1 As PictureBox
-    Friend WithEvents PictureBox2 As PictureBox
     Friend WithEvents PictureBox3 As PictureBox
     Friend WithEvents miAdvancedOptions As ToolStripMenuItem
+    Friend WithEvents linklblMomentumReversalTradableInstrument As LinkLabel
 End Class

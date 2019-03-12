@@ -3,7 +3,7 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
-Imports Algo2TradeCore.UserSettings
+Imports Algo2TradeCore.Entities.UserSettings
 Imports NLog
 Imports Utilities.Time
 Imports Utilities.DAL

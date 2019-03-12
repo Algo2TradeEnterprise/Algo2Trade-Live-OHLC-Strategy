@@ -9,7 +9,7 @@ Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
 Imports Algo2TradeCore.ChartHandler.ChartStyle
-Imports Algo2TradeCore.UserSettings
+Imports Algo2TradeCore.Entities.UserSettings
 Imports System.IO
 Imports System.Runtime.Serialization.Formatters.Binary
 
@@ -35,6 +35,7 @@ Namespace Controller
         Public Event FetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
         Public Event CollectorError(ByVal errorMessage As String)
         Public Event NewItemAdded(ByVal item As ActivityDashboard)
+        Public Event SessionExpiry(ByVal runningStrategy As Strategy)
 
         Protected Overridable Sub OnDocumentDownloadComplete()
             RaiseEvent DocumentDownloadComplete()
@@ -89,6 +90,9 @@ Namespace Controller
             If item IsNot Nothing Then
                 RaiseEvent NewItemAdded(item)
             End If
+        End Sub
+        Protected Sub OnSessionExpiry(ByVal runningStrategy As Strategy)
+            RaiseEvent SessionExpiry(runningStrategy)
         End Sub
 #End Region
 
@@ -403,18 +407,14 @@ Namespace Controller
         End Function
         Protected Async Function CreateInstrumentMappingTable() As Task
             Await Task.Delay(0).ConfigureAwait(False)
-            Dim filePath As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("InstrumentMappingFile_{0}.a2t", Now.ToString("yy_MM_dd")))
+            Dim filePath As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("InstrumentMappingFile_{0}.Instruments.a2t", Now.ToString("yy_MM_dd")))
             Dim mapStartNumber As Integer = 0
 
             If InstrumentMappingTable Is Nothing Then InstrumentMappingTable = New Concurrent.ConcurrentDictionary(Of String, String)
             If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 0 Then
                 Dim instrumentMappingTableFromDisk As Concurrent.ConcurrentDictionary(Of String, String) = Nothing
                 If File.Exists(filePath) Then
-                    Using fs As New FileStream(filePath, FileMode.Open)
-                        Dim bf As BinaryFormatter = New BinaryFormatter()
-                        instrumentMappingTableFromDisk = CType(bf.Deserialize(fs), Concurrent.ConcurrentDictionary(Of String, String))
-                        fs.Close()
-                    End Using
+                    instrumentMappingTableFromDisk = Utilities.Strings.DeserializeToCollection(Of Concurrent.ConcurrentDictionary(Of String, String))(filePath)
                     Dim needToBeMapped As List(Of IInstrument) = Nothing
                     For Each runningInstrument In _AllStrategyUniqueInstruments
                         If instrumentMappingTableFromDisk IsNot Nothing AndAlso instrumentMappingTableFromDisk.Count > 0 AndAlso
@@ -451,7 +451,7 @@ Namespace Controller
                     Next
                 End If
             End If
-            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "InstrumentMappingFile*.a2t")
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "InstrumentMappingFile*.Instruments.a2t")
                 Try
                     File.Delete(runningFile)
                 Catch ex As Exception
@@ -461,11 +461,7 @@ Namespace Controller
                 End Try
             Next
             'Serialize collection
-            Using fss As New FileStream(filePath, FileMode.OpenOrCreate)
-                Dim bff As BinaryFormatter = New BinaryFormatter()
-                bff.Serialize(fss, InstrumentMappingTable)
-                fss.Close()
-            End Using
+            Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of String, String))(filePath, InstrumentMappingTable)
         End Function
     End Class
 End Namespace

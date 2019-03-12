@@ -11,6 +11,7 @@ Namespace Entities
         Implements INotifyPropertyChanged
         Public Event PropertyChanged As PropertyChangedEventHandler Implements INotifyPropertyChanged.PropertyChanged
 
+        Private ReadOnly _defaultDate As Date = New Date(2000, 1, 1)
         Public Sub New(ByVal associatedStrategyInstrument As StrategyInstrument)
             Me.ParentStrategyInstrument = associatedStrategyInstrument
             EntryActivity = New Activity(ActivityType.Entry, Me) With {
@@ -26,19 +27,11 @@ Namespace Entities
                 .PreviousActivityAttributes = New Activity(ActivityType.Cancel, Me)
             }
             Me.SignalDirection = APIAdapter.TransactionType.None
+            Me.SignalGeneratedTime = _defaultDate
         End Sub
 
-        Private _TradingSymbol As String
         <Display(Name:="Symbol", Order:=0)>
-        Public ReadOnly Property TradingSymbol As String
-            Get
-                _TradingSymbol = ParentStrategyInstrument.TradableInstrument.TradingSymbol
-                Return _TradingSymbol
-            End Get
-        End Property
-        Public Function GetDirtyTradingSymbol() As String
-            Return _TradingSymbol
-        End Function
+        Public Property TradingSymbol As String
 
         Private _TotalExecutedOrders As Integer
         <Display(Name:="Total Executed Orders", Order:=1)>
@@ -69,11 +62,14 @@ Namespace Entities
         Public ReadOnly Property ActiveSignal As Boolean
             Get
                 If ParentStrategyInstrument.IsActiveInstrument() Then
-                    If Me.EntryActivity.RequestStatus = SignalStatusType.Handled OrElse
-                       Me.EntryActivity.RequestStatus = SignalStatusType.Activated OrElse
+                    If Me.EntryActivity.RequestStatus = SignalStatusType.Activated OrElse
                        Me.EntryActivity.RequestStatus = SignalStatusType.Running Then
                         _ActiveSignal = True
+                    Else
+                        _ActiveSignal = False
                     End If
+                Else
+                    _ActiveSignal = False
                 End If
                 Return _ActiveSignal
             End Get
@@ -225,10 +221,14 @@ Namespace Entities
 #Region "Activity"
         <Serializable>
         Public Class Activity
+
+            Private ReadOnly _defaultDate As Date = New Date(2000, 1, 1)
             Public Sub New(ByVal typeOfActivity As ActivityType, ByVal parentActivityDashboard As ActivityDashboard)
                 Me.TypeOfActivity = typeOfActivity
                 Me.ParentActivityDashboard = parentActivityDashboard
                 Me.RequestStatus = SignalStatusType.None
+                Me.RequestTime = _defaultDate
+                Me.ReceivedTime = _defaultDate
             End Sub
             Public ReadOnly Property TypeOfActivity As ActivityType
             Public ReadOnly Property ParentActivityDashboard As ActivityDashboard
