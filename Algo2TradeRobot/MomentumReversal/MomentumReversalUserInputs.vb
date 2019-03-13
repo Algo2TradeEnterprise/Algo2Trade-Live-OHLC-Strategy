@@ -118,10 +118,10 @@ Public Class MomentumReversalUserInputs
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
                                             maxLossPerTrade = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                            Throw New ApplicationException(String.Format("Max Loss Per Trade cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be blank for {0}", instrumentName))
+                                        Throw New ApplicationException(String.Format("Max Loss Per Trade cannot be blank for {0}", instrumentName))
                                     End If
                                 End If
                             Next
