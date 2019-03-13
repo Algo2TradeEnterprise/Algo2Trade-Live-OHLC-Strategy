@@ -99,7 +99,9 @@ Public Class MomentumReversalStrategyInstrument
         If Now < MRUserSettings.LastTradeEntryTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= MRUserSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Not IsActiveInstrument() AndAlso Me.GetTotalExecutedOrders() < MRUserSettings.InstrumentsData(instrumentName.ToUpper).NumberOfTrade AndAlso
-            Not IsAnyTradeExitedInCurrentTimeframeCandle(MRUserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) Then
+            Not IsAnyTradeExitedInCurrentTimeframeCandle(MRUserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) AndAlso
+            Me.ParentStrategy.GetTotalPL > Math.Abs(MRUserSettings.MaxLossPerDay) * -1 AndAlso
+            Me.ParentStrategy.GetTotalPL < Math.Abs(MRUserSettings.MaxProfitPerDay) Then
 
             Dim MRTradePrice As Decimal = Nothing
             Dim price As Decimal = Nothing
