@@ -226,6 +226,8 @@ Public Class MomentumReversalStrategy
             Return True
         ElseIf Me.GetTotalPL <= Math.Abs(CType(Me.UserSettings, MomentumReversalUserInputs).MaxLossPerDay) * -1 Then
             Return True
+        ElseIf Me.GetTotalPL >= Math.Abs(CType(Me.UserSettings, MomentumReversalUserInputs).MaxProfitPerDay) Then
+            Return True
         Else
             Return False
         End If

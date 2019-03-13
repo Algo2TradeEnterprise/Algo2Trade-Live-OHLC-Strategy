@@ -32,6 +32,8 @@ Partial Class frmAdvancedOptions
         Me.lblGetInformationDelay = New System.Windows.Forms.Label()
         Me.btnSaveDelaySettings = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
+        Me.dtpckrForceRestartTime = New System.Windows.Forms.DateTimePicker()
+        Me.lblForceRestartTime = New System.Windows.Forms.Label()
         Me.tabMain.SuspendLayout()
         Me.tabDelaySettings.SuspendLayout()
         Me.SuspendLayout()
@@ -47,6 +49,8 @@ Partial Class frmAdvancedOptions
         '
         'tabDelaySettings
         '
+        Me.tabDelaySettings.Controls.Add(Me.dtpckrForceRestartTime)
+        Me.tabDelaySettings.Controls.Add(Me.lblForceRestartTime)
         Me.tabDelaySettings.Controls.Add(Me.txtBackToBackOrderCoolOffDelay)
         Me.tabDelaySettings.Controls.Add(Me.lblBackToBackOrderCoolOffDelay)
         Me.tabDelaySettings.Controls.Add(Me.txtGetInformationDelay)
@@ -116,6 +120,26 @@ Partial Class frmAdvancedOptions
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
+        'dtpckrForceRestartTime
+        '
+        Me.dtpckrForceRestartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
+        Me.dtpckrForceRestartTime.Location = New System.Drawing.Point(268, 96)
+        Me.dtpckrForceRestartTime.Name = "dtpckrForceRestartTime"
+        Me.dtpckrForceRestartTime.ShowUpDown = True
+        Me.dtpckrForceRestartTime.Size = New System.Drawing.Size(134, 22)
+        Me.dtpckrForceRestartTime.TabIndex = 20
+        Me.dtpckrForceRestartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
+        '
+        'lblForceRestartTime
+        '
+        Me.lblForceRestartTime.AutoSize = True
+        Me.lblForceRestartTime.Location = New System.Drawing.Point(6, 98)
+        Me.lblForceRestartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblForceRestartTime.Name = "lblForceRestartTime"
+        Me.lblForceRestartTime.Size = New System.Drawing.Size(129, 17)
+        Me.lblForceRestartTime.TabIndex = 21
+        Me.lblForceRestartTime.Text = "Force Restart Time"
+        '
         'frmAdvancedOptions
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -143,4 +167,6 @@ Partial Class frmAdvancedOptions
     Friend WithEvents lblGetInformationDelay As Label
     Friend WithEvents txtBackToBackOrderCoolOffDelay As TextBox
     Friend WithEvents lblBackToBackOrderCoolOffDelay As Label
+    Friend WithEvents dtpckrForceRestartTime As DateTimePicker
+    Friend WithEvents lblForceRestartTime As Label
 End Class

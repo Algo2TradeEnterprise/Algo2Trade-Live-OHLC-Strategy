@@ -109,9 +109,14 @@ Public Class MomentumReversalStrategyInstrument
             Dim stoploss As Decimal = Nothing
             Dim quantity As Integer = Nothing
             If Me.TradableInstrument.RawInstrumentType.ToUpper = "FUT" Then
-                quantity = Me.TradableInstrument.LotSize
+                quantity = Me.TradableInstrument.LotSize * MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity
             Else
-                quantity = MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity
+                If MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Capital <> Decimal.MinValue AndAlso
+                    MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Capital > 0 Then
+                    quantity = Math.Floor(MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Capital / (Math.Floor(Me.TradableInstrument.LastTick.LastPrice / 13)))
+                Else
+                    quantity = MRUserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity
+                End If
             End If
 
             Dim benchmarkWicksSize As Double = runningCandlePayload.PreviousPayload.CandleRange * MRUserSettings.CandleWickSizePercentage / 100

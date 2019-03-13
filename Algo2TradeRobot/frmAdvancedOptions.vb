@@ -27,6 +27,7 @@ Public Class frmAdvancedOptions
         If _UserInputs IsNot Nothing Then
             txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
             txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
+            dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
         End If
     End Sub
 
@@ -34,12 +35,16 @@ Public Class frmAdvancedOptions
         If _UserInputs Is Nothing Then _UserInputs = New ControllerUserInputs
         _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
         _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
+        _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
         Utilities.Strings.SerializeFromCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename, _UserInputs)
     End Sub
 
     Private Sub ValidateInputs()
         ValidateNumbers(1, 1000, txtGetInformationDelay)
         ValidateNumbers(1, 1000, txtBackToBackOrderCoolOffDelay)
+        If dtpckrForceRestartTime.Value.Hour = 0 AndAlso dtpckrForceRestartTime.Value.Minute = 0 Then
+            Throw New ApplicationException("Force Restart Time can not be blank")
+        End If
     End Sub
 
     Private Function ValidateNumbers(ByVal startNumber As Integer, ByVal endNumber As Integer, ByVal inputTB As TextBox) As Boolean

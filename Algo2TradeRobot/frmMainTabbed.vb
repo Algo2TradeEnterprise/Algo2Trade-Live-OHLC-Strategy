@@ -2,6 +2,7 @@
 Imports NLog
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Controller
+Imports Algo2TradeCore.Exceptions
 Imports System.ComponentModel
 Imports Syncfusion.WinForms.DataGrid
 Imports Syncfusion.WinForms.DataGrid.Events
@@ -258,6 +259,7 @@ Public Class frmMainTabbed
     Private _commonController As APIStrategyController = Nothing
     Private _connection As IConnection = Nothing
     Private _commonControllerUserInput As ControllerUserInputs = Nothing
+    Private _lastException As Exception = Nothing
 #End Region
 
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
@@ -299,6 +301,7 @@ Public Class frmMainTabbed
 
         If _cts Is Nothing Then _cts = New CancellationTokenSource
         _cts.Token.ThrowIfCancellationRequested()
+        _lastException = Nothing
 
         Try
             EnableDisableUIEx(UIMode.Active, GetType(MomentumReversalStrategy))
@@ -313,7 +316,7 @@ Public Class frmMainTabbed
                 _MRUserInputs.InstrumentsData = Nothing
                 _MRUserInputs.FillInstrumentDetails(_MRUserInputs.InstrumentDetailsFilePath, _cts)
             Else
-                Throw New ApplicationException(String.Format("The following error occurred: {0}", "Settings file not found. Please complete your settings properly."))
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
@@ -429,6 +432,16 @@ Public Class frmMainTabbed
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
 
             Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            _lastException = fex
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -440,17 +453,32 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(MomentumReversalStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
         End Try
-        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-            If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-            _commonController = Nothing
-            _connection = Nothing
-            _cts = Nothing
-        End If
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         Await Task.Run(AddressOf MomentumReversalWorkerAsync).ConfigureAwait(False)
+        If _lastException IsNot Nothing Then
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnMomentumReversalStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                Debug.WriteLine("Restart for daily refresh")
+                logger.Debug("Restarting the application again for daily refresh")
+                btnMomentumReversalStart_Click(sender, e)
+            End If
+        End If
     End Sub
     Private Sub tmrMomentumReversalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMomentumReversalTickerStatus.Tick
         FlashTickerBulbEx(GetType(MomentumReversalStrategy))

@@ -1,6 +1,7 @@
 ﻿Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
+Imports Algo2TradeCore.Exceptions
 Imports NLog
 
 Namespace Adapter
@@ -59,7 +60,22 @@ Namespace Adapter
                     _cts.Token.ThrowIfCancellationRequested()
 
                     Try
+                        If Now >= Me.ParentController.UserInputs.ForceRestartTime AndAlso
+                            Now <= Me.ParentController.UserInputs.ForceRestartTime.AddSeconds(20) Then
+                            Await Task.Delay(1000 * 15, _cts.Token).ConfigureAwait(False)
+                            Throw New ForceExitException()
+                        End If
+
                         Await GetOrderUpdatesAsync().ConfigureAwait(False)
+                    Catch fex As ForceExitException
+                        logger.Error(fex)
+                        Me.ParentController.OrphanException = fex
+                    Catch aex As AdapterBusinessException
+                        logger.Error(aex)
+                        Select Case aex.ExceptionType
+                            Case AdapterBusinessException.TypeOfException.PermissionException
+                                Me.ParentController.OrphanException = aex
+                        End Select
                     Catch ex As Exception
                         'Neglect error as in the next minute, it will be run again,
                         'till that time tick based candles will be used
