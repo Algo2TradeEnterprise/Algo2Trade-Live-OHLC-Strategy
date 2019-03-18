@@ -45,7 +45,7 @@ Public Class OHLStrategy
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
         Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             '' Get all the futures instruments

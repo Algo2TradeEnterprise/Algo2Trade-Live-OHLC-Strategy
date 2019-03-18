@@ -86,7 +86,7 @@ Public Class OHLStrategyInstrument
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000).ConfigureAwait(False)
+                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
                 slDelayCtr += 1
             End While
         Catch ex As Exception
@@ -97,7 +97,7 @@ Public Class OHLStrategyInstrument
         End Try
     End Function
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim currentTime As Date = Now
         If TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
@@ -142,7 +142,7 @@ Public Class OHLStrategyInstrument
         Return ret
     End Function
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
             Dim currentTime As Date = Now

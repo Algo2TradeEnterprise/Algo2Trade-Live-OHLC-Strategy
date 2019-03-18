@@ -1,6 +1,4 @@
-﻿Imports System.ComponentModel
-Imports System.IO
-Imports System.Runtime.Serialization.Formatters.Binary
+﻿Imports System.IO
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
@@ -307,7 +305,7 @@ Namespace Strategies
 #End Region
 
 #Region "UI Refresh"
-        Public Async Function UIRefresh(ByVal associatedStrategyInstrument As StrategyInstrument) As Task
+        Public Async Function UIRefresh(ByVal associatedStrategyInstrument As StrategyInstrument, ByVal forceRefresh As Boolean) As Task
             Try
                 Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
                 If associatedStrategyInstrument IsNot Nothing AndAlso
@@ -318,31 +316,17 @@ Namespace Strategies
                                                      Return key.Substring(0, 4).Equals(String.Format("{0}{1}", Me.ParentStrategy.StrategyIdentifier, Me.ParentStrategy.ParentController.InstrumentMappingTable(associatedStrategyInstrument.TradableInstrument.InstrumentIdentifier).PadLeft(3, "0")))
                                                  End Function)
                     If currentInstrumentActivities IsNot Nothing AndAlso currentInstrumentActivities.Count > 0 Then
-                        'currentInstrumentActivities.Select(Function(x)
-                        '                                       If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
-                        '                                       associatedStrategyInstrument.TradableInstrument.LastTick.LastPrice <> x.Value.GetDirtyLastPrice Then
-                        '                                           x.Value.NotifyPropertyChanged("LastPrice")
-                        '                                           x.Value.NotifyPropertyChanged("SignalPL")
-                        '                                           x.Value.NotifyPropertyChanged("OverallPL")
-                        '                                           x.Value.NotifyPropertyChanged("TotalExecutedOrders")
-                        '                                           x.Value.NotifyPropertyChanged("ActiveInstrument")
-                        '                                       End If
-                        '                                       If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp <> x.Value.GetDirtyTimestamp Then x.Value.NotifyPropertyChanged("Timestamp")
-                        '                                       If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.HasValue AndAlso Utilities.Time.IsDateTimeEqualTillMinutes(associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp.Value, x.Value.GetDirtyLastCandleTime) Then x.Value.NotifyPropertyChanged("LastCandleTime")
-                        '                                       If associatedStrategyInstrument.TradableInstrument.TradingSymbol IsNot Nothing AndAlso associatedStrategyInstrument.TradableInstrument.TradingSymbol <> x.Value.GetDirtyTradingSymbol Then x.Value.NotifyPropertyChanged("TradingSymbol")
-                        '                                       Return True
-                        '                                   End Function)
                         For Each instrumentActivity In currentInstrumentActivities
-                            If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
-                               associatedStrategyInstrument.TradableInstrument.LastTick.LastPrice <> instrumentActivity.Value.GetDirtyLastPrice Then
+                            If forceRefresh OrElse (associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
+                               associatedStrategyInstrument.TradableInstrument.LastTick.LastPrice <> instrumentActivity.Value.GetDirtyLastPrice) Then
                                 instrumentActivity.Value.NotifyPropertyChanged("LastPrice")
                                 instrumentActivity.Value.NotifyPropertyChanged("SignalPL")
                                 instrumentActivity.Value.NotifyPropertyChanged("OverallPL")
                                 instrumentActivity.Value.NotifyPropertyChanged("TotalExecutedOrders")
                                 instrumentActivity.Value.NotifyPropertyChanged("ActiveSignal")
                             End If
-                            If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
-                                associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp <> instrumentActivity.Value.GetDirtyTimestamp Then
+                            If forceRefresh OrElse (associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso
+                                associatedStrategyInstrument.TradableInstrument.LastTick.Timestamp <> instrumentActivity.Value.GetDirtyTimestamp) Then
                                 instrumentActivity.Value.NotifyPropertyChanged("Timestamp")
                             End If
                             If associatedStrategyInstrument.TradableInstrument.LastTick IsNot Nothing AndAlso

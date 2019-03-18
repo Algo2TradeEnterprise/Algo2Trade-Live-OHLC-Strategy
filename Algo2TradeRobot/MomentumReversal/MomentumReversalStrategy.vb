@@ -43,7 +43,7 @@ Public Class MomentumReversalStrategy
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
         Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             'Get all the futures instruments
@@ -117,13 +117,8 @@ Public Class MomentumReversalStrategy
                     Dim runningTradableInstrument As IInstrument = Nothing
                     Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
                                                                                                          Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.RawInstrumentType = "FUT" AndAlso (x.Exchange = "NFO" OrElse x.Exchange = "MCX")
+                                                                                                             x.RawInstrumentType = "FUT" AndAlso (x.RawExchange = "NFO" OrElse x.RawExchange = "MCX")
                                                                                                      End Function)
-
-                    'Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                    '                                                                                     Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                    '                                                                                         x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX"
-                    '                                                                                 End Function)
 
                     Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
                                                                            If Not x.Expiry.Value.Date = Now.Date Then
@@ -221,12 +216,13 @@ Public Class MomentumReversalStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
+        Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(IInstrument.TypeOfExchage.NSE)
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
             Return True
-        ElseIf Me.GetTotalPL <= Math.Abs(CType(Me.UserSettings, MomentumReversalUserInputs).MaxLossPerDay) * -1 Then
+        ElseIf Me.GetTotalPL <= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxLossPercentagePerDay) * -1 / 100 Then
             Return True
-        ElseIf Me.GetTotalPL >= Math.Abs(CType(Me.UserSettings, MomentumReversalUserInputs).MaxProfitPerDay) Then
+        ElseIf Me.GetTotalPL >= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxProfitPercentagePerDay) / 100 Then
             Return True
         Else
             Return False

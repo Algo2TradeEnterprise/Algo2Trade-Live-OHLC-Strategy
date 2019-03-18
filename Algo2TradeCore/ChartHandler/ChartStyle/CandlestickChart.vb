@@ -23,7 +23,7 @@ Namespace ChartHandler.ChartStyle
             'logger.Debug("{0}->GetChartFromHistoricalAsync, parameters:{1}", Me.ToString, Utilities.Strings.JsonSerialize(historicalCandlesJSONDict))
             Try
                 While Interlocked.Read(_historicalLock) > 0
-                    Await Task.Delay(10).ConfigureAwait(False)
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
                 Interlocked.Increment(_historicalLock)
                 'Debug.WriteLine(String.Format("Process Historical before. Time:{0}, Lock:{1}", Now, _lock))
@@ -118,7 +118,7 @@ Namespace ChartHandler.ChartStyle
 
             Try
                 While Interlocked.Read(_tickLock) > 0
-                    Await Task.Delay(10).ConfigureAwait(False)
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
                 Interlocked.Increment(_tickLock)
 
@@ -240,7 +240,7 @@ Namespace ChartHandler.ChartStyle
 
         Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
             'logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim blockDateInThisTimeframe As New Date(currentPayload.SnapshotDateTime.Year,
                                                     currentPayload.SnapshotDateTime.Month,
                                                     currentPayload.SnapshotDateTime.Day,

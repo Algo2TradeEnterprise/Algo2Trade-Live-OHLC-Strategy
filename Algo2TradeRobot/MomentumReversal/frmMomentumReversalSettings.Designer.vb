@@ -27,6 +27,10 @@ Partial Class frmMomentumReversalSettings
         Me.btnSaveMomentumReversalSettings = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMaxProfitPercentagePerDay = New System.Windows.Forms.TextBox()
+        Me.lblMaxProfitPercentagePerDay = New System.Windows.Forms.Label()
+        Me.txtMaxLossPercentagePerDay = New System.Windows.Forms.TextBox()
+        Me.lblMaxLossPercentagePerDay = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -40,17 +44,13 @@ Partial Class frmMomentumReversalSettings
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.txtTargetMultiplier = New System.Windows.Forms.TextBox()
-        Me.txtMaxSLPercentage = New System.Windows.Forms.TextBox()
+        Me.txtCapitalProtectionPercentage = New System.Windows.Forms.TextBox()
         Me.txtCandleWickSizePercentage = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
         Me.lblTargetMultiplier = New System.Windows.Forms.Label()
-        Me.lblMaxSLPercentage = New System.Windows.Forms.Label()
+        Me.lblCapitalProtectionPercentage = New System.Windows.Forms.Label()
         Me.lblCandleWickSizePercentage = New System.Windows.Forms.Label()
         Me.opnFileMRSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.txtMaxLossPerDay = New System.Windows.Forms.TextBox()
-        Me.lblMaxLossPerDay = New System.Windows.Forms.Label()
-        Me.txtMaxProfitPerDay = New System.Windows.Forms.TextBox()
-        Me.lblMaxProfitPerDay = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -76,10 +76,10 @@ Partial Class frmMomentumReversalSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtMaxProfitPerDay)
-        Me.GroupBox1.Controls.Add(Me.lblMaxProfitPerDay)
-        Me.GroupBox1.Controls.Add(Me.txtMaxLossPerDay)
-        Me.GroupBox1.Controls.Add(Me.lblMaxLossPerDay)
+        Me.GroupBox1.Controls.Add(Me.txtMaxProfitPercentagePerDay)
+        Me.GroupBox1.Controls.Add(Me.lblMaxProfitPercentagePerDay)
+        Me.GroupBox1.Controls.Add(Me.txtMaxLossPercentagePerDay)
+        Me.GroupBox1.Controls.Add(Me.lblMaxLossPercentagePerDay)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
@@ -93,11 +93,11 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Controls.Add(Me.lblInstrumentDetails)
         Me.GroupBox1.Controls.Add(Me.txtSignalTimeFrame)
         Me.GroupBox1.Controls.Add(Me.txtTargetMultiplier)
-        Me.GroupBox1.Controls.Add(Me.txtMaxSLPercentage)
+        Me.GroupBox1.Controls.Add(Me.txtCapitalProtectionPercentage)
         Me.GroupBox1.Controls.Add(Me.txtCandleWickSizePercentage)
         Me.GroupBox1.Controls.Add(Me.lblSignalTimeFrame)
         Me.GroupBox1.Controls.Add(Me.lblTargetMultiplier)
-        Me.GroupBox1.Controls.Add(Me.lblMaxSLPercentage)
+        Me.GroupBox1.Controls.Add(Me.lblCapitalProtectionPercentage)
         Me.GroupBox1.Controls.Add(Me.lblCandleWickSizePercentage)
         Me.GroupBox1.Location = New System.Drawing.Point(4, 4)
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
@@ -106,6 +106,42 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Size = New System.Drawing.Size(451, 426)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
+        '
+        'txtMaxProfitPercentagePerDay
+        '
+        Me.txtMaxProfitPercentagePerDay.Location = New System.Drawing.Point(174, 237)
+        Me.txtMaxProfitPercentagePerDay.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxProfitPercentagePerDay.Name = "txtMaxProfitPercentagePerDay"
+        Me.txtMaxProfitPercentagePerDay.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxProfitPercentagePerDay.TabIndex = 26
+        '
+        'lblMaxProfitPercentagePerDay
+        '
+        Me.lblMaxProfitPercentagePerDay.AutoSize = True
+        Me.lblMaxProfitPercentagePerDay.Location = New System.Drawing.Point(8, 241)
+        Me.lblMaxProfitPercentagePerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxProfitPercentagePerDay.Name = "lblMaxProfitPercentagePerDay"
+        Me.lblMaxProfitPercentagePerDay.Size = New System.Drawing.Size(141, 17)
+        Me.lblMaxProfitPercentagePerDay.TabIndex = 27
+        Me.lblMaxProfitPercentagePerDay.Text = "Max Profit % Per Day"
+        '
+        'txtMaxLossPercentagePerDay
+        '
+        Me.txtMaxLossPercentagePerDay.Location = New System.Drawing.Point(174, 202)
+        Me.txtMaxLossPercentagePerDay.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxLossPercentagePerDay.Name = "txtMaxLossPercentagePerDay"
+        Me.txtMaxLossPercentagePerDay.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxLossPercentagePerDay.TabIndex = 24
+        '
+        'lblMaxLossPercentagePerDay
+        '
+        Me.lblMaxLossPercentagePerDay.AutoSize = True
+        Me.lblMaxLossPercentagePerDay.Location = New System.Drawing.Point(8, 206)
+        Me.lblMaxLossPercentagePerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxLossPercentagePerDay.Name = "lblMaxLossPercentagePerDay"
+        Me.lblMaxLossPercentagePerDay.Size = New System.Drawing.Size(138, 17)
+        Me.lblMaxLossPercentagePerDay.TabIndex = 25
+        Me.lblMaxLossPercentagePerDay.Text = "Max Loss % Per Day"
         '
         'dtpckrEODExitTime
         '
@@ -231,13 +267,13 @@ Partial Class frmMomentumReversalSettings
         Me.txtTargetMultiplier.Size = New System.Drawing.Size(256, 22)
         Me.txtTargetMultiplier.TabIndex = 4
         '
-        'txtMaxSLPercentage
+        'txtCapitalProtectionPercentage
         '
-        Me.txtMaxSLPercentage.Location = New System.Drawing.Point(174, 351)
-        Me.txtMaxSLPercentage.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxSLPercentage.Name = "txtMaxSLPercentage"
-        Me.txtMaxSLPercentage.Size = New System.Drawing.Size(256, 22)
-        Me.txtMaxSLPercentage.TabIndex = 7
+        Me.txtCapitalProtectionPercentage.Location = New System.Drawing.Point(174, 351)
+        Me.txtCapitalProtectionPercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtCapitalProtectionPercentage.Name = "txtCapitalProtectionPercentage"
+        Me.txtCapitalProtectionPercentage.Size = New System.Drawing.Size(256, 22)
+        Me.txtCapitalProtectionPercentage.TabIndex = 7
         '
         'txtCandleWickSizePercentage
         '
@@ -267,15 +303,15 @@ Partial Class frmMomentumReversalSettings
         Me.lblTargetMultiplier.TabIndex = 2
         Me.lblTargetMultiplier.Text = "Target Multiplier"
         '
-        'lblMaxSLPercentage
+        'lblCapitalProtectionPercentage
         '
-        Me.lblMaxSLPercentage.AutoSize = True
-        Me.lblMaxSLPercentage.Location = New System.Drawing.Point(7, 354)
-        Me.lblMaxSLPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxSLPercentage.Name = "lblMaxSLPercentage"
-        Me.lblMaxSLPercentage.Size = New System.Drawing.Size(107, 17)
-        Me.lblMaxSLPercentage.TabIndex = 1
-        Me.lblMaxSLPercentage.Text = "Max Stoploss %"
+        Me.lblCapitalProtectionPercentage.AutoSize = True
+        Me.lblCapitalProtectionPercentage.Location = New System.Drawing.Point(7, 354)
+        Me.lblCapitalProtectionPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblCapitalProtectionPercentage.Name = "lblCapitalProtectionPercentage"
+        Me.lblCapitalProtectionPercentage.Size = New System.Drawing.Size(135, 17)
+        Me.lblCapitalProtectionPercentage.TabIndex = 1
+        Me.lblCapitalProtectionPercentage.Text = "Capital Protection %"
         '
         'lblCandleWickSizePercentage
         '
@@ -289,42 +325,6 @@ Partial Class frmMomentumReversalSettings
         '
         'opnFileMRSettings
         '
-        '
-        'txtMaxLossPerDay
-        '
-        Me.txtMaxLossPerDay.Location = New System.Drawing.Point(174, 202)
-        Me.txtMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxLossPerDay.Name = "txtMaxLossPerDay"
-        Me.txtMaxLossPerDay.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxLossPerDay.TabIndex = 24
-        '
-        'lblMaxLossPerDay
-        '
-        Me.lblMaxLossPerDay.AutoSize = True
-        Me.lblMaxLossPerDay.Location = New System.Drawing.Point(8, 206)
-        Me.lblMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxLossPerDay.Name = "lblMaxLossPerDay"
-        Me.lblMaxLossPerDay.Size = New System.Drawing.Size(122, 17)
-        Me.lblMaxLossPerDay.TabIndex = 25
-        Me.lblMaxLossPerDay.Text = "Max Loss Per Day"
-        '
-        'txtMaxProfitPerDay
-        '
-        Me.txtMaxProfitPerDay.Location = New System.Drawing.Point(174, 237)
-        Me.txtMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxProfitPerDay.Name = "txtMaxProfitPerDay"
-        Me.txtMaxProfitPerDay.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxProfitPerDay.TabIndex = 26
-        '
-        'lblMaxProfitPerDay
-        '
-        Me.lblMaxProfitPerDay.AutoSize = True
-        Me.lblMaxProfitPerDay.Location = New System.Drawing.Point(8, 241)
-        Me.lblMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxProfitPerDay.Name = "lblMaxProfitPerDay"
-        Me.lblMaxProfitPerDay.Size = New System.Drawing.Size(125, 17)
-        Me.lblMaxProfitPerDay.TabIndex = 27
-        Me.lblMaxProfitPerDay.Text = "Max Profit Per Day"
         '
         'frmMomentumReversalSettings
         '
@@ -350,11 +350,11 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents GroupBox1 As GroupBox
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents txtTargetMultiplier As TextBox
-    Friend WithEvents txtMaxSLPercentage As TextBox
+    Friend WithEvents txtCapitalProtectionPercentage As TextBox
     Friend WithEvents txtCandleWickSizePercentage As TextBox
     Friend WithEvents lblSignalTimeFrame As Label
     Friend WithEvents lblTargetMultiplier As Label
-    Friend WithEvents lblMaxSLPercentage As Label
+    Friend WithEvents lblCapitalProtectionPercentage As Label
     Friend WithEvents lblCandleWickSizePercentage As Label
     Friend WithEvents ImageList1 As ImageList
     Friend WithEvents btnBrowse As Button
@@ -369,8 +369,8 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents dtpckrTradeStartTime As DateTimePicker
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents dtpckrLastTradeEntryTime As DateTimePicker
-    Friend WithEvents txtMaxProfitPerDay As TextBox
-    Friend WithEvents lblMaxProfitPerDay As Label
-    Friend WithEvents txtMaxLossPerDay As TextBox
-    Friend WithEvents lblMaxLossPerDay As Label
+    Friend WithEvents txtMaxProfitPercentagePerDay As TextBox
+    Friend WithEvents lblMaxProfitPercentagePerDay As Label
+    Friend WithEvents txtMaxLossPercentagePerDay As TextBox
+    Friend WithEvents lblMaxLossPercentagePerDay As Label
 End Class

@@ -36,20 +36,29 @@ Public Class frmMainTabbed
                 Catch sop As System.InvalidOperationException
                     logger.Error(sop)
                 End Try
-                Await Task.Delay(500).ConfigureAwait(False)
+                Await Task.Delay(500, _cts.Token).ConfigureAwait(False)
             End While
         End If
     End Sub
 
     Delegate Sub BindingListAdd_Delegate(ByVal [src] As BindingList(Of ActivityDashboard), ByVal [value] As ActivityDashboard)
-    Public Sub BindingListAdd_ThreadSafe(ByVal [src] As BindingList(Of ActivityDashboard), ByVal [value] As ActivityDashboard)
+    Public Async Sub BindingListAdd_ThreadSafe(ByVal [src] As BindingList(Of ActivityDashboard), ByVal [value] As ActivityDashboard)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
         ' If these threads are different, it returns true.  
         If Me.InvokeRequired Then
             Dim MyDelegate As New BindingListAdd_Delegate(AddressOf BindingListAdd_ThreadSafe)
             Me.Invoke(MyDelegate, New Object() {[src], [value]})
         Else
-            [src].Add([value])
+            '[src].Add([value])
+            While True
+                Try
+                    [src].Insert(0, [value])
+                    Exit While
+                Catch ex As Exception
+                    logger.Error(ex)
+                End Try
+                Await Task.Delay(500, _cts.Token).ConfigureAwait(False)
+            End While
         End If
     End Sub
 
@@ -61,15 +70,8 @@ Public Class frmMainTabbed
             Dim MyDelegate As New SetSFGridFreezFirstColumn_Delegate(AddressOf SetSFGridFreezFirstColumn_ThreadSafe)
             Me.Invoke(MyDelegate, New Object() {[grd]})
         Else
-            While True
-                Try
-                    [grd].FrozenColumnCount = 1
-                    Exit While
-                Catch sop As System.InvalidOperationException
-                    logger.Error(sop)
-                End Try
-                Await Task.Delay(500).ConfigureAwait(False)
-            End While
+            [grd].FrozenColumnCount = 1
+            'Await Task.Delay(500).ConfigureAwait(False)
         End If
     End Sub
 
@@ -391,7 +393,7 @@ Public Class frmMainTabbed
                         Else
                             OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000).ConfigureAwait(False)
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
@@ -466,6 +468,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
+        PreviousDayCleanup()
         Await Task.Run(AddressOf MomentumReversalWorkerAsync).ConfigureAwait(False)
         If _lastException IsNot Nothing Then
             If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
@@ -596,7 +599,7 @@ Public Class frmMainTabbed
                         Else
                             OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000).ConfigureAwait(False)
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
@@ -653,6 +656,7 @@ Public Class frmMainTabbed
         End If
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
+        PreviousDayCleanup()
         Await Task.Run(AddressOf OHLStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
@@ -764,7 +768,7 @@ Public Class frmMainTabbed
                         Else
                             OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                             _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000).ConfigureAwait(False)
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
                         End If
                     Else
@@ -821,6 +825,7 @@ Public Class frmMainTabbed
         End If
     End Function
     Private Async Sub btnAmiSignalStart_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStart.Click
+        PreviousDayCleanup()
         Await Task.Run(AddressOf AmiSignalStartWorkerAsync).ConfigureAwait(False)
     End Sub
     Private Sub tmrAmiSignalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrAmiSignalTickerStatus.Tick
@@ -950,11 +955,11 @@ Public Class frmMainTabbed
 
         tmrTickerStatusCommon.Enabled = False
 
-        Dim trialEndDate As Date = New Date(2019, 3, 16, 0, 0, 0)
-        If Now() >= trialEndDate Then
-            MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-            End
-        End If
+        'Dim trialEndDate As Date = New Date(2019, 3, 16, 0, 0, 0)
+        'If Now() >= trialEndDate Then
+        '    MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+        '    End
+        'End If
 
         If tmrTickerStatusCommon.Interval = 700 Then
             tmrTickerStatusCommon.Interval = 2000
@@ -1059,6 +1064,23 @@ Public Class frmMainTabbed
                     SetListAddItem_ThreadSafe(lstAmiSignalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
+    End Sub
+    Private Sub PreviousDayCleanup()
+        Try
+            Dim todayDate As String = Now.ToString("yy_MM_dd")
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.Instruments.a2t")
+                If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+            Next
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.ActivityDashboard.a2t")
+                If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+            Next
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.Margin.a2t")
+                If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+            Next
+        Catch ex As Exception
+            logger.Error(ex)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        End Try
     End Sub
 #End Region
 

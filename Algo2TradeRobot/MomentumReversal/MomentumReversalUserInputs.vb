@@ -19,7 +19,9 @@ Public Class MomentumReversalUserInputs
         Public Quantity As Integer
         Public Capital As Decimal
         Public NumberOfTrade As Integer
-        Public MaxLossPerTrade As Decimal
+        Public MaxTargetPercentagePerTrade As Decimal
+        Public MaxLossPerStock As Decimal
+        Public MaxProfitPerStock As Decimal
     End Class
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
@@ -31,7 +33,7 @@ Public Class MomentumReversalUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL", "NUMBER OF TRADE", "MAX LOSS PER TRADE"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL", "NUMBER OF TRADE", "MAX TARGET % PER TRADE", "MAX LOSS PER STOCK", "MAX PROFIT PER STOCK"}
 
                         For colCtr = 0 To 6
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -49,7 +51,9 @@ Public Class MomentumReversalUserInputs
                             Dim quantity As Integer = Integer.MinValue
                             Dim capital As Decimal = Decimal.MinValue
                             Dim numberOfTrade As Integer = Integer.MinValue
-                            Dim maxLossPerTrade As Decimal = Decimal.MinValue
+                            Dim maxTargetPercentagePerTrade As Decimal = Decimal.MinValue
+                            Dim maxLossPerStock As Decimal = Decimal.MinValue
+                            Dim maxProfitPerStock As Decimal = Decimal.MinValue
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -116,12 +120,47 @@ Public Class MomentumReversalUserInputs
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            maxLossPerTrade = instrumentDetails(rowCtr, columnCtr)
+                                            If Val(instrumentDetails(rowCtr, columnCtr)) >= 0 AndAlso
+                                                Val(instrumentDetails(rowCtr, columnCtr)) <= 100 Then
+                                                maxTargetPercentagePerTrade = instrumentDetails(rowCtr, columnCtr)
+                                            Else
+                                                Throw New ApplicationException(String.Format("Max Target Percentage Per Trade cannot be <{0} and >{1} for {2}", 0, 100, instrumentName))
+                                            End If
                                         Else
-                                            Throw New ApplicationException(String.Format("Max Loss Per Trade cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                            Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    End If
+                                ElseIf columnCtr = 7 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            If Val(instrumentDetails(rowCtr, columnCtr)) >= Decimal.MinValue AndAlso
+                                                Val(instrumentDetails(rowCtr, columnCtr)) <= Decimal.MaxValue Then
+                                                maxLossPerStock = instrumentDetails(rowCtr, columnCtr)
+                                            Else
+                                                Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be <{0} and >{1} for {2}", Decimal.MinValue, Decimal.MaxValue, instrumentName))
+                                            End If
+                                        Else
+                                            Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Max Loss Per Trade cannot be blank for {0}", instrumentName))
+                                        Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be blank for {0}", instrumentName))
+                                    End If
+                                ElseIf columnCtr = 8 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            If Val(instrumentDetails(rowCtr, columnCtr)) >= 0 AndAlso
+                                                Val(instrumentDetails(rowCtr, columnCtr)) <= Decimal.MaxValue Then
+                                                maxProfitPerStock = instrumentDetails(rowCtr, columnCtr)
+                                            Else
+                                                Throw New ApplicationException(String.Format("Max Profit Per Stock cannot be <{0} and >{1} for {2}", 0, Decimal.MaxValue, instrumentName))
+                                            End If
+                                        Else
+                                            Throw New ApplicationException(String.Format("Max Profit Per Stock cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Max Profit Per Stock cannot be blank for {0}", instrumentName))
                                     End If
                                 End If
                             Next
@@ -143,7 +182,9 @@ Public Class MomentumReversalUserInputs
                                 instrumentData.Quantity = quantity
                                 instrumentData.Capital = capital
                                 instrumentData.NumberOfTrade = numberOfTrade
-                                instrumentData.MaxLossPerTrade = maxLossPerTrade
+                                instrumentData.MaxTargetPercentagePerTrade = maxTargetPercentagePerTrade
+                                instrumentData.MaxLossPerStock = maxLossPerStock
+                                instrumentData.MaxProfitPerStock = maxProfitPerStock
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, MomentumReversalUserInputs.InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.InstrumentName) Then
                                     Throw New ApplicationException(String.Format("Duplicate Instrument Name {0}", instrumentData.InstrumentName))

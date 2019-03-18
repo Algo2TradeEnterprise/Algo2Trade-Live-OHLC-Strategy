@@ -44,7 +44,7 @@ Public Class AmiSignalStrategy
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
         Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             ''Get all the futures instruments
@@ -185,7 +185,7 @@ Public Class AmiSignalStrategy
                     server.Start()
                     'flag = False
                 End Try
-                Await Task.Delay(100).ConfigureAwait(False)
+                Await Task.Delay(100, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
@@ -207,7 +207,7 @@ Public Class AmiSignalStrategy
     End Function
     Private Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
         logger.Debug("PopulateExternalSignalAsync, parameters:{0}", signal)
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
             Dim signalarr() As String = signal.Trim.Split(" ")
             If signalarr.Count > 2 Then

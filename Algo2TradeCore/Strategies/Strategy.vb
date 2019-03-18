@@ -1,6 +1,4 @@
-﻿Imports System.IO
-Imports System.Runtime.Serialization.Formatters.Binary
-Imports System.Threading
+﻿Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
@@ -181,7 +179,7 @@ Namespace Strategies
                     Else
                         delayCtr = 0
                     End If
-                    Await Task.Delay(1000).ConfigureAwait(False)
+                    Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
                 End While
             Catch ex As Exception
                 'To log exceptions getting created from this function as the bubble up of the exception

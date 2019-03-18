@@ -1,6 +1,4 @@
-﻿Imports System.ComponentModel
-Imports System.ComponentModel.DataAnnotations
-Imports System.Net.Http
+﻿Imports System.Net.Http
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
@@ -9,7 +7,6 @@ Imports NLog
 Imports Utilities
 Imports Utilities.ErrorHandlers
 Imports Utilities.Numbers.NumberManipulation
-Imports Algo2TradeCore.ChartHandler.ChartStyle
 
 Namespace Strategies
     Public MustInherit Class StrategyInstrument
@@ -105,10 +102,7 @@ Namespace Strategies
             _cts = canceller
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
         End Sub
-
-        <System.ComponentModel.Browsable(False)>
         Public Property ParentStrategy As Strategy
-        <System.ComponentModel.Browsable(False)>
         Public Property TradableInstrument As IInstrument
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
         Public Property RawPayloadConsumers As List(Of IPayloadConsumer)
@@ -322,13 +316,22 @@ Namespace Strategies
                     plOfDay += parentBusinessOrder.ParentOrder.AveragePrice * parentBusinessOrder.ParentOrder.Quantity
                 End If
                 If calculateWithLTP AndAlso parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = "COMPLETE" Then
+                    Dim quantityToCalculate As Integer = parentBusinessOrder.ParentOrder.Quantity
+                    If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                        quantityToCalculate = 0
+                        For Each slOrder In parentBusinessOrder.SLOrder
+                            If Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "COMPLETE" Then
+                                quantityToCalculate += slOrder.Quantity
+                            End If
+                        Next
+                    End If
                     If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                        plOfDay += Me.TradableInstrument.LastTick.LastPrice * parentBusinessOrder.ParentOrder.Quantity
+                        plOfDay += Me.TradableInstrument.LastTick.LastPrice * quantityToCalculate
                     ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                        plOfDay += Me.TradableInstrument.LastTick.LastPrice * parentBusinessOrder.ParentOrder.Quantity * -1
+                        plOfDay += Me.TradableInstrument.LastTick.LastPrice * quantityToCalculate * -1
                     End If
                 End If
-                Return plOfDay
+                Return plOfDay * Me.TradableInstrument.QuantityMultiplier
             Else
                 Return 0
             End If
@@ -385,7 +388,7 @@ Namespace Strategies
             'Date.Parse(timeOfOrder).Subtract(Date.Parse(Now.Date)).TotalSeconds)))
         End Function
         Public Overridable Async Function HandleTickTriggerToUIETCAsync() As Task
-            Await Me.ParentStrategy.SignalManager.UIRefresh(Me).ConfigureAwait(False)
+            Await Me.ParentStrategy.SignalManager.UIRefresh(Me, False).ConfigureAwait(False)
         End Function
         Public Overridable Async Function PopulateChartAndIndicatorsAsync(ByVal candleCreator As Chart, ByVal currentCandle As OHLCPayload) As Task
             'logger.Debug("PopulateChartAndIndicatorsAsync, parameters:{0},{1}", candleCreator.ToString, currentCandle.ToString)
@@ -401,7 +404,7 @@ Namespace Strategies
         End Function
         Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IBusinessOrder) As Task
             'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             'If OrderDetails.ContainsKey(orderData.ParentOrderIdentifier) Then
             '    orderData.SignalCandle = OrderDetails(orderData.ParentOrderIdentifier).SignalCandle
@@ -522,6 +525,7 @@ Namespace Strategies
                     End If
                 End If
             End If
+            Await Me.ParentStrategy.SignalManager.UIRefresh(Me, True).ConfigureAwait(False)
         End Function
         'Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IOrder) As Task
         '    'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(order))
@@ -621,7 +625,7 @@ Namespace Strategies
                         apiConnectionBeingUsed = Me.ParentStrategy.ParentController.APIConnection
                         _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Waiting for fresh token before running command:{0}", command.ToString)
-                        Await Task.Delay(500).ConfigureAwait(False)
+                        Await Task.Delay(500, _cts.Token).ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                     End While
                     _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentController.APIConnection.AccessToken)
@@ -643,7 +647,7 @@ Namespace Strategies
                                     Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
+                                    placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                        tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                        transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                        quantity:=placeOrderTrigger.Item2.Quantity,
@@ -827,7 +831,7 @@ Namespace Strategies
                                     Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
+                                    placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                     transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                     quantity:=placeOrderTrigger.Item2.Quantity,
@@ -866,7 +870,7 @@ Namespace Strategies
                                     Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.Exchange,
+                                    placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                     transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                     quantity:=placeOrderTrigger.Item2.Quantity,

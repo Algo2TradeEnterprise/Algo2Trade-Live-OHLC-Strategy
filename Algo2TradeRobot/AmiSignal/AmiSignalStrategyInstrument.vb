@@ -71,7 +71,7 @@ Public Class AmiSignalStrategyInstrument
                     ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000).ConfigureAwait(False)
+                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
@@ -81,7 +81,7 @@ Public Class AmiSignalStrategyInstrument
         End Try
     End Function
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 0, 0)
 
@@ -134,7 +134,7 @@ Public Class AmiSignalStrategyInstrument
         Return ret
     End Function
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         Throw New NotImplementedException
         Return ret
@@ -156,7 +156,7 @@ Public Class AmiSignalStrategyInstrument
 
     Private Async Function DeleteProcessedOrderAsync(ByVal orderData As IBusinessOrder) As Task
         'logger.Debug("DeleteProcessedOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
 
         If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 Then
@@ -178,7 +178,7 @@ Public Class AmiSignalStrategyInstrument
 
     Public Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
         logger.Info("PopulateExternalSignalAsync, parameters:{0}", signal)
-        Await Task.Delay(0).ConfigureAwait(False)
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim currentSignal As AmiSignal = Nothing
         If EntrySignals Is Nothing Then EntrySignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
         If ExitSignals Is Nothing Then ExitSignals = New Concurrent.ConcurrentDictionary(Of String, AmiSignal)
@@ -203,7 +203,7 @@ Public Class AmiSignalStrategyInstrument
                         If Not exitSignal Then
                             exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
                         End If
-                        Await Task.Delay(100).ConfigureAwait(False)
+                        Await Task.Delay(100, _cts.Token).ConfigureAwait(False)
                     End While
                 End If
                 If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then
@@ -249,7 +249,7 @@ Public Class AmiSignalStrategyInstrument
                         If Not exitSignal Then
                             exitSignal = Await GenerateExitSignalAsync().ConfigureAwait(False)
                         End If
-                        Await Task.Delay(100).ConfigureAwait(False)
+                        Await Task.Delay(100, _cts.Token).ConfigureAwait(False)
                     End While
                 End If
                 If Me.ParentStrategy.GetNumberActiveInstruments() >= CType(Me.ParentStrategy.UserSettings, AmiSignalUserInputs).NumberOfTrade Then

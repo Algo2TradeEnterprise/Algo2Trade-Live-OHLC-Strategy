@@ -123,6 +123,7 @@ Namespace Controller
         Protected _AllStrategies As List(Of Strategy)
         Protected _subscribedStrategyInstruments As Dictionary(Of String, Concurrent.ConcurrentBag(Of StrategyInstrument))
         Protected _rawPayloadCreators As Dictionary(Of String, CandleStickChart)
+        Protected _userMarginFilename As String
         Private _lastGetOrderTime As Date
         Public Sub New(ByVal validatedUser As IUser,
                        ByVal associatedBrokerSource As APISource,
@@ -133,6 +134,7 @@ Namespace Controller
             UserInputs = associatedUserInputs
             _cts = canceller
             _LoginThreads = 0
+            _userMarginFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("UserMargin_{0}.Margin.a2t", Now.ToString("yy_MM_dd")))
         End Sub
         Public MustOverride Function GetErrorResponse(ByVal response As Object) As String
         Public MustOverride Async Function CloseTickerIfConnectedAsync() As Task
@@ -165,7 +167,7 @@ Namespace Controller
                         apiConnectionBeingUsed = Me.APIConnection
                         _cts.Token.ThrowIfCancellationRequested()
                         logger.Debug("Waiting for fresh token before running command:{0}", command.ToString)
-                        Await Task.Delay(500).ConfigureAwait(False)
+                        Await Task.Delay(500, _cts.Token).ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                     End While
 
@@ -222,6 +224,20 @@ Namespace Controller
                                 ret = allOrderResponse
                                 _cts.Token.ThrowIfCancellationRequested()
                                 Exit For
+                            Case ExecutionCommands.GetUserMargins
+                                Dim userMarginResponse As Dictionary(Of IInstrument.TypeOfExchage, IUserMargin) = Nothing
+                                userMarginResponse = Await _APIAdapter.GetUserMarginsAsync.ConfigureAwait(False)
+                                If userMarginResponse IsNot Nothing AndAlso userMarginResponse.Count > 0 Then
+                                    logger.Debug("Getting userMarginResponse is complete, count:{0}", userMarginResponse.Count)
+                                    lastException = Nothing
+                                    allOKWithoutException = True
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    ret = userMarginResponse
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Exit For
+                                Else
+                                    Throw New ApplicationException(String.Format("Getting user margin did not succeed"))
+                                End If
                         End Select
                     Catch aex As AdapterBusinessException
                         logger.Error(aex)
@@ -355,6 +371,7 @@ Namespace Controller
         Protected MustOverride Function GetLoginURL() As String
         Public MustOverride Async Function LoginAsync() As Task(Of IConnection)
         Public MustOverride Async Function PrepareToRunStrategyAsync() As Task(Of Boolean)
+        Protected MustOverride Async Function FillQuantityMultiplierMapAsync() As Task
         Public MustOverride Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
         Public MustOverride Overloads Async Function GetOrderDetailsAsync() As Task(Of Concurrent.ConcurrentBag(Of IBusinessOrder))
         Public Sub FillCandlestickCreator()
@@ -462,6 +479,28 @@ Namespace Controller
             Next
             'Serialize collection
             Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of String, String))(filePath, InstrumentMappingTable)
+        End Function
+        Protected Overridable Async Function FillUserStartingMargin(ByVal filename As String) As Task
+            _cts.Token.ThrowIfCancellationRequested()
+            If File.Exists(filename) Then
+                _currentUser.DaysStartingCapitals = Utilities.Strings.DeserializeToCollection(Of IUser)(filename).DaysStartingCapitals
+            Else
+                Dim execCommand As ExecutionCommands = ExecutionCommands.GetUserMargins
+                Dim userMarginResponses As Dictionary(Of IInstrument.TypeOfExchage, IUserMargin) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+                If userMarginResponses IsNot Nothing AndAlso userMarginResponses.Count > 0 Then
+                    _cts.Token.ThrowIfCancellationRequested()
+                    For Each userMarginResponse In userMarginResponses
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If _currentUser.DaysStartingCapitals Is Nothing Then _currentUser.DaysStartingCapitals = New Dictionary(Of IInstrument.TypeOfExchage, Decimal)
+                        _currentUser.DaysStartingCapitals.Add(userMarginResponse.Key, userMarginResponse.Value.NetAmount)
+                    Next
+                End If
+                Utilities.Strings.SerializeFromCollection(Of IUser)(_userMarginFilename, _currentUser)
+            End If
+        End Function
+        Public Function GetUserMargin() As Dictionary(Of IInstrument.TypeOfExchage, Decimal)
+            Return _currentUser.DaysStartingCapitals
         End Function
     End Class
 End Namespace

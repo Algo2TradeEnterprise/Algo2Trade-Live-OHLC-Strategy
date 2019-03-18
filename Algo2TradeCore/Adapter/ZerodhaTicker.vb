@@ -18,7 +18,7 @@ Namespace Adapter
         Public Overrides Async Function ConnectTickerAsync() As Task
             logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
 
             If _ticker IsNot Nothing Then
@@ -52,7 +52,7 @@ Namespace Adapter
         Public Overrides Async Function SubscribeAsync(ByVal instrumentIdentifiers As List(Of String)) As Task
             logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             If _subscribedInstruments Is Nothing Then _subscribedInstruments = New List(Of String)
             Dim subscriptionList() As UInt32 = Nothing
 

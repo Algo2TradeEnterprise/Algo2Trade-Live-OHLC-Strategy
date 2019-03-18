@@ -39,11 +39,11 @@ Public Class frmMomentumReversalSettings
             dtpckrLastTradeEntryTime.Value = _MRSettings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _MRSettings.EODExitTime
             txtTargetMultiplier.Text = _MRSettings.TargetMultiplier
-            txtMaxLossPerDay.Text = _MRSettings.MaxLossPerDay
-            txtMaxProfitPerDay.Text = _MRSettings.MaxProfitPerDay
+            txtMaxLossPercentagePerDay.Text = _MRSettings.MaxLossPercentagePerDay
+            txtMaxProfitPercentagePerDay.Text = _MRSettings.MaxProfitPercentagePerDay
             txtCandleWickSizePercentage.Text = _MRSettings.CandleWickSizePercentage
             txtMinCandleRangePercentage.Text = _MRSettings.MinCandleRangePercentage
-            txtMaxSLPercentage.Text = _MRSettings.MaxCapitalProtectionPercentage
+            txtCapitalProtectionPercentage.Text = _MRSettings.MaxCapitalProtectionPercentage
             txtInstrumentDetalis.Text = _MRSettings.InstrumentDetailsFilePath
         End If
     End Sub
@@ -53,11 +53,11 @@ Public Class frmMomentumReversalSettings
         _MRSettings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _MRSettings.EODExitTime = dtpckrEODExitTime.Value
         _MRSettings.TargetMultiplier = txtTargetMultiplier.Text
-        _MRSettings.MaxLossPerDay = txtMaxLossPerDay.Text
-        _MRSettings.MaxProfitPerDay = txtMaxProfitPerDay.Text
+        _MRSettings.MaxLossPercentagePerDay = txtMaxLossPercentagePerDay.Text
+        _MRSettings.MaxProfitPercentagePerDay = txtMaxProfitPercentagePerDay.Text
         _MRSettings.CandleWickSizePercentage = txtCandleWickSizePercentage.Text
         _MRSettings.MinCandleRangePercentage = txtMinCandleRangePercentage.Text
-        _MRSettings.MaxCapitalProtectionPercentage = txtMaxSLPercentage.Text
+        _MRSettings.MaxCapitalProtectionPercentage = txtCapitalProtectionPercentage.Text
         _MRSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         Utilities.Strings.SerializeFromCollection(Of MomentumReversalUserInputs)(_MRSettingsFilename, _MRSettings)
@@ -78,11 +78,11 @@ Public Class frmMomentumReversalSettings
     Private Sub ValidateInputs()
         ValidateNumbers(0, 100, txtCandleWickSizePercentage)
         ValidateNumbers(0, 100, txtMinCandleRangePercentage)
-        ValidateNumbers(0, 100, txtMaxSLPercentage)
+        ValidateNumbers(0, 100, txtCapitalProtectionPercentage)
         ValidateNumbers(0, 999, txtTargetMultiplier)
         ValidateNumbers(1, 60, txtSignalTimeFrame)
-        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerDay)
-        ValidateNumbers(0, Decimal.MaxValue, txtMaxProfitPerDay)
+        ValidateNumbers(0, 100, txtMaxLossPercentagePerDay)
+        ValidateNumbers(0, 100, txtMaxProfitPercentagePerDay)
         ValidateFile()
     End Sub
 

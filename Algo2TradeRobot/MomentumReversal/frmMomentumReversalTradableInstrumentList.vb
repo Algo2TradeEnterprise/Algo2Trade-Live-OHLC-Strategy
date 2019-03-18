@@ -21,7 +21,7 @@ Public Class frmMomentumReversalTradableInstrumentList
             For Each instrument In _TradableInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
-                row("Exchange") = instrument.TradableInstrument.Exchange
+                row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize

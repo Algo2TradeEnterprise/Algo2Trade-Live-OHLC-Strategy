@@ -16,29 +16,28 @@ Namespace Adapter
 
         Protected _Kite As Kite
         Public Sub New(ByVal associatedParentController As ZerodhaStrategyController,
-               ByVal canceller As CancellationTokenSource)
+                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, canceller)
             _Kite = New Kite(APIKey:=CType(associatedParentController.APIConnection, ZerodhaConnection).ZerodhaUser.APIKey,
                              AccessToken:=CType(associatedParentController.APIConnection, ZerodhaConnection).AccessToken,
                              Debug:=False)
             _Kite.SetSessionExpiryHook(AddressOf associatedParentController.OnSessionExpireAsync)
+            Calculator = New ZerodhaBrokerageCalculator(Me.ParentController, canceller)
         End Sub
-        Public Overrides Async Function CalculatePLWithBrokerageAsync(ByVal stockName As String,
-                                                           ByVal buy As Double,
-                                                           ByVal sell As Double,
-                                                           ByVal quantity As Integer,
-                                                           ByVal exchange As String) As Task(Of Decimal)
+        Public Overrides Function CalculatePLWithBrokerage(ByVal intrument As IInstrument,
+                                                            ByVal buy As Double,
+                                                            ByVal sell As Double,
+                                                            ByVal quantity As Integer,
+                                                            ByVal exchange As String) As Decimal
             Dim ret As Decimal = Nothing
-            Dim calculator As APIBrokerageCalculator = New ZerodhaBrokerageCalculator(_cts)
             Dim brokerageAttributes As IBrokerageAttributes = Nothing
             Select Case exchange
                 Case "NSE"
-                    brokerageAttributes = calculator.GetIntradayEquityBrokerage(buy, sell, quantity)
+                    brokerageAttributes = Calculator.GetIntradayEquityBrokerage(buy, sell, quantity)
                 Case "NFO"
-                    brokerageAttributes = calculator.GetIntradayEquityFuturesBrokerage(buy, sell, quantity)
+                    brokerageAttributes = Calculator.GetIntradayEquityFuturesBrokerage(buy, sell, quantity)
                 Case "MCX"
-                    stockName = stockName.Remove(stockName.Count - 8)
-                    brokerageAttributes = Await calculator.GetIntradayCommodityFuturesBrokerageAsync(stockName, buy, sell, quantity).ConfigureAwait(False)
+                    brokerageAttributes = Calculator.GetIntradayCommodityFuturesBrokerage(intrument, buy, sell, quantity)
                 Case Else
                     Throw New NotImplementedException("Calculator not implemented")
             End Select
@@ -279,6 +278,64 @@ Namespace Adapter
                 End If
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of IInstrument.TypeOfExchage, IUserMargin))
+            'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            Dim ret As Dictionary(Of IInstrument.TypeOfExchage, IUserMargin) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetUserMargins
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(UserMarginsResponse) Then
+                'OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
+                logger.Debug(String.Format("Creating IBussinessUserMargin from API User Margin", Utils.JsonSerialize(tempRet)))
+                Dim zerodhaReturedUserMarginResponse As UserMarginsResponse = CType(tempRet, UserMarginsResponse)
+                Dim equityMargin As New ZerodhaUserMargin With
+                    {.WrappedUserMargin = zerodhaReturedUserMarginResponse.Equity}
+                Dim commodityMargin As New ZerodhaUserMargin With
+                    {.WrappedUserMargin = zerodhaReturedUserMarginResponse.Commodity}
+                If ret Is Nothing Then ret = New Dictionary(Of IInstrument.TypeOfExchage, IUserMargin)
+                ret.Add(IInstrument.TypeOfExchage.NSE, equityMargin)
+                ret.Add(IInstrument.TypeOfExchage.MCX, commodityMargin)
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return any User margin, command:{0}", execCommand.ToString))
             End If
             Return ret
         End Function
@@ -906,6 +963,19 @@ Namespace Adapter
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = New Dictionary(Of String, Object) From {{command.ToString, instruments}}
+                Case ExecutionCommands.GetUserMargins
+                    Dim userMargins As UserMarginsResponse = Nothing
+                    userMargins = Await Task.Factory.StartNew(Function()
+                                                                  Try
+                                                                      Return _Kite.GetMargins()
+                                                                  Catch ex As Exception
+                                                                      logger.Error(ex)
+                                                                      lastException = ex
+                                                                      Return Nothing
+                                                                  End Try
+                                                              End Function).ConfigureAwait(False)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    ret = New Dictionary(Of String, Object) From {{command.ToString, userMargins}}
                 Case ExecutionCommands.InvalidateAccessToken
                     Dim invalidateToken = _Kite.InvalidateAccessToken(CType(ParentController.APIConnection, ZerodhaConnection).AccessToken)
                     lastException = Nothing

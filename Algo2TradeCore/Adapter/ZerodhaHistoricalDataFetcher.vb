@@ -22,7 +22,7 @@ Namespace Adapter
         Public Event FetcherError(ByVal instrumentIdentifier As String, ByVal msg As String)
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Async Function OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             RaiseEvent FetcherCandles(instrumentIdentifier, historicalCandlesJSONDict)
         End Function
         Protected Overridable Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal msg As String)
@@ -49,7 +49,7 @@ Namespace Adapter
         Public Overrides Async Function ConnectFetcherAsync() As Task
             'logger.Debug("{0}->ConnectTickerAsync, parameters:Nothing", Me.ToString)
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             'Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
 
             'RemoveHandler Me.FetcherCandlesAsync, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
@@ -157,7 +157,7 @@ Namespace Adapter
                         If _stopPollRunning Then
                             Exit While
                         End If
-                        Await Task.Delay(1000).ConfigureAwait(False)
+                        Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
                     End While
                 End While
             Catch ex As Exception
@@ -171,7 +171,7 @@ Namespace Adapter
         Public Overrides Async Function SubscribeAsync(ByVal tradableInstruments As IEnumerable(Of IInstrument), ByVal maxNumberOfDays As Integer) As Task
             'logger.Debug("{0}->SubscribeAsync, instrumentIdentifiers:{1}", Me.ToString, Utils.JsonSerialize(instrumentIdentifiers))
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             If _subscribedInstruments Is Nothing Then
                 _subscribedInstruments = New Concurrent.ConcurrentBag(Of IInstrument)
             End If
@@ -209,7 +209,7 @@ Namespace Adapter
             While IsConnected()
                 _stopPollRunning = True
                 If forceClose Then Exit While
-                Await Task.Delay(100).ConfigureAwait(False)
+                Await Task.Delay(100, _cts.Token).ConfigureAwait(False)
             End While
         End Function
 

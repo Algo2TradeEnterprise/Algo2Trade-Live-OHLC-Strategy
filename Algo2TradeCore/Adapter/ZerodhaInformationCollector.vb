@@ -18,7 +18,7 @@ Namespace Adapter
         Public Event CollectorError(ByVal msg As String)
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Async Function OnCollectorInformationAsync(ByVal information As Object, ByVal typeOfInformation As InformationType) As Task
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             RaiseEvent CollectorInformationAsync(information, typeOfInformation)
         End Function
         Protected Overridable Sub OnCollectorError(ByVal msg As String)
@@ -35,7 +35,7 @@ Namespace Adapter
 
         Public Overrides Async Function ConnectCollectorAsync() As Task
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim currentZerodhaStrategyController As ZerodhaStrategyController = CType(ParentController, ZerodhaStrategyController)
 
             RemoveHandler Me.CollectorInformationAsync, AddressOf currentZerodhaStrategyController.OnCollectorInformationAsync
@@ -61,8 +61,8 @@ Namespace Adapter
 
                     Try
                         If Now >= Me.ParentController.UserInputs.ForceRestartTime AndAlso
-                            Now <= Me.ParentController.UserInputs.ForceRestartTime.AddSeconds(20) Then
-                            Await Task.Delay(1000 * 15, _cts.Token).ConfigureAwait(False)
+                            Now <= Me.ParentController.UserInputs.ForceRestartTime.AddSeconds(_pollingFrequency * 2) Then
+                            Await Task.Delay(1000 * ((_pollingFrequency * 2) - 5), _cts.Token).ConfigureAwait(False)
                             Throw New ForceExitException()
                         End If
 
@@ -120,7 +120,7 @@ Namespace Adapter
             While IsConnected()
                 _stopPollRunning = True
                 If forceClose Then Exit While
-                Await Task.Delay(100).ConfigureAwait(False)
+                Await Task.Delay(100, _cts.Token).ConfigureAwait(False)
             End While
         End Function
 

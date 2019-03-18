@@ -84,6 +84,7 @@
     <Compile Include="Adapter\ZerodhaInformationCollector.vb" />
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
+    <Compile Include="Entities\IUserMargin.vb" />
     <Compile Include="Entities\PlaceOrderParameters.vb" />
     <Compile Include="Entities\IBrokerageAttributes.vb" />
     <Compile Include="Calculator\APIBrokerageCalculator.vb" />
@@ -110,6 +111,7 @@
     <Compile Include="Entities\BusinessOrder.vb" />
     <Compile Include="Entities\ZerodhaConnection.vb" />
     <Compile Include="Entities\ZerodhaInstrument.vb" />
+    <Compile Include="Entities\ZerodhaUserMargin.vb" />
     <Compile Include="Entities\ZerodhaOrder.vb" />
     <Compile Include="Entities\ZerodhaQuote.vb" />
     <Compile Include="Entities\ZerodhaTick.vb" />

@@ -2,10 +2,12 @@
 Imports Algo2TradeCore.Entities
 Imports NLog
 Imports Algo2TradeCore.Controller
+Imports Algo2TradeCore.Calculator
 Namespace Adapter
     Public MustInherit Class APIAdapter
         Protected _cts As CancellationTokenSource
         Public Property ParentController As APIStrategyController
+        Protected Calculator As APIBrokerageCalculator
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadComplete()
@@ -36,10 +38,11 @@ Namespace Adapter
             Me.ParentController = associatedParentController
             _cts = canceller
         End Sub
-        Public MustOverride Async Function CalculatePLWithBrokerageAsync(ByVal stockName As String, ByVal buy As Double, ByVal sell As Double, ByVal quantity As Integer, ByVal exchange As String) As Task(Of Decimal)
+        Public MustOverride Function CalculatePLWithBrokerage(ByVal instrument As IInstrument, ByVal buy As Double, ByVal sell As Double, ByVal quantity As Integer, ByVal exchange As String) As Decimal
         Public MustOverride Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
         Public MustOverride Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
         Public MustOverride Async Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
+        Public MustOverride Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of IInstrument.TypeOfExchage, IUserMargin))
         Public MustOverride Async Function GetAllQuotesAsync(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
         Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
         Public MustOverride Async Function ModifyStoplossOrderAsync(ByVal orderId As String, ByVal triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
@@ -61,6 +64,7 @@ Namespace Adapter
             GetOrders
             GetOrderTrades
             GetInstruments
+            GetUserMargins
             InvalidateAccessToken
             GenerateSession
             None

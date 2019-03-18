@@ -14,7 +14,7 @@ Namespace Entities
             InstrumentIdentifier = associatedIdentifer
         End Sub
         Public Property InstrumentIdentifier As String Implements IInstrument.InstrumentIdentifier
-        Public ReadOnly Property Exchange As String Implements IInstrument.Exchange
+        Public ReadOnly Property RawExchange As String Implements IInstrument.RawExchange
             Get
                 Return WrappedInstrument.Exchange
             End Get
@@ -95,5 +95,25 @@ Namespace Entities
                 End Select
             End Get
         End Property
+
+        Public ReadOnly Property ExchangeType As IInstrument.TypeOfExchage Implements IInstrument.ExchangeType
+            Get
+                Select Case RawExchange
+                    Case "NSE", "NFO"
+                        Return IInstrument.TypeOfExchage.NSE
+                    Case "MCX"
+                        Return IInstrument.TypeOfExchage.MCX
+                    Case "CDS"
+                        Return IInstrument.TypeOfExchage.CDS
+                    Case Else
+                        Return IInstrument.TypeOfExchage.None
+                End Select
+            End Get
+        End Property
+
+        Public Property QuantityMultiplier As Long Implements IInstrument.QuantityMultiplier
+
+        Public Property BrokerageCategory As String Implements IInstrument.BrokerageCategory
+
     End Class
 End Namespace

@@ -13,6 +13,7 @@ Imports System.Net.Http
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Adapter.APIAdapter
 Imports Algo2TradeCore.Entities.UserSettings
+Imports System.IO
 
 Namespace Controller
     Public Class ZerodhaStrategyController
@@ -328,7 +329,7 @@ Namespace Controller
 
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As ZerodhaConnection = Nothing
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim kiteConnector As New Kite(_currentUser.APIKey, Debug:=True)
 
             Dim lastException As Exception = Nothing
@@ -348,6 +349,7 @@ Namespace Controller
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
                         Dim user As User = kiteConnector.GenerateSession(requestToken, _currentUser.APISecret)
+                        CType(_currentUser, ZerodhaUser).WrappedUser = user
                         _cts.Token.ThrowIfCancellationRequested()
                         Console.WriteLine(Utils.JsonSerialize(user))
                         logger.Debug("Processing response")
@@ -511,7 +513,7 @@ Namespace Controller
                 Dim tempConn As ZerodhaConnection = Nothing
                 Try
                     _cts.Token.ThrowIfCancellationRequested()
-                    Await Task.Delay(2000).ConfigureAwait(False)
+                    Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                     Dim loginMessage As String = Nothing
                     While True
                         _cts.Token.ThrowIfCancellationRequested()
@@ -534,7 +536,7 @@ Namespace Controller
                             Else
                                 OnHeartbeat(String.Format("Login process failed after token expiry:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
                                 _cts.Token.ThrowIfCancellationRequested()
-                                Await Task.Delay(10000).ConfigureAwait(False)
+                                Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
                                 _cts.Token.ThrowIfCancellationRequested()
                             End If
                         Else
@@ -638,11 +640,67 @@ Namespace Controller
             Await _APIInformationCollector.ConnectCollectorAsync().ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
+            Await FillUserStartingMargin(_userMarginFilename).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetInstruments
             _AllInstruments = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
 
-            Return _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0
+            Await FillQuantityMultiplierMapAsync().ConfigureAwait(False)
+
+            Return _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0 AndAlso
+                Me._currentUser.DaysStartingCapitals IsNot Nothing AndAlso Me._currentUser.DaysStartingCapitals.Count > 0
         End Function
+
+        Protected Overrides Async Function FillQuantityMultiplierMapAsync() As Task
+            Dim commodityMultiplierMap As Dictionary(Of String, Object) = Nothing
+            Dim proxyToBeUsed As HttpProxy = Nothing
+            Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
+                Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync("https://zerodha.com/static/app.js",
+                                                                                     HttpMethod.Get,
+                                                                                     Nothing,
+                                                                                     True,
+                                                                                     Nothing,
+                                                                                     False,
+                                                                                     Nothing).ConfigureAwait(False)
+                If l Is Nothing OrElse l.Item2 Is Nothing Then
+                    Throw New ApplicationException(String.Format("No response in the additional site's historical race results landing page: {0}", "https://zerodha.com/static/app.js"))
+                End If
+                If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
+                    Dim jString As String = l.Item2
+                    If jString IsNot Nothing Then
+                        Dim map As String = Utilities.Strings.GetTextBetween("COMMODITY_MULTIPLIER_MAP=", "},", jString)
+                        If map IsNot Nothing Then
+                            map = map & "}"
+                            commodityMultiplierMap = Utilities.Strings.JsonDeserialize(map)
+                        End If
+                    End If
+                End If
+            End Using
+            If commodityMultiplierMap IsNot Nothing AndAlso commodityMultiplierMap.Count > 0 Then
+                If _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0 Then
+                    For Each instrument In _AllInstruments
+                        If instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
+                            instrument.ExchangeType = IInstrument.TypeOfExchage.MCX Then
+                            Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
+                            If commodityMultiplierMap.ContainsKey(stockName) Then
+                                instrument.QuantityMultiplier = Val(commodityMultiplierMap(stockName).ToString.Substring(0, commodityMultiplierMap(stockName).ToString.Length - 1))
+                                instrument.BrokerageCategory = commodityMultiplierMap(stockName).ToString.Substring(commodityMultiplierMap(stockName).ToString.Length - 1)
+                            Else
+                                logger.Warn(String.Format("Commodity Multiplier Map doesn't have this MCX stock - {0}", stockName))
+                            End If
+                        Else
+                            instrument.QuantityMultiplier = 1
+                            instrument.BrokerageCategory = Nothing
+                        End If
+                    Next
+                End If
+            Else
+                Throw New ApplicationException("Unable to fetch quantity multiplier")
+            End If
+        End Function
+
         ''' <summary>
         ''' This will help find all tradable instruments as per the passed strategy and then create the strategy workers for each of these instruments
         ''' </summary>
@@ -810,7 +868,7 @@ Namespace Controller
         Public Overrides Async Function GetOrderDetailsAsync() As Task(Of Concurrent.ConcurrentBag(Of IBusinessOrder))
             Dim ret As Concurrent.ConcurrentBag(Of IBusinessOrder) = Nothing
             _cts.Token.ThrowIfCancellationRequested()
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
             _cts.Token.ThrowIfCancellationRequested()
             Dim allOrders As IEnumerable(Of IOrder) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
@@ -929,7 +987,7 @@ Namespace Controller
 
         Public Async Sub OnFetcherCandlesAsync(ByVal instrumentIdentifier As String, ByVal historicalCandlesJSONDict As Dictionary(Of String, Object))
             'logger.Debug("OnFetcherCandlesAsync, parameteres:{0},{1}",instrumentIdentifier, Utils.JsonSerialize(historicalCandlesJSONDict))
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             'ctr += 1
             'If ctr >= 0 AndAlso _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
             '    For Each runningStrategyInstrument In _subscribedStrategyInstruments(instrumentIdentifier)
@@ -987,7 +1045,7 @@ Namespace Controller
         End Sub
         Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
             'logger.Debug("OnTickerTickAsync, tickData:{0}", Utils.JsonSerialize(tickData))
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
             Dim runningInstruments As IEnumerable(Of IInstrument) = _AllStrategyUniqueInstruments.Where(Function(x)
                                                                                                             Return x.InstrumentIdentifier = tickData.InstrumentToken
@@ -1008,7 +1066,7 @@ Namespace Controller
         End Sub
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
             'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             If orderData.Status = "COMPLETE" OrElse
                 orderData.Status = "MODIFIED" OrElse
                 orderData.Status = "CANCELLED" OrElse
@@ -1026,7 +1084,7 @@ Namespace Controller
         Dim ctr As Integer = 0
         Public Async Sub OnCollectorInformationAsync(ByVal information As Object, ByVal typeOfInformation As APIInformationCollector.InformationType)
             'logger.Debug("OnCollectorInformationAsync, parameteres:{0},{1}",instrumentIdentifier, Utils.JsonSerialize(historicalCandlesJSONDict))
-            Await Task.Delay(0).ConfigureAwait(False)
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             If information IsNot Nothing Then
                 Select Case typeOfInformation
                     Case APIInformationCollector.InformationType.GetOrderDetails
