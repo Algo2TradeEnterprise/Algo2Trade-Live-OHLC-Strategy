@@ -63,7 +63,7 @@ Public Class frmMainTabbed
     End Sub
 
     Delegate Sub SetSFGridFreezFirstColumn_Delegate(ByVal [grd] As SfDataGrid)
-    Public Async Sub SetSFGridFreezFirstColumn_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid)
+    Public Sub SetSFGridFreezFirstColumn_ThreadSafe(ByVal [grd] As Syncfusion.WinForms.DataGrid.SfDataGrid)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
         ' If these threads are different, it returns true.  
         If [grd].InvokeRequired Then
