@@ -50,7 +50,7 @@ Partial Class frmMomentumReversalSettings
         Me.lblTargetMultiplier = New System.Windows.Forms.Label()
         Me.lblCapitalProtectionPercentage = New System.Windows.Forms.Label()
         Me.lblCandleWickSizePercentage = New System.Windows.Forms.Label()
-        Me.opnFileMRSettings = New System.Windows.Forms.OpenFileDialog()
+        Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -323,7 +323,7 @@ Partial Class frmMomentumReversalSettings
         Me.lblCandleWickSizePercentage.TabIndex = 0
         Me.lblCandleWickSizePercentage.Text = "Candle Wick Size %"
         '
-        'opnFileMRSettings
+        'opnFileSettings
         '
         '
         'frmMomentumReversalSettings
@@ -360,7 +360,7 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
-    Friend WithEvents opnFileMRSettings As OpenFileDialog
+    Friend WithEvents opnFileSettings As OpenFileDialog
     Friend WithEvents txtMinCandleRangePercentage As TextBox
     Friend WithEvents lblMinCandleRangePercentage As Label
     Friend WithEvents lblEODExitTime As Label

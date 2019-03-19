@@ -10,9 +10,7 @@ Public Class frmMomentumReversalSettings
     Private _MRSettingsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, "MomentumReversalSettings.Strategy.a2t")
 
     Public Sub New(ByRef MRUserInputs As MomentumReversalUserInputs)
-        ' This call is required by the designer.
         InitializeComponent()
-        ' Add any initialization after the InitializeComponent() call.
         _MRSettings = MRUserInputs
     End Sub
 
@@ -87,13 +85,13 @@ Public Class frmMomentumReversalSettings
     End Sub
 
     Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
-        opnFileMRSettings.ShowDialog()
+        opnFileSettings.ShowDialog()
     End Sub
 
-    Private Sub opnFileMRSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileMRSettings.FileOk
-        Dim extension As String = Path.GetExtension(opnFileMRSettings.FileName)
+    Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
+        Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
         If extension = ".csv" Then
-            txtInstrumentDetalis.Text = opnFileMRSettings.FileName
+            txtInstrumentDetalis.Text = opnFileSettings.FileName
         Else
             MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
         End If

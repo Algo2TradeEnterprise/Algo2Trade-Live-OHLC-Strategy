@@ -1,6 +1,5 @@
 ﻿Imports System.Text.RegularExpressions
 Imports System.Threading
-Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
@@ -23,12 +22,6 @@ Public Class MomentumReversalStrategy
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
-    'Public Sub New(ByVal associatedParentController As APIStrategyController,
-    '               ByVal strategyIdentifier As String,
-    '               ByVal maxNumberOfDaysForHistoricalFetch As Integer,
-    '               ByVal canceller As CancellationTokenSource)
-    '    MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
-    'End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
     ''' </summary>
@@ -46,50 +39,8 @@ Public Class MomentumReversalStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            'Get all the futures instruments
-            'Dim futureAllInstruments = allInstruments.Where(Function(x)
-            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "NFO"
-            '                                                End Function)
-            '_cts.Token.ThrowIfCancellationRequested()
-            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-            '    For Each runningFutureAllInstrument In futureAllInstruments
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        Dim coreInstrumentName As String = Regex.Replace(runningFutureAllInstrument.TradingSymbol, "[0-9]+[A-Z]+FUT", "")
-            '        If coreInstrumentName IsNot Nothing Then
-            '            Dim cashInstrumentToAdd = allInstruments.Where(Function(x)
-            '                                                               Return x.TradingSymbol = coreInstrumentName
-            '                                                           End Function).FirstOrDefault
-            '            _cts.Token.ThrowIfCancellationRequested()
-            '            If cashInstrumentToAdd IsNot Nothing AndAlso cashInstrumentToAdd.TradingSymbol IsNot Nothing AndAlso
-            '                (retTradableInstrumentsAsPerStrategy Is Nothing OrElse (retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso
-            '                retTradableInstrumentsAsPerStrategy.Find(Function(x)
-            '                                                             Return x.InstrumentIdentifier = cashInstrumentToAdd.InstrumentIdentifier
-            '                                                         End Function) Is Nothing)) Then
-            '                ret = True
-            '                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '                retTradableInstrumentsAsPerStrategy.Add(cashInstrumentToAdd)
-            '            End If
-            '        End If
-            '    Next
-            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            'End If
-
-            'Dim futureAllInstruments = allInstruments.Where(Function(x)
-            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
-            '                                                End Function)
-            '_cts.Token.ThrowIfCancellationRequested()
-            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-            '    For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        ret = True
-            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '        retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
-            '    Next
-            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            'End If
-
             'Get MR Strategy Instruments
-            Dim mrUserInputs As MomentumReversalUserInputs = CType(UserSettings, MomentumReversalUserInputs)
+            Dim mrUserInputs As MomentumReversalUserInputs = CType(Me.UserSettings, MomentumReversalUserInputs)
             If mrUserInputs.InstrumentsData IsNot Nothing AndAlso mrUserInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 Dim cashInstrumentList As IEnumerable(Of KeyValuePair(Of String, MomentumReversalUserInputs.InstrumentDetails)) =
@@ -178,17 +129,6 @@ Public Class MomentumReversalStrategy
     End Function
 
     Public Overrides Async Function MonitorAsync() As Task
-        'Dim ctr As Integer
-        'While True
-        '    _cts.Token.ThrowIfCancellationRequested()
-        '    Await Task.Delay(500)
-        '    ctr += 500
-
-        '    If ctr = 10000 Then
-        '        _cts.Cancel()
-        '    End If
-        '    Await Task.Delay(1000)
-        'End While
         Dim lastException As Exception = Nothing
 
         Try

@@ -1,12 +1,9 @@
-﻿Imports System.Threading
-Imports Algo2TradeCore.Adapter
+﻿Imports System.Text.RegularExpressions
+Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
-Imports Algo2TradeCore.Entities.UserSettings
 Imports NLog
-Imports Utilities.Time
-Imports Utilities.DAL
 
 Public Class OHLStrategy
     Inherits Strategy
@@ -16,7 +13,7 @@ Public Class OHLStrategy
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
-                   ByVal userSettings As StrategyUserInputs,
+                   ByVal userSettings As OHLUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
@@ -25,12 +22,6 @@ Public Class OHLStrategy
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
-    'Public Sub New(ByVal associatedParentController As APIStrategyController,
-    '               ByVal strategyIdentifier As String,
-    '               ByVal maxNumberOfDaysForHistoricalFetch As Integer,
-    '               ByVal canceller As CancellationTokenSource)
-    '    MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
-    'End Sub
     ''' <summary>
     ''' This function will fill the instruments based on the stratgey used and also create the workers
     ''' </summary>
@@ -48,37 +39,48 @@ Public Class OHLStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            '' Get all the futures instruments
-            'Dim futureAllInstruments = allInstruments.Where(Function(x)
-            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
-            '                                                End Function)
-            '_cts.Token.ThrowIfCancellationRequested()
-            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-            '    For Each runningFutureAllInstrument In futureAllInstruments.Take(50)
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        ret = True
-            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '        retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
-            '    Next
-            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            'End If
-
             'Get OHL Strategy Instruments
-            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments.csv"
-            'Dim filePath As String = "G:\algo2trade\GitHub\Algo2Trade Live\OHL Tradable Instruments - Copy.csv"
-            Dim filePath As String = "D:\algo2trade\Code\Algo2Trade Live\OHL Tradable Instruments.csv"
-            Dim dt As DataTable = Nothing
-            Using readCSV As New CSVHelper(filePath, ",", _cts)
-                dt = readCSV.GetDataTableFromCSV(0)
-            End Using
-            If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+            Dim ohlUserInputs As OHLUserInputs = CType(Me.UserSettings, OHLUserInputs)
+            If ohlUserInputs.InstrumentsData IsNot Nothing AndAlso ohlUserInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                For i As Integer = 0 To dt.Rows.Count - 1
+                Dim cashInstrumentList As IEnumerable(Of KeyValuePair(Of String, OHLUserInputs.InstrumentDetails)) =
+                    ohlUserInputs.InstrumentsData.Where(Function(x)
+                                                            Return x.Value.MarketType = IInstrument.TypeOfInstrument.Cash OrElse
+                                                           x.Value.MarketType = IInstrument.TypeOfInstrument.None
+                                                        End Function)
+                Dim futureInstrumentList As IEnumerable(Of KeyValuePair(Of String, OHLUserInputs.InstrumentDetails)) =
+                    ohlUserInputs.InstrumentsData.Where(Function(x)
+                                                            Return x.Value.MarketType = IInstrument.TypeOfInstrument.Futures OrElse
+                                                           x.Value.MarketType = IInstrument.TypeOfInstrument.None
+                                                        End Function)
+                For Each instrument In cashInstrumentList.ToList
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim rowNumber As Integer = i
                     Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = dt.Rows(rowNumber).Item(0)
+                                                                                                Return x.TradingSymbol = instrument.Key
                                                                                             End Function)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    ret = True
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                Next
+                For Each instrument In futureInstrumentList.ToList
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim runningTradableInstrument As IInstrument = Nothing
+                    Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                         Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
+                                                                                                             x.RawInstrumentType = "FUT" AndAlso (x.RawExchange = "NFO" OrElse x.RawExchange = "MCX")
+                                                                                                     End Function)
+
+                    Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
+                                                                           If Not x.Expiry.Value.Date = Now.Date Then
+                                                                               Return x.Expiry.Value
+                                                                           Else
+                                                                               Return Date.MaxValue
+                                                                           End If
+                                                                       End Function)
+                    runningTradableInstrument = allTradableInstruments.Find(Function(x)
+                                                                                Return x.Expiry = minExpiry
+                                                                            End Function)
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = True
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
@@ -153,14 +155,16 @@ Public Class OHLStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
+        Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(IInstrument.TypeOfExchage.NSE)
         Dim currentTime As Date = Now
-        If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
+        If currentTime >= Me.UserSettings.EODExitTime Then
+            Return True
+        ElseIf Me.GetTotalPL <= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxLossPercentagePerDay) * -1 / 100 Then
+            Return True
+        ElseIf Me.GetTotalPL >= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxProfitPercentagePerDay) / 100 Then
             Return True
         Else
             Return False
-        End If
-        If Me.GetTotalPL() >= 300 Then
-            Return True
         End If
     End Function
 End Class

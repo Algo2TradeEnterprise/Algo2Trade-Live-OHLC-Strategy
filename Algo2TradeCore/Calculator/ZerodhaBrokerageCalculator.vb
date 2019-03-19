@@ -13,7 +13,7 @@ Namespace Calculator
             MyBase.New(associatedParentController, canceller)
         End Sub
         Public Overrides Function GetIntradayEquityBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetIntradayEquityBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
+            'logger.Debug("{0}->GetIntradayEquityBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -44,7 +44,7 @@ Namespace Calculator
         End Function
 
         Public Overrides Function GetDeliveryEquityBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetDeliveryEquityBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
+            'logger.Debug("{0}->GetDeliveryEquityBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -76,7 +76,7 @@ Namespace Calculator
         End Function
 
         Public Overrides Function GetIntradayEquityFuturesBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetIntradayEquityFuturesBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
+            'logger.Debug("{0}->GetIntradayEquityFuturesBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
             Dim m = buy
             Dim g = sell
@@ -110,10 +110,10 @@ Namespace Calculator
             Return ret
         End Function
 
-        Public Overrides Function GetIntradayCommodityFuturesBrokerage(instruemt As IInstrument, buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetIntradayCommodityFuturesBrokerageAsync, parameters:{1},{2},{3},{4}", Me.ToString, instruemt.TradingSymbol, buy, sell, quantity)
+        Public Overrides Function GetIntradayCommodityFuturesBrokerage(instrument As IInstrument, buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
+            'logger.Debug("{0}->GetIntradayCommodityFuturesBrokerageAsync, parameters:{1},{2},{3},{4}", Me.ToString, instruemt.TradingSymbol, buy, sell, quantity)
             Dim ret As New ZerodhaBrokerageAttributes
-            Dim stockName As String = instruemt.TradingSymbol.Remove(instruemt.TradingSymbol.Count - 8)
+            Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
             Dim m = buy
             Dim g = sell
             Dim v = quantity
@@ -121,8 +121,8 @@ Namespace Calculator
             ret.Sell = sell
             ret.Quantity = quantity
 
-            Dim t = instruemt.QuantityMultiplier
-            Dim e = instruemt.BrokerageCategory
+            Dim t = instrument.QuantityMultiplier
+            Dim e = instrument.BrokerageCategory
             ret.Multiplier = t
             Dim o = Math.Round(((m + g) * t * v), 2)
             Dim i = Nothing
@@ -175,57 +175,18 @@ Namespace Calculator
         End Function
 
         Public Overrides Function GetIntradayEquityOptionsBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetIntradayEquityOptionsBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
+            'logger.Debug("{0}->GetIntradayEquityOptionsBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Throw New NotImplementedException()
         End Function
 
         Public Overrides Function GetIntradayCurrencyFuturesBrokerage(buy As Decimal, sell As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetIntradayCurrencyFuturesBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
+            'logger.Debug("{0}->GetIntradayCurrencyFuturesBrokerage, parameters:{1},{2},{3}", Me.ToString, buy, sell, quantity)
             Throw New NotImplementedException()
         End Function
 
         Public Overrides Function GetIntradayCurrencyOptionsBrokerage(strikePrice As Decimal, buyPremium As Decimal, sellPremium As Decimal, quantity As Integer) As IBrokerageAttributes
-            logger.Debug("{0}->GetIntradayCurrencyOptionsBrokerage, parameters:{1},{2},{3},{4}", Me.ToString, strikePrice, buyPremium, sellPremium, quantity)
+            'logger.Debug("{0}->GetIntradayCurrencyOptionsBrokerage, parameters:{1},{2},{3},{4}", Me.ToString, strikePrice, buyPremium, sellPremium, quantity)
             Throw New NotImplementedException()
         End Function
-
-#Region "BrowseHTTP"
-        Private Async Function GetJsonForCommodityAsync() As Task(Of Dictionary(Of String, Object))
-            Dim ret As Dictionary(Of String, Object) = Nothing
-
-            _cts.Token.ThrowIfCancellationRequested()
-            Dim proxyToBeUsed As HttpProxy = Nothing
-            Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-                Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync("https://zerodha.com/static/app.js",
-                                                                                     HttpMethod.Get,
-                                                                                     Nothing,
-                                                                                     True,
-                                                                                     Nothing,
-                                                                                     False,
-                                                                                     Nothing).ConfigureAwait(False)
-                _cts.Token.ThrowIfCancellationRequested()
-                If l Is Nothing OrElse l.Item2 Is Nothing Then
-                    Throw New ApplicationException(String.Format("No response in the additional site's historical race results landing page: {0}", "https://zerodha.com/static/app.js"))
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                    Dim jString As String = l.Item2
-                    If jString IsNot Nothing Then
-                        _cts.Token.ThrowIfCancellationRequested()
-                        Dim map As String = Utilities.Strings.GetTextBetween("COMMODITY_MULTIPLIER_MAP=", "},", jString)
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If map IsNot Nothing Then
-                            map = map & "}"
-                            _cts.Token.ThrowIfCancellationRequested()
-                            ret = Utilities.Strings.JsonDeserialize(map)
-                            _cts.Token.ThrowIfCancellationRequested()
-                        End If
-                    End If
-                End If
-            End Using
-            _cts.Token.ThrowIfCancellationRequested()
-            Return ret
-        End Function
-#End Region
     End Class
 End Namespace

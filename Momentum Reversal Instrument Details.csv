@@ -1,2 +1,2 @@
 Instrument Name,Cash,Futures,Quantity,Capital,Number Of Trade,Max Target % Per Trade,Max Loss Per Stock,Max Profit Per Stock
-ADANIENT,TRUE,,1,,10,,1,10
+ADANIENT,TRUE,,1,,10,0.1,0.25,0.5

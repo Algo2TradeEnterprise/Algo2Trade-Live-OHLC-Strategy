@@ -309,7 +309,7 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.Active, GetType(MomentumReversalStrategy))
             EnableDisableUIEx(UIMode.BlockOther, GetType(MomentumReversalStrategy))
 
-            OnHeartbeat("Validating user settings")
+            OnHeartbeat("Validating MR user settings")
             If File.Exists("MomentumReversalSettings.Strategy.a2t") Then
                 Dim fs As Stream = New FileStream("MomentumReversalSettings.Strategy.a2t", FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
@@ -418,7 +418,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(MomentumReversalStrategy))
 
-            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, 2, _MRUserInputs, 5, _cts)
+            Dim momentumReversalStrategyToExecute As New MomentumReversalStrategy(_commonController, 0, _MRUserInputs, 5, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", momentumReversalStrategyToExecute.ToString), New List(Of Object) From {momentumReversalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -428,10 +428,12 @@ Public Class frmMainTabbed
             _MRTradableInstruments = momentumReversalStrategyToExecute.TradableStrategyInstruments
             SetObjectText_ThreadSafe(linklblMomentumReversalTradableInstrument, String.Format("Tradable Instruments: {0}", _MRTradableInstruments.Count))
             SetObjectEnableDisable_ThreadSafe(linklblMomentumReversalTradableInstrument, True)
+            _cts.Token.ThrowIfCancellationRequested()
 
             _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
+            _cts.Token.ThrowIfCancellationRequested()
 
             Await momentumReversalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch aex As AdapterBusinessException
@@ -470,6 +472,7 @@ Public Class frmMainTabbed
     Private Async Sub btnMomentumReversalStart_Click(sender As Object, e As EventArgs) Handles btnMomentumReversalStart.Click
         PreviousDayCleanup()
         Await Task.Run(AddressOf MomentumReversalWorkerAsync).ConfigureAwait(False)
+
         If _lastException IsNot Nothing Then
             If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
                 CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
@@ -504,7 +507,9 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "OHL"
+    Private _OHLUserInputs As OHLUserInputs = Nothing
     Private _OHLdashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _OHLTradableInstruments As IEnumerable(Of OHLStrategyInstrument) = Nothing
     Private Sub sfdgvOHLMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvOHLMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(OHLStrategy))
     End Sub
@@ -519,13 +524,23 @@ Public Class frmMainTabbed
 
         If _cts Is Nothing Then _cts = New CancellationTokenSource
         _cts.Token.ThrowIfCancellationRequested()
+        _lastException = Nothing
 
         Try
-            Dim OHLSettings As New StrategyUserInputs
-            OHLSettings.SignalTimeFrame = 5
-
             EnableDisableUIEx(UIMode.Active, GetType(OHLStrategy))
             EnableDisableUIEx(UIMode.BlockOther, GetType(OHLStrategy))
+
+            OnHeartbeat("Validating OHL user settings")
+            If File.Exists("OHLSettings.Strategy.a2t") Then
+                Dim fs As Stream = New FileStream("OHLSettings.Strategy.a2t", FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _OHLUserInputs = CType(bf.Deserialize(fs), OHLUserInputs)
+                fs.Close()
+                _OHLUserInputs.InstrumentsData = Nothing
+                _OHLUserInputs.FillInstrumentDetails(_OHLUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
+            End If
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
@@ -623,18 +638,34 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(OHLStrategy))
 
-            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, OHLSettings, 0, _cts)
+            Dim ohlStrategyToExecute As New OHLStrategy(_commonController, 1, _OHLUserInputs, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", ohlStrategyToExecute.ToString), New List(Of Object) From {ohlStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
             Await _commonController.SubscribeStrategyAsync(ohlStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
+            _OHLTradableInstruments = ohlStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblOHLTradableInstruments, String.Format("Tradable Instruments: {0}", _OHLTradableInstruments.Count))
+            SetObjectEnableDisable_ThreadSafe(linklblOHLTradableInstruments, True)
+            _cts.Token.ThrowIfCancellationRequested()
+
             _OHLdashboadList = New BindingList(Of ActivityDashboard)(ohlStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, _OHLdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
+            _cts.Token.ThrowIfCancellationRequested()
 
             Await ohlStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            _lastException = fex
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -646,18 +677,34 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(OHLStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(OHLStrategy))
         End Try
-        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-            If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-            _commonController = Nothing
-            _connection = Nothing
-            _cts = Nothing
-        End If
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
     End Function
     Private Async Sub btnOHLStart_Click(sender As Object, e As EventArgs) Handles btnOHLStart.Click
         PreviousDayCleanup()
         Await Task.Run(AddressOf OHLStartWorkerAsync).ConfigureAwait(False)
+
+        If _lastException IsNot Nothing Then
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnOHLStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                Debug.WriteLine("Restart for daily refresh")
+                logger.Debug("Restarting the application again for daily refresh")
+                btnOHLStart_Click(sender, e)
+            End If
+        End If
     End Sub
     Private Sub tmrOHLTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrOHLTickerStatus.Tick
         FlashTickerBulbEx(GetType(OHLStrategy))
@@ -667,6 +714,14 @@ Public Class frmMainTabbed
         If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
         If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _cts.Cancel()
+    End Sub
+    Private Sub btnOHLSettings_Click(sender As Object, e As EventArgs) Handles btnOHLSettings.Click
+        Dim newForm As New frmOHLSettings(_OHLUserInputs)
+        newForm.ShowDialog()
+    End Sub
+    Private Sub linklblOHLTradableInstruments_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblOHLTradableInstruments.LinkClicked
+        Dim newForm As New frmOHLTradableInstrumentList(_OHLTradableInstruments)
+        newForm.ShowDialog()
     End Sub
 #End Region
 
@@ -792,7 +847,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(AmiSignalStrategy))
 
-            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 3, amiSignalSettings, 0, _cts)
+            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 2, amiSignalSettings, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -876,6 +931,7 @@ Public Class frmMainTabbed
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnOHLStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnOHLStop, False)
+                    SetObjectEnableDisable_ThreadSafe(linklblOHLTradableInstruments, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, Nothing)
             End Select
         ElseIf source Is GetType(MomentumReversalStrategy) Then
@@ -883,7 +939,7 @@ Public Class frmMainTabbed
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStart, False)
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStop, True)
-                    SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
+                    'SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, False)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
                         SetObjectText_ThreadSafe(btnOHLStart, Common.LOGIN_PENDING)
@@ -905,7 +961,7 @@ Public Class frmMainTabbed
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnMomentumReversalStop, False)
-                    SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
+                    'SetObjectEnableDisable_ThreadSafe(btnMomentumReversalSettings, True)
                     SetObjectEnableDisable_ThreadSafe(linklblMomentumReversalTradableInstrument, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
             End Select
@@ -1123,7 +1179,6 @@ Public Class frmMainTabbed
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
-        'Nothing to do
         OnHeartbeat(String.Format("Ticker:Error:{0}", errorMsg))
     End Sub
     Private Sub OnTickerNoReconnect()
@@ -1136,11 +1191,9 @@ Public Class frmMainTabbed
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
-        'Nothing to do
         OnHeartbeat(String.Format("Historical Data Fetcher: Error:{0}, InstrumentIdentifier:{1}", errorMsg, instrumentIdentifier))
     End Sub
     Private Sub OnCollectorError(ByVal errorMsg As String)
-        'Nothing to do
         OnHeartbeat(String.Format("Information Collector: Error:{0}", errorMsg))
     End Sub
     Public Sub ProgressStatus(ByVal msg As String)
@@ -1180,18 +1233,36 @@ Public Class frmMainTabbed
     End Sub
     Protected Overridable Sub OnNewItemAdded(ByVal item As ActivityDashboard)
         If item IsNot Nothing Then
-            'Select Case item.ParentStrategyInstrument.ParentStrategy
-            '    Case MomentumReversalStrategy
-            '_MRdashboadList.Add(item)
-            BindingListAdd_ThreadSafe(_MRdashboadList, item)
-            'End Select
+            Select Case item.ParentStrategyInstrument.ParentStrategy.GetType
+                Case GetType(MomentumReversalStrategy)
+                    BindingListAdd_ThreadSafe(_MRdashboadList, item)
+                Case GetType(OHLStrategy)
+                    BindingListAdd_ThreadSafe(_OHLdashboadList, item)
+                Case GetType(AmiSignalStrategy)
+                    BindingListAdd_ThreadSafe(_AmidashboadList, item)
+                Case Else
+                    Throw New NotImplementedException
+            End Select
         End If
     End Sub
     Protected Sub OnSessionExpiry(ByVal runningStrategy As Strategy)
         SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
-        _MRdashboadList = Nothing
-        _MRdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-        SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
+        Select Case runningStrategy.GetType
+            Case GetType(MomentumReversalStrategy)
+                _MRdashboadList = Nothing
+                _MRdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
+            Case GetType(OHLStrategy)
+                _OHLdashboadList = Nothing
+                _OHLdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _OHLdashboadList)
+            Case GetType(AmiSignalStrategy)
+                _AmidashboadList = Nothing
+                _AmidashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _AmidashboadList)
+            Case Else
+                Throw New NotImplementedException
+        End Select
         SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
     End Sub
 

@@ -73,6 +73,8 @@ Partial Class frmMainTabbed
         Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.btnOHLSettings = New System.Windows.Forms.Button()
+        Me.linklblOHLTradableInstruments = New System.Windows.Forms.LinkLabel()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabMomentumReversal.SuspendLayout()
@@ -392,14 +394,16 @@ Partial Class frmMainTabbed
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.62955!))
+        Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.781737!))
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
         Me.pnlOHLTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.btnOHLStop, 0, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.btnOHLStart, 0, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.Panel2, 14, 0)
+        Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.btnOHLSettings, 9, 0)
+        Me.pnlOHLTopHeaderVerticalSplitter.Controls.Add(Me.linklblOHLTradableInstruments, 10, 0)
         Me.pnlOHLTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlOHLTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlOHLTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -435,7 +439,7 @@ Partial Class frmMainTabbed
         '
         Me.Panel2.Controls.Add(Me.blbOHLTickerStatus)
         Me.Panel2.Controls.Add(Me.lblOHLTickerStatus)
-        Me.Panel2.Location = New System.Drawing.Point(1197, 4)
+        Me.Panel2.Location = New System.Drawing.Point(1189, 4)
         Me.Panel2.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel2.Name = "Panel2"
         Me.Panel2.Size = New System.Drawing.Size(146, 31)
@@ -732,6 +736,30 @@ Partial Class frmMainTabbed
         '
         Me.tmrAmiSignalTickerStatus.Enabled = True
         '
+        'btnOHLSettings
+        '
+        Me.btnOHLSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnOHLSettings.Location = New System.Drawing.Point(805, 4)
+        Me.btnOHLSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnOHLSettings.Name = "btnOHLSettings"
+        Me.btnOHLSettings.Size = New System.Drawing.Size(81, 31)
+        Me.btnOHLSettings.TabIndex = 12
+        Me.btnOHLSettings.Text = "Settings"
+        Me.btnOHLSettings.UseVisualStyleBackColor = True
+        '
+        'linklblOHLTradableInstruments
+        '
+        Me.linklblOHLTradableInstruments.AutoSize = True
+        Me.linklblOHLTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblOHLTradableInstruments.Enabled = False
+        Me.linklblOHLTradableInstruments.Location = New System.Drawing.Point(893, 0)
+        Me.linklblOHLTradableInstruments.Name = "linklblOHLTradableInstruments"
+        Me.linklblOHLTradableInstruments.Size = New System.Drawing.Size(218, 39)
+        Me.linklblOHLTradableInstruments.TabIndex = 13
+        Me.linklblOHLTradableInstruments.TabStop = True
+        Me.linklblOHLTradableInstruments.Text = "Tradable Instruments: 0"
+        Me.linklblOHLTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -760,6 +788,7 @@ Partial Class frmMainTabbed
         Me.tabOHL.ResumeLayout(False)
         Me.pnlOHLMainPanelHorizontalSplitter.ResumeLayout(False)
         Me.pnlOHLTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlOHLTopHeaderVerticalSplitter.PerformLayout()
         Me.Panel2.ResumeLayout(False)
         Me.Panel2.PerformLayout()
         Me.pnlOHLBodyVerticalSplitter.ResumeLayout(False)
@@ -829,4 +858,6 @@ Partial Class frmMainTabbed
     Friend WithEvents PictureBox3 As PictureBox
     Friend WithEvents miAdvancedOptions As ToolStripMenuItem
     Friend WithEvents linklblMomentumReversalTradableInstrument As LinkLabel
+    Friend WithEvents btnOHLSettings As Button
+    Friend WithEvents linklblOHLTradableInstruments As LinkLabel
 End Class

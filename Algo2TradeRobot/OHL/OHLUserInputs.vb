@@ -5,11 +5,10 @@ Imports Utilities.DAL
 Imports Algo2TradeCore.Entities
 
 <Serializable>
-Public Class MomentumReversalUserInputs
+Public Class OHLUserInputs
     Inherits StrategyUserInputs
-    Public CandleWickSizePercentage As Decimal
-    Public MaxCapitalProtectionPercentage As Decimal
-    Public MinCandleRangePercentage As Decimal
+    Public StoplossPercentage As Decimal
+    Public TargetPercentage As Decimal
     Public InstrumentDetailsFilePath As String
     Public InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
@@ -18,8 +17,6 @@ Public Class MomentumReversalUserInputs
         Public MarketType As IInstrument.TypeOfInstrument
         Public Quantity As Integer
         Public Capital As Decimal
-        Public NumberOfTrade As Integer
-        Public MaxTargetPercentagePerTrade As Decimal
         Public MaxLossPerStock As Decimal
         Public MaxProfitPerStock As Decimal
     End Class
@@ -33,9 +30,9 @@ Public Class MomentumReversalUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL", "NUMBER OF TRADE", "MAX TARGET % PER TRADE", "MAX LOSS PER STOCK", "MAX PROFIT PER STOCK"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CASH", "FUTURES", "QUANTITY", "CAPITAL", "MAX LOSS PER STOCK", "MAX PROFIT PER STOCK"}
 
-                        For colCtr = 0 To 8
+                        For colCtr = 0 To 6
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -50,8 +47,6 @@ Public Class MomentumReversalUserInputs
                             Dim marketFuture As Boolean = False
                             Dim quantity As Integer = Integer.MinValue
                             Dim capital As Decimal = Decimal.MinValue
-                            Dim numberOfTrade As Integer = Integer.MinValue
-                            Dim maxTargetPercentagePerTrade As Decimal = Decimal.MinValue
                             Dim maxLossPerStock As Decimal = Decimal.MinValue
                             Dim maxProfitPerStock As Decimal = Decimal.MinValue
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
@@ -103,35 +98,6 @@ Public Class MomentumReversalUserInputs
                                     End If
                                 ElseIf columnCtr = 5 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                    Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                        Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
-                                            If Val(instrumentDetails(rowCtr, columnCtr)) < 1 Then
-                                                Throw New ApplicationException(String.Format("Number Of Trade cannot be < 1 for {0}", instrumentName))
-                                            End If
-                                            numberOfTrade = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Number Of Trade cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Number Of Trade cannot be blank for {0}", instrumentName))
-                                    End If
-                                ElseIf columnCtr = 6 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            If Val(instrumentDetails(rowCtr, columnCtr)) >= 0 AndAlso
-                                                Val(instrumentDetails(rowCtr, columnCtr)) <= 100 Then
-                                                maxTargetPercentagePerTrade = instrumentDetails(rowCtr, columnCtr)
-                                            Else
-                                                Throw New ApplicationException(String.Format("Max Target Percentage Per Trade cannot be <{0} and >{1} for {2}", 0, 100, instrumentName))
-                                            End If
-                                        Else
-                                            Throw New ApplicationException(String.Format("Max Target Percentage Per Trade cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
-                                        End If
-                                    End If
-                                ElseIf columnCtr = 7 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
                                             If Val(instrumentDetails(rowCtr, columnCtr)) >= Decimal.MinValue AndAlso
@@ -146,7 +112,7 @@ Public Class MomentumReversalUserInputs
                                     Else
                                         Throw New ApplicationException(String.Format("Max Loss Per Stock cannot be blank for {0}", instrumentName))
                                     End If
-                                ElseIf columnCtr = 8 Then
+                                ElseIf columnCtr = 6 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
@@ -165,7 +131,7 @@ Public Class MomentumReversalUserInputs
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
-                                Dim instrumentData As New MomentumReversalUserInputs.InstrumentDetails
+                                Dim instrumentData As New OHLUserInputs.InstrumentDetails
                                 instrumentData.InstrumentName = instrumentName.ToUpper
                                 If marketCash AndAlso marketFuture Then
                                     instrumentData.MarketType = IInstrument.TypeOfInstrument.None
@@ -181,11 +147,9 @@ Public Class MomentumReversalUserInputs
                                 End If
                                 instrumentData.Quantity = quantity
                                 instrumentData.Capital = capital
-                                instrumentData.NumberOfTrade = numberOfTrade
-                                instrumentData.MaxTargetPercentagePerTrade = maxTargetPercentagePerTrade
                                 instrumentData.MaxLossPerStock = maxLossPerStock
                                 instrumentData.MaxProfitPerStock = maxProfitPerStock
-                                If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, MomentumReversalUserInputs.InstrumentDetails)
+                                If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, OHLUserInputs.InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.InstrumentName) Then
                                     Throw New ApplicationException(String.Format("Duplicate Instrument Name {0}", instrumentData.InstrumentName))
                                 End If

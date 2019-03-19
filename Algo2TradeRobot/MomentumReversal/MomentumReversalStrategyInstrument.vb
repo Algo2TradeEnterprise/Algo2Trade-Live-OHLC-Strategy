@@ -1,6 +1,4 @@
-﻿Imports System.ComponentModel.DataAnnotations
-Imports System.Threading
-Imports Algo2TradeCore
+﻿Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
@@ -42,14 +40,19 @@ Public Class MomentumReversalStrategyInstrument
         Try
             'Dim slDelayCtr As Integer = 0
             Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
-            Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeType)
+            Dim instrumentName As String = Nothing
+            If Me.TradableInstrument.TradingSymbol.Contains("FUT") Then
+                instrumentName = Me.TradableInstrument.TradingSymbol.Remove(Me.TradableInstrument.TradingSymbol.Count - 8)
+            Else
+                instrumentName = Me.TradableInstrument.TradingSymbol
+            End If
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                If Me.ParentStrategy.GetTotalPL() < capitalAtDayStart * Math.Abs(MRUserSettings.MaxLossPercentagePerDay) * -1 / 100 OrElse
-                    Me.ParentStrategy.GetTotalPL() > capitalAtDayStart * Math.Abs(MRUserSettings.MaxProfitPercentagePerDay) / 100 Then
+                If Me.GetOverallPL() <= Math.Abs(MRUserSettings.InstrumentsData(instrumentName).MaxLossPerStock) * -1 OrElse
+                    Me.GetOverallPL() >= Math.Abs(MRUserSettings.InstrumentsData(instrumentName).MaxProfitPerStock) Then
                     Debug.WriteLine("Force Cancel for stock pl")
                     Await ForceExitAllTradesAsync().ConfigureAwait(False)
                 End If
