@@ -69,9 +69,11 @@ Namespace Adapter
                         Await GetOrderUpdatesAsync().ConfigureAwait(False)
                     Catch fex As ForceExitException
                         logger.Error(fex)
+                        OnCollectorError(fex.Message)
                         Me.ParentController.OrphanException = fex
                     Catch aex As AdapterBusinessException
                         logger.Error(aex)
+                        OnCollectorError(aex.Message)
                         Select Case aex.ExceptionType
                             Case AdapterBusinessException.TypeOfException.PermissionException
                                 Me.ParentController.OrphanException = aex
