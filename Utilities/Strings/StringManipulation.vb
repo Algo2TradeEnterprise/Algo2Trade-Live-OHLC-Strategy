@@ -412,7 +412,7 @@ Namespace Strings
         End Function
 
         Public Sub SerializeFromCollection(Of T)(ByVal outputFilePath As String, ByVal collectionToBeSerialized As T)
-            logger.Debug("Serialize from collection")
+            'logger.Debug("Serialize from collection")
             'serialize
             Using stream As Stream = File.Open(outputFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite)
                 Dim bformatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
@@ -421,14 +421,14 @@ Namespace Strings
             End Using
         End Sub
         Public Function DeserializeToCollection(Of T)(ByVal inputFilePath As String) As T
-            logger.Debug("Deserialize to collection")
+            'logger.Debug("Deserialize to collection")
             Using stream As Stream = File.Open(inputFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
                 Dim binaryFormatter = New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
                 Return DirectCast(binaryFormatter.Deserialize(stream), T)
             End Using
         End Function
         Public Function Encrypt(ByVal stringToEncrypt As String, ByVal key As String) As String
-            logger.Debug("Encrytping a string")
+            'logger.Debug("Encrytping a string")
             Dim DES As New TripleDESCryptoServiceProvider
             Dim MD5 As New MD5CryptoServiceProvider
             DES.Key = MD5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(key))
@@ -437,7 +437,7 @@ Namespace Strings
             Return Convert.ToBase64String(DES.CreateEncryptor().TransformFinalBlock(Buffer, 0, Buffer.Length))
         End Function
         Public Function Decrypt(ByVal encryptedString As String, ByVal key As String) As String
-            logger.Debug("Decrytping a string")
+            'logger.Debug("Decrytping a string")
             Dim ret As String = Nothing
             Try
                 Dim DES As New TripleDESCryptoServiceProvider
