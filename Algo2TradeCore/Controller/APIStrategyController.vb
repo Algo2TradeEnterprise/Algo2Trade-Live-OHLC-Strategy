@@ -225,7 +225,7 @@ Namespace Controller
                                 _cts.Token.ThrowIfCancellationRequested()
                                 Exit For
                             Case ExecutionCommands.GetUserMargins
-                                Dim userMarginResponse As Dictionary(Of IInstrument.TypeOfExchage, IUserMargin) = Nothing
+                                Dim userMarginResponse As Dictionary(Of Enums.TypeOfExchage, IUserMargin) = Nothing
                                 userMarginResponse = Await _APIAdapter.GetUserMarginsAsync.ConfigureAwait(False)
                                 If userMarginResponse IsNot Nothing AndAlso userMarginResponse.Count > 0 Then
                                     logger.Debug("Getting userMarginResponse is complete, count:{0}", userMarginResponse.Count)
@@ -486,20 +486,20 @@ Namespace Controller
                 _currentUser.DaysStartingCapitals = Utilities.Strings.DeserializeToCollection(Of IUser)(filename).DaysStartingCapitals
             Else
                 Dim execCommand As ExecutionCommands = ExecutionCommands.GetUserMargins
-                Dim userMarginResponses As Dictionary(Of IInstrument.TypeOfExchage, IUserMargin) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+                Dim userMarginResponses As Dictionary(Of Enums.TypeOfExchage, IUserMargin) = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()
                 If userMarginResponses IsNot Nothing AndAlso userMarginResponses.Count > 0 Then
                     _cts.Token.ThrowIfCancellationRequested()
                     For Each userMarginResponse In userMarginResponses
                         _cts.Token.ThrowIfCancellationRequested()
-                        If _currentUser.DaysStartingCapitals Is Nothing Then _currentUser.DaysStartingCapitals = New Dictionary(Of IInstrument.TypeOfExchage, Decimal)
+                        If _currentUser.DaysStartingCapitals Is Nothing Then _currentUser.DaysStartingCapitals = New Dictionary(Of Enums.TypeOfExchage, Decimal)
                         _currentUser.DaysStartingCapitals.Add(userMarginResponse.Key, userMarginResponse.Value.NetAmount)
                     Next
                 End If
                 Utilities.Strings.SerializeFromCollection(Of IUser)(_userMarginFilename, _currentUser)
             End If
         End Function
-        Public Function GetUserMargin() As Dictionary(Of IInstrument.TypeOfExchage, Decimal)
+        Public Function GetUserMargin() As Dictionary(Of Enums.TypeOfExchage, Decimal)
             Return _currentUser.DaysStartingCapitals
         End Function
     End Class

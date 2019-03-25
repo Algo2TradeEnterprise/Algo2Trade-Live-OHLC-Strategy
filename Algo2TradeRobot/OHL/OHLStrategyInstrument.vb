@@ -91,7 +91,7 @@ Public Class OHLStrategyInstrument
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim currentTime As Date = Now
         Dim OHLUserSettings As OHLUserInputs = Me.ParentStrategy.UserSettings
-        Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeType)
+        Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeDetails.ExchangeType)
 
         Dim instrumentName As String = Nothing
         If Me.TradableInstrument.TradingSymbol.Contains("FUT") Then

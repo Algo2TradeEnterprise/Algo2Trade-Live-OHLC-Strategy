@@ -156,7 +156,7 @@ Public Class MomentumReversalStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
-        Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(IInstrument.TypeOfExchage.NSE)
+        Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(Enums.TypeOfExchage.NSE)
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
             Return True

@@ -11,7 +11,7 @@ Namespace Entities
         Public Property APIKey As String Implements IUser.APIKey
         Public Property APIVersion As String Implements IUser.APIVersion
         Public Property API2FAPin As String Implements IUser.API2FAPin
-        Public Property DaysStartingCapitals As Dictionary(Of IInstrument.TypeOfExchage, Decimal) Implements IUser.DaysStartingCapitals
+        Public Property DaysStartingCapitals As Dictionary(Of Enums.TypeOfExchage, Decimal) Implements IUser.DaysStartingCapitals
 
         <NonSerialized>
         Private _WrappedUser As User

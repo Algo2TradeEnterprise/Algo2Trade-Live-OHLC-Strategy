@@ -84,6 +84,11 @@
     <Compile Include="Adapter\ZerodhaInformationCollector.vb" />
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
+    <Compile Include="ChartHandler\Indicator\Indicator.vb" />
+    <Compile Include="Entities\Exchange.vb" />
+    <Compile Include="Entities\Fields\IField.vb" />
+    <Compile Include="Entities\Fields\IntegerField.vb" />
+    <Compile Include="Entities\Indicators\SMA.vb" />
     <Compile Include="Entities\IUserMargin.vb" />
     <Compile Include="Entities\PlaceOrderParameters.vb" />
     <Compile Include="Entities\IBrokerageAttributes.vb" />
@@ -167,8 +172,6 @@
       <Name>Utilities</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ChartHandler\Indicator\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

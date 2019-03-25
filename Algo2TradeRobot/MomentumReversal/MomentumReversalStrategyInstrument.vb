@@ -4,6 +4,7 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Utilities.Numbers
 Imports NLog
+Imports Algo2TradeCore.Entities.Indicators
 
 Public Class MomentumReversalStrategyInstrument
     Inherits StrategyInstrument
@@ -30,7 +31,11 @@ Public Class MomentumReversalStrategyInstrument
         RawPayloadConsumers = New List(Of IPayloadConsumer)
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
-                RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
+                Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame) With
+                {
+                    .OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New SMA()}
+                }
+                RawPayloadConsumers.Add(chartConsumer)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
@@ -98,7 +103,7 @@ Public Class MomentumReversalStrategyInstrument
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(MRUserSettings.SignalTimeFrame)
-        Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeType)
+        Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeDetails.ExchangeType)
 
         Dim instrumentName As String = Nothing
         If Me.TradableInstrument.TradingSymbol.Contains("FUT") Then

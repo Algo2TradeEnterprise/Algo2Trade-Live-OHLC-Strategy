@@ -281,9 +281,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
-        Public Overrides Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of IInstrument.TypeOfExchage, IUserMargin))
+        Public Overrides Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of Enums.TypeOfExchage, IUserMargin))
             'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
-            Dim ret As Dictionary(Of IInstrument.TypeOfExchage, IUserMargin) = Nothing
+            Dim ret As Dictionary(Of Enums.TypeOfExchage, IUserMargin) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.GetUserMargins
             _cts.Token.ThrowIfCancellationRequested()
             Dim tempAllRet As Dictionary(Of String, Object) = Nothing
@@ -331,9 +331,9 @@ Namespace Adapter
                     {.WrappedUserMargin = zerodhaReturedUserMarginResponse.Equity}
                 Dim commodityMargin As New ZerodhaUserMargin With
                     {.WrappedUserMargin = zerodhaReturedUserMarginResponse.Commodity}
-                If ret Is Nothing Then ret = New Dictionary(Of IInstrument.TypeOfExchage, IUserMargin)
-                ret.Add(IInstrument.TypeOfExchage.NSE, equityMargin)
-                ret.Add(IInstrument.TypeOfExchage.MCX, commodityMargin)
+                If ret Is Nothing Then ret = New Dictionary(Of Enums.TypeOfExchage, IUserMargin)
+                ret.Add(Enums.TypeOfExchage.NSE, equityMargin)
+                ret.Add(Enums.TypeOfExchage.MCX, commodityMargin)
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any User margin, command:{0}", execCommand.ToString))
             End If

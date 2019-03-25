@@ -681,8 +681,10 @@ Namespace Controller
             If commodityMultiplierMap IsNot Nothing AndAlso commodityMultiplierMap.Count > 0 Then
                 If _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0 Then
                     For Each instrument In _AllInstruments
+                        instrument.ExchangeDetails = Me.UserInputs.ExchangeDetails(instrument.RawExchange)
+
                         If instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                            instrument.ExchangeType = IInstrument.TypeOfExchage.MCX Then
+                            instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.MCX Then
                             Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
                             If commodityMultiplierMap.ContainsKey(stockName) Then
                                 instrument.QuantityMultiplier = Val(commodityMultiplierMap(stockName).ToString.Substring(0, commodityMultiplierMap(stockName).ToString.Length - 1))

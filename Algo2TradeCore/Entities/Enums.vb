@@ -5,5 +5,18 @@
             Upstox
             None
         End Enum
+        Enum TypeOfExchage
+            NSE = 1
+            MCX
+            CDS
+            None
+        End Enum
+        Enum Indicator
+            SMA = 1
+            None
+        End Enum
+        'Enum TypeOfField
+
+        'End Enum
     End Module
 End Namespace

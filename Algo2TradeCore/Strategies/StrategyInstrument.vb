@@ -1,6 +1,7 @@
 ﻿Imports System.Net.Http
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
+Imports Algo2TradeCore.ChartHandler.ChartStyle
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Exceptions
 Imports NLog
@@ -395,6 +396,14 @@ Namespace Strategies
                                                                     currentCandle,
                                                                     runningRawPayloadConsumer).ConfigureAwait(False)
                     End If
+                Next
+            End If
+        End Function
+        Public Overridable Async Function PopulateChartAndIndicatorsAsync(ByVal candleCreator As Chart, ByVal currentCandles As List(Of OHLCPayload)) As Task
+            'logger.Debug("PopulateChartAndIndicatorsAsync, parameters:{0},{1}", candleCreator.ToString, currentCandle.ToString)
+            If currentCandles IsNot Nothing AndAlso currentCandles.Count > 0 Then
+                For Each currentCandle In currentCandles
+                    Await PopulateChartAndIndicatorsAsync(candleCreator, currentCandle).ConfigureAwait(False)
                 Next
             End If
         End Function

@@ -96,24 +96,11 @@ Namespace Entities
             End Get
         End Property
 
-        Public ReadOnly Property ExchangeType As IInstrument.TypeOfExchage Implements IInstrument.ExchangeType
-            Get
-                Select Case RawExchange
-                    Case "NSE", "NFO"
-                        Return IInstrument.TypeOfExchage.NSE
-                    Case "MCX"
-                        Return IInstrument.TypeOfExchage.MCX
-                    Case "CDS"
-                        Return IInstrument.TypeOfExchage.CDS
-                    Case Else
-                        Return IInstrument.TypeOfExchage.None
-                End Select
-            End Get
-        End Property
-
         Public Property QuantityMultiplier As Long Implements IInstrument.QuantityMultiplier
 
         Public Property BrokerageCategory As String Implements IInstrument.BrokerageCategory
+
+        Public Property ExchangeDetails As Exchange Implements IInstrument.ExchangeDetails
 
     End Class
 End Namespace

@@ -2,10 +2,11 @@
 Imports System.Threading
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Controller
-Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.Entities.Indicators
+Imports Algo2TradeCore.ChartHandler.ChartStyle
 
-Namespace ChartHandler.ChartStyle
-    Public MustInherit Class Chart
+Namespace ChartHandler.Indicator
+    Public Class Indicator
 
 #Region "Events/Event handlers"
         Public Event DocumentDownloadCompleteEx(ByVal source As List(Of Object))
@@ -52,22 +53,31 @@ Namespace ChartHandler.ChartStyle
 #End Region
 
         Public Property ParentController As APIStrategyController
-        Protected _parentInstrument As IInstrument
-        Protected _subscribedStrategyInstruments As IEnumerable(Of StrategyInstrument)
-        Protected _cts As New CancellationTokenSource
-        Protected _historicalLock As Integer
-        Protected _tickLock As Integer
+        Private ReadOnly _parentChart As CandleStickChart
+        Private ReadOnly _cts As New CancellationTokenSource
         Public Sub New(ByVal associatedParentController As APIStrategyController,
-                      ByVal assoicatedParentInstrument As IInstrument,
-                      ByVal associatedStrategyInstruments As IEnumerable(Of StrategyInstrument),
+                      ByVal assoicatedParentChart As CandleStickChart,
                       ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
-            _parentInstrument = assoicatedParentInstrument
-            _subscribedStrategyInstruments = associatedStrategyInstruments
+            _parentChart = assoicatedParentChart
             _cts = canceller
         End Sub
-        Public MustOverride Async Function GetChartFromHistoricalAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
-        Public MustOverride Async Function GetChartFromTickAsync(ByVal tickData As ITick) As Task
-        Public MustOverride Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
+
+#Region "Private Function"
+        Private Async Function CalcualteSMAx(ByVal smaTime As Date, ByVal smaOn As Object, ByVal outputConsumer As SMA, ByVal startTime As Date, ByVal endTime As Date) As Task
+
+        End Function
+#End Region
+
+#Region "Public Functions"
+        Public Async Function CalculateSMA(ByVal smaTime As Date, ByVal smaOn As Object, ByVal outputConsumer As SMA) As Task
+            If outputConsumer.SMAPayloads IsNot Nothing AndAlso outputConsumer.SMAPayloads.Count > 0 Then
+                If outputConsumer.SMAPayloads.ContainsKey(smaTime) Then
+
+                End If
+            End If
+        End Function
+#End Region
+
     End Class
 End Namespace

@@ -1,5 +1,4 @@
 ﻿Imports System.IO
-Imports Algo2TradeCore.Entities
 
 Namespace Entities.UserSettings
     <Serializable>
@@ -8,6 +7,7 @@ Namespace Entities.UserSettings
         Public Property UserDetails As IUser
         Public Property GetInformationDelay As Integer
         Public Property BackToBackOrderCoolOffDelay As Integer
+        Public Property ExchangeDetails As Dictionary(Of String, Exchange)
 
         Private _ForceRestartTime As Date
         Public Property ForceRestartTime As Date
@@ -18,5 +18,6 @@ Namespace Entities.UserSettings
                 _ForceRestartTime = value
             End Set
         End Property
+
     End Class
 End Namespace

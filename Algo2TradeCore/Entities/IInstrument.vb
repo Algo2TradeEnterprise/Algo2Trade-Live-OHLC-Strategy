@@ -15,7 +15,8 @@
         Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
         Property IsHistoricalCompleted As Boolean
         ReadOnly Property InstrumentType As TypeOfInstrument
-        ReadOnly Property ExchangeType As TypeOfExchage
+        Property ExchangeDetails As Exchange
+
         <Serializable>
         Enum TypeOfInstrument
             Cash = 1
@@ -23,11 +24,6 @@
             Options
             None
         End Enum
-        Enum TypeOfExchage
-            NSE = 1
-            MCX
-            CDS
-            None
-        End Enum
+
     End Interface
 End Namespace

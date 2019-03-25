@@ -1,4 +1,5 @@
 ﻿Imports Algo2TradeCore.Entities.UserSettings
+Imports Algo2TradeCore.Entities
 
 Public Class frmAdvancedOptions
 
@@ -28,6 +29,14 @@ Public Class frmAdvancedOptions
             txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
             txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
             dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
+            If _UserInputs.ExchangeDetails IsNot Nothing Then
+                dtpckrNSEExchangeStartTime.Value = _UserInputs.ExchangeDetails("NSE").ExchangeStartTime
+                dtpckrNSEExchangeEndTime.Value = _UserInputs.ExchangeDetails("NSE").ExchangeEndTime
+                dtpckrMCXExchangeStartTime.Value = _UserInputs.ExchangeDetails("MCX").ExchangeStartTime
+                dtpckrMCXExchangeEndTime.Value = _UserInputs.ExchangeDetails("MCX").ExchangeEndTime
+                dtpckrCDSExchangeStartTime.Value = _UserInputs.ExchangeDetails("CDS").ExchangeStartTime
+                dtpckrCDSExchangeEndTime.Value = _UserInputs.ExchangeDetails("CDS").ExchangeEndTime
+            End If
         End If
     End Sub
 
@@ -36,6 +45,16 @@ Public Class frmAdvancedOptions
         _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
         _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
         _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
+        _UserInputs.ExchangeDetails = New Dictionary(Of String, Exchange) From {
+            {"NSE", New Exchange(Enums.TypeOfExchage.NSE) With
+            {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value}},
+            {"NFO", New Exchange(Enums.TypeOfExchage.NSE) With
+            {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value}},
+            {"MCX", New Exchange(Enums.TypeOfExchage.MCX) With
+            {.ExchangeStartTime = dtpckrMCXExchangeStartTime.Value, .ExchangeEndTime = dtpckrMCXExchangeEndTime.Value}},
+            {"CDS", New Exchange(Enums.TypeOfExchage.CDS) With
+            {.ExchangeStartTime = dtpckrCDSExchangeStartTime.Value, .ExchangeEndTime = dtpckrCDSExchangeEndTime.Value}}
+        }
         Utilities.Strings.SerializeFromCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename, _UserInputs)
     End Sub
 
@@ -57,4 +76,5 @@ Public Class frmAdvancedOptions
         If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
         Return ret
     End Function
+
 End Class

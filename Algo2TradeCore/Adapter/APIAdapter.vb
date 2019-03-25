@@ -42,7 +42,7 @@ Namespace Adapter
         Public MustOverride Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
         Public MustOverride Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
         Public MustOverride Async Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
-        Public MustOverride Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of IInstrument.TypeOfExchage, IUserMargin))
+        Public MustOverride Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of Enums.TypeOfExchage, IUserMargin))
         Public MustOverride Async Function GetAllQuotesAsync(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
         Public MustOverride Sub SetAPIAccessToken(ByVal apiAccessToken As String)
         Public MustOverride Async Function ModifyStoplossOrderAsync(ByVal orderId As String, ByVal triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))

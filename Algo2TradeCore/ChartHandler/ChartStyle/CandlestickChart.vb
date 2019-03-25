@@ -4,13 +4,11 @@ Imports Algo2TradeCore.Controller
 Imports NLog
 Imports Algo2TradeCore.Strategies
 Namespace ChartHandler.ChartStyle
-
     Public Class CandleStickChart
         Inherits Chart
 #Region "Logging and Status Progress"
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
-
 
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal assoicatedParentInstrument As IInstrument,
@@ -115,6 +113,7 @@ Namespace ChartHandler.ChartStyle
             If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
                 Exit Function
             End If
+            'Debug.WriteLine(Utilities.Strings.JsonSerialize(tickData))
 
             Try
                 While Interlocked.Read(_tickLock) > 0
@@ -130,7 +129,7 @@ Namespace ChartHandler.ChartStyle
                                                             End Function)
                     If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then lastExistingPayload = lastExistingPayloads.LastOrDefault.Value
                 End If
-                Dim runningPayload As OHLCPayload = Nothing
+                Dim runningPayloads As List(Of OHLCPayload) = New List(Of OHLCPayload)
                 Dim tickWasProcessed As Boolean = False
                 'Do not touch the payload if it was already processed by historical
                 Dim freshCandle As Boolean = False
@@ -173,8 +172,40 @@ Namespace ChartHandler.ChartStyle
                         'Debug.WriteLine(previousCandle.PreviousPayload.ToString)
                         'Debug.WriteLine(previousCandle.ToString)
                     End If
-                    runningPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
-                    With runningPayload
+
+                    'Fill 0 volume Candles
+                    If previousCandle IsNot Nothing AndAlso
+                        Utilities.Time.GetDateTimeTillMinutes(Now) <= Utilities.Time.GetDateTimeTillMinutes(Me._parentInstrument.ExchangeDetails.ExchangeEndTime) AndAlso
+                        Not Utilities.Time.IsDateTimeEqualTillMinutes(tickData.Timestamp.Value, previousCandle.SnapshotDateTime.AddMinutes(1)) Then
+                        Dim timeToCalculateFrom As Date = Date.MinValue
+                        If previousCandle.SnapshotDateTime < Me._parentInstrument.ExchangeDetails.ExchangeStartTime Then
+                            timeToCalculateFrom = Me._parentInstrument.ExchangeDetails.ExchangeStartTime
+                        Else
+                            timeToCalculateFrom = previousCandle.SnapshotDateTime.AddMinutes(1)
+                        End If
+                        Dim timeGap As Integer = DateDiff(DateInterval.Minute, timeToCalculateFrom, tickData.Timestamp.Value)
+                        Dim fillPayload As OHLCPayload = Nothing
+                        For time As Integer = 0 To timeGap - 1
+                            fillPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
+                            With fillPayload
+                                .TradingSymbol = _parentInstrument.TradingSymbol
+                                .OpenPrice = previousCandle.ClosePrice
+                                .HighPrice = previousCandle.ClosePrice
+                                .LowPrice = previousCandle.ClosePrice
+                                .ClosePrice = previousCandle.ClosePrice
+                                .Volume = 0
+                                .DailyVolume = tickData.Volume
+                                .SnapshotDateTime = timeToCalculateFrom.AddMinutes(time)
+                                .PreviousPayload = previousCandle
+                                .NumberOfTicks = 1
+                            End With
+                            previousCandle = fillPayload
+                            runningPayloads.Add(fillPayload)
+                        Next
+                    End If
+
+                    Dim currentPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
+                    With currentPayload
                         .TradingSymbol = _parentInstrument.TradingSymbol
                         .OpenPrice = tickData.LastPrice
                         .HighPrice = tickData.LastPrice
@@ -186,6 +217,7 @@ Namespace ChartHandler.ChartStyle
                         .PreviousPayload = previousCandle
                         .NumberOfTicks = 1
                     End With
+                    runningPayloads.Add(currentPayload)
                     tickWasProcessed = True
 
                     ''TODO: Below loop is for checking purpose
@@ -198,20 +230,30 @@ Namespace ChartHandler.ChartStyle
                     'Next
                 End If
                 If tickWasProcessed Then 'If not processed would mean that the tick was for a historical candle that was already processed and not for a live candle
-                    If runningPayload IsNot Nothing Then
-                        _parentInstrument.RawPayloads.GetOrAdd(runningPayload.SnapshotDateTime, runningPayload)
+                    If runningPayloads IsNot Nothing AndAlso runningPayloads.Count > 0 Then
+                        For Each currentRunningPayload In runningPayloads
+                            _parentInstrument.RawPayloads.GetOrAdd(currentRunningPayload.SnapshotDateTime, currentRunningPayload)
+                        Next
                     Else
-                        runningPayload = lastExistingPayload
+                        runningPayloads.Add(lastExistingPayload)
                     End If
                     If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                         For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                            Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayload).ConfigureAwait(False)
+                            Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayloads).ConfigureAwait(False)
                         Next
                     End If
                 End If
 
 
-
+                If freshCandle Then
+                    For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
+                                                                                  Return x.Key
+                                                                              End Function)
+                        If payload.Value.PreviousPayload IsNot Nothing Then
+                            Debug.WriteLine(payload.Value.ToString())
+                        End If
+                    Next
+                End If
 
                 ''TODO: Below loop is for checking purpose
                 'Try
