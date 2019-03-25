@@ -1,5 +1,6 @@
 Instrument Name,Cash,Futures,Quantity,Capital,Max Loss Per Stock,Max Profit Per Stock
 DHFL,TRUE,,1,,0.4,0.5
+KPIT,TRUE,,1,,0.4,0.5
 ZEEL,TRUE,,1,,0.4,0.5
 RELCAPITAL,TRUE,,1,,0.4,0.5
 JETAIRWAYS,TRUE,,1,,0.4,0.5

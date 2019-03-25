@@ -171,11 +171,7 @@ Namespace Strategies
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
                 For Each activeOrder In allActiveOrders
-                    If activeOrder.Status <> "COMPLETE" Then
-                        'If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 AndAlso
-                        '    RequestResponseForCancelOrder.ContainsKey(Utilities.Strings.Encrypt(activeOrder.ParentOrderIdentifier, activeOrder.OrderIdentifier)) Then
-                        '    Continue For
-                        'End If
+                    If Not activeOrder.Status = "COMPLETE" Then
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder))
                         ret.Add(New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, activeOrder))
                     End If
@@ -406,9 +402,6 @@ Namespace Strategies
             'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            'If OrderDetails.ContainsKey(orderData.ParentOrderIdentifier) Then
-            '    orderData.SignalCandle = OrderDetails(orderData.ParentOrderIdentifier).SignalCandle
-            'End If
             OrderDetails.AddOrUpdate(orderData.ParentOrderIdentifier, orderData, Function(key, value) orderData)
 
             'Modify Activity Details
@@ -527,54 +520,6 @@ Namespace Strategies
             End If
             Await Me.ParentStrategy.SignalManager.UIRefresh(Me, True).ConfigureAwait(False)
         End Function
-        'Public Overridable Async Function ProcessOrderAsync(ByVal orderData As IOrder) As Task
-        '    'logger.Debug("ProcessOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(order))
-        '    Await Task.Delay(0).ConfigureAwait(False)
-
-        '    'Delete RequestResponseForPlaceOrder collection
-        '    'logger.Warn("Process Order ID: {0}, Parent Order ID: {1}", orderData.OrderIdentifier, orderData.ParentOrderIdentifier)
-        '    'logger.Warn("Place Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
-        '    If RequestResponseForPlaceOrder IsNot Nothing AndAlso RequestResponseForPlaceOrder.Count > 0 Then
-        '        Dim placeOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForPlaceOrder.Where(Function(x)
-        '                                                                                                                             Return x.Value = orderData.OrderIdentifier
-        '                                                                                                                         End Function)
-        '        If placeOrderParameters IsNot Nothing AndAlso placeOrderParameters.Count > 0 Then
-        '            For Each placeOrderParameter In placeOrderParameters
-        '                RequestResponseForPlaceOrder.TryRemove(placeOrderParameter.Key, placeOrderParameter.Value)
-        '                'logger.Warn("Place Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForPlaceOrder))
-        '            Next
-        '        End If
-        '    End If
-
-        '    'Delete RequestResponseForModifyOrder collection
-        '    'logger.Warn("Modify Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForModifyOrder))
-        '    If RequestResponseForModifyOrder IsNot Nothing AndAlso RequestResponseForModifyOrder.Count > 0 Then
-        '        Dim modifyOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForModifyOrder.Where(Function(x)
-        '                                                                                                                               Return x.Key = Utilities.Strings.Encrypt(orderData.TriggerPrice, orderData.OrderIdentifier)
-        '                                                                                                                           End Function)
-        '        If modifyOrderParameters IsNot Nothing AndAlso modifyOrderParameters.Count > 0 Then
-        '            For Each modifyOrderParameter In modifyOrderParameters
-        '                RequestResponseForPlaceOrder.TryRemove(modifyOrderParameter.Key, modifyOrderParameter.Value)
-        '                'logger.Warn("Modify Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForModifyOrder))
-        '            Next
-        '        End If
-        '    End If
-
-        '    'Delete RequestResponseForCancelOrder collection
-        '    'logger.Warn("Cancel Collection Before deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
-        '    If RequestResponseForCancelOrder IsNot Nothing AndAlso RequestResponseForCancelOrder.Count > 0 Then
-        '        Dim encryptionDataString As String = If(orderData.ParentOrderIdentifier Is Nothing, "Algo2TradeParentCancel", orderData.ParentOrderIdentifier)
-        '        Dim cancelOrderParameters As IEnumerable(Of KeyValuePair(Of String, String)) = RequestResponseForCancelOrder.Where(Function(x)
-        '                                                                                                                               Return x.Key = Utilities.Strings.Encrypt(encryptionDataString, orderData.OrderIdentifier)
-        '                                                                                                                           End Function)
-        '        If cancelOrderParameters IsNot Nothing AndAlso cancelOrderParameters.Count > 0 Then
-        '            For Each cancelOrderParameter In cancelOrderParameters
-        '                RequestResponseForPlaceOrder.TryRemove(cancelOrderParameter.Key, cancelOrderParameter.Value)
-        '                'logger.Warn("Cancel Collection After deletion: {0}", Utilities.Strings.JsonSerialize(RequestResponseForCancelOrder))
-        '            Next
-        '        End If
-        '    End If
-        'End Function
         Public Overridable Async Function ForceExitAllTradesAsync() As Task
             'logger.Debug("ForceExitAllTradesAsync, parameters:Nothing")
             Try

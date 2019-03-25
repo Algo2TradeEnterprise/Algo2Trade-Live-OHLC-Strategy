@@ -148,7 +148,7 @@ Namespace Controller
             If _APIInformationCollector IsNot Nothing Then _APIInformationCollector.RefreshCancellationToken(canceller)
         End Sub
         Protected Async Function ExecuteCommandAsync(ByVal command As APIAdapter.ExecutionCommands, ByVal data As Object) As Task(Of Object)
-            logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
+            'logger.Debug("ExecuteCommandAsync, parameters:{0},{1}", command, Utilities.Strings.JsonSerialize(data))
 
             Dim ret As Object = Nothing
             Dim lastException As Exception = Nothing
