@@ -46,49 +46,106 @@ Namespace ChartHandler.ChartStyle
                             End If
                         End If
                         For Each historicalCandle In historicalCandles
-                            Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
-                            With runningPayload
-                                .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
-                                .TradingSymbol = _parentInstrument.TradingSymbol
-                                .OpenPrice = New Field(TypeOfField.Open, historicalCandle(1))
-                                .HighPrice = New Field(TypeOfField.High, historicalCandle(2))
-                                .LowPrice = New Field(TypeOfField.Low, historicalCandle(3))
-                                .ClosePrice = New Field(TypeOfField.Close, historicalCandle(4))
-                                .Volume = New Field(TypeOfField.Volume, historicalCandle(5))
-                                If previousCandlePayload IsNot Nothing AndAlso
-                                    .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
-                                    .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
-                                Else
-                                    .DailyVolume = .Volume.Value
-                                End If
-                                .PreviousPayload = previousCandlePayload
-                            End With
-                            previousCandlePayload = runningPayload
 
-                            If runningPayload IsNot Nothing Then
-                                Dim existingOrAddedPayload As OHLCPayload = Nothing
-                                Dim freshCandleAdded As Boolean = False
-                                If _parentInstrument.RawPayloads IsNot Nothing Then
-                                    If Not _parentInstrument.RawPayloads.ContainsKey(runningPayload.SnapshotDateTime) Then freshCandleAdded = True
-                                    existingOrAddedPayload = _parentInstrument.RawPayloads.GetOrAdd(runningPayload.SnapshotDateTime, runningPayload)
-                                End If
-                                Dim candleNeedsUpdate As Boolean = False
-                                If existingOrAddedPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
-                                    candleNeedsUpdate = Not runningPayload.Equals(existingOrAddedPayload)
-                                    _parentInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
-                                ElseIf Not runningPayload.Equals(existingOrAddedPayload) Then
-                                    candleNeedsUpdate = True
-                                End If
-                                If candleNeedsUpdate OrElse freshCandleAdded Then
-                                    'existingOrAddedPayload = runningPayload
-                                    _parentInstrument.RawPayloads(runningPayload.SnapshotDateTime) = runningPayload
-                                    If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
-                                        For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                                            Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayload).ConfigureAwait(False)
-                                        Next
-                                    End If
+                            Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+
+                            'Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
+                            'With runningPayload
+                            '    .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+                            '    .TradingSymbol = _parentInstrument.TradingSymbol
+                            '    .OpenPrice = New Field(TypeOfField.Open, historicalCandle(1))
+                            '    .HighPrice = New Field(TypeOfField.High, historicalCandle(2))
+                            '    .LowPrice = New Field(TypeOfField.Low, historicalCandle(3))
+                            '    .ClosePrice = New Field(TypeOfField.Close, historicalCandle(4))
+                            '    .Volume = New Field(TypeOfField.Volume, historicalCandle(5))
+                            '    If previousCandlePayload IsNot Nothing AndAlso
+                            '        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                            '        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                            '    Else
+                            '        .DailyVolume = .Volume.Value
+                            '    End If
+                            '    .PreviousPayload = previousCandlePayload
+                            'End With
+                            'previousCandlePayload = runningPayload
+
+                            'If runningPayload IsNot Nothing Then
+                            Dim dummy As OHLCPayload = Nothing
+                            Dim existingOrAddedPayload As OHLCPayload = Nothing
+                            Dim freshCandleAdded As Boolean = False
+                            If _parentInstrument.RawPayloads IsNot Nothing Then
+                                If Not _parentInstrument.RawPayloads.ContainsKey(runningSnapshotTime) Then
+                                    freshCandleAdded = True
+                                    'Create new candle and add it
+                                    Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
+                                    With runningPayload
+                                        .SnapshotDateTime = runningSnapshotTime
+                                        .TradingSymbol = _parentInstrument.TradingSymbol
+                                        .OpenPrice = New Field(TypeOfField.Open, historicalCandle(1))
+                                        .HighPrice = New Field(TypeOfField.High, historicalCandle(2))
+                                        .LowPrice = New Field(TypeOfField.Low, historicalCandle(3))
+                                        .ClosePrice = New Field(TypeOfField.Close, historicalCandle(4))
+                                        .Volume = New Field(TypeOfField.Volume, historicalCandle(5))
+                                        If previousCandlePayload IsNot Nothing AndAlso
+                                            .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                                            .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                                        Else
+                                            .DailyVolume = .Volume.Value
+                                        End If
+                                        .PreviousPayload = previousCandlePayload
+                                    End With
+                                    previousCandlePayload = runningPayload
+                                    'Now that the candle is created, add it to the collection
+                                    existingOrAddedPayload = _parentInstrument.RawPayloads.GetOrAdd(runningSnapshotTime, runningPayload)
+                                Else
+                                    'Get the existing already present candle
+                                    existingOrAddedPayload = _parentInstrument.RawPayloads.GetOrAdd(runningSnapshotTime, dummy)
                                 End If
                             End If
+                            Dim candleNeedsUpdate As Boolean = False
+                            If existingOrAddedPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
+                                candleNeedsUpdate = Not existingOrAddedPayload.Equals(historicalCandle(1),
+                                                                                    historicalCandle(2),
+                                                                                    historicalCandle(3),
+                                                                                    historicalCandle(4),
+                                                                                    historicalCandle(5),
+                                                                                    runningSnapshotTime)
+                                '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
+                            ElseIf Not existingOrAddedPayload.Equals(historicalCandle(1),
+                                                                                    historicalCandle(2),
+                                                                                    historicalCandle(3),
+                                                                                    historicalCandle(4),
+                                                                                    historicalCandle(5),
+                                                                                    runningSnapshotTime) Then
+                                candleNeedsUpdate = True
+                            End If
+                            If candleNeedsUpdate OrElse freshCandleAdded Then
+                                ''existingOrAddedPayload = runningPayload
+                                With _parentInstrument.RawPayloads(runningSnapshotTime)
+                                    .SnapshotDateTime = runningSnapshotTime
+                                    .TradingSymbol = _parentInstrument.TradingSymbol
+                                    .OpenPrice.Value = historicalCandle(1)
+                                    .HighPrice.Value = historicalCandle(2)
+                                    .LowPrice.Value = historicalCandle(3)
+                                    .ClosePrice.Value = historicalCandle(4)
+                                    .Volume.Value = historicalCandle(5)
+                                    If previousCandlePayload IsNot Nothing AndAlso
+                                        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                                        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                                    Else
+                                        .DailyVolume = .Volume.Value
+                                    End If
+                                    .PreviousPayload = previousCandlePayload
+                                End With
+                                previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
+
+                                '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
+                                If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+                                    For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
+                                        Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, _parentInstrument.RawPayloads(runningSnapshotTime)).ConfigureAwait(False)
+                                    Next
+                                End If
+                            End If
+                            'End If
                         Next
                         _parentInstrument.IsHistoricalCompleted = True
                         'TODO: Below loop is for checking purpose
@@ -219,7 +276,7 @@ Namespace ChartHandler.ChartStyle
                     End With
                     runningPayloads.Add(currentPayload)
                     tickWasProcessed = True
-
+                    Debug.WriteLine(currentPayload.ToString())
                     ''TODO: Below loop is for checking purpose
                     'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
                     '                                                              Return x.Key

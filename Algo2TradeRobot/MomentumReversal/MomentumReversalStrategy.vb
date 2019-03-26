@@ -39,6 +39,7 @@ Public Class MomentumReversalStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
+
             'Get MR Strategy Instruments
             Dim mrUserInputs As MomentumReversalUserInputs = CType(Me.UserSettings, MomentumReversalUserInputs)
             If mrUserInputs.InstrumentsData IsNot Nothing AndAlso mrUserInputs.InstrumentsData.Count > 0 Then

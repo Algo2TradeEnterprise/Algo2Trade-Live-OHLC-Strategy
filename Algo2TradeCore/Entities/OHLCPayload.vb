@@ -99,5 +99,20 @@ Namespace Entities
                 Utilities.Time.IsTimeEqualTillSeconds(.SnapshotDateTime, compareWith.SnapshotDateTime)
             End With
         End Function
+        Public Overridable Overloads Function Equals(openPrice As Decimal,
+                                                     highPrice As Decimal,
+                                                     lowPrice As Decimal,
+                                                     closePrice As Decimal,
+                                                     volume As Long,
+                                                     snapshotDateTime As Date) As Boolean
+            With Me
+                Return .OpenPrice.Value = openPrice And
+                .HighPrice.Value = highPrice And
+                .LowPrice.Value = lowPrice And
+                .ClosePrice.Value = closePrice And
+                .Volume.Value = volume And
+                Utilities.Time.IsTimeEqualTillSeconds(.SnapshotDateTime, snapshotDateTime)
+            End With
+        End Function
     End Class
 End Namespace
