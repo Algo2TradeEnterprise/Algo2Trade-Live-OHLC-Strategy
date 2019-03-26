@@ -91,7 +91,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrForceRestartTime.Name = "dtpckrForceRestartTime"
         Me.dtpckrForceRestartTime.ShowUpDown = True
         Me.dtpckrForceRestartTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrForceRestartTime.TabIndex = 20
+        Me.dtpckrForceRestartTime.TabIndex = 3
         Me.dtpckrForceRestartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblForceRestartTime
@@ -160,7 +160,7 @@ Partial Class frmAdvancedOptions
         Me.GroupBox3.Controls.Add(Me.lblCDSExchangeStartTime)
         Me.GroupBox3.Location = New System.Drawing.Point(9, 185)
         Me.GroupBox3.Name = "GroupBox3"
-        Me.GroupBox3.Size = New System.Drawing.Size(436, 85)
+        Me.GroupBox3.Size = New System.Drawing.Size(404, 85)
         Me.GroupBox3.TabIndex = 31
         Me.GroupBox3.TabStop = False
         Me.GroupBox3.Text = "CDS"
@@ -172,7 +172,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrCDSExchangeEndTime.Name = "dtpckrCDSExchangeEndTime"
         Me.dtpckrCDSExchangeEndTime.ShowUpDown = True
         Me.dtpckrCDSExchangeEndTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrCDSExchangeEndTime.TabIndex = 31
+        Me.dtpckrCDSExchangeEndTime.TabIndex = 9
         Me.dtpckrCDSExchangeEndTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblCDSExchangeEndTime
@@ -192,7 +192,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrCDSExchangeStartTime.Name = "dtpckrCDSExchangeStartTime"
         Me.dtpckrCDSExchangeStartTime.ShowUpDown = True
         Me.dtpckrCDSExchangeStartTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrCDSExchangeStartTime.TabIndex = 29
+        Me.dtpckrCDSExchangeStartTime.TabIndex = 8
         Me.dtpckrCDSExchangeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblCDSExchangeStartTime
@@ -213,7 +213,7 @@ Partial Class frmAdvancedOptions
         Me.GroupBox2.Controls.Add(Me.lblMCXExchangeStartTime)
         Me.GroupBox2.Location = New System.Drawing.Point(9, 94)
         Me.GroupBox2.Name = "GroupBox2"
-        Me.GroupBox2.Size = New System.Drawing.Size(436, 85)
+        Me.GroupBox2.Size = New System.Drawing.Size(404, 85)
         Me.GroupBox2.TabIndex = 30
         Me.GroupBox2.TabStop = False
         Me.GroupBox2.Text = "MCX"
@@ -225,7 +225,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrMCXExchangeEndTime.Name = "dtpckrMCXExchangeEndTime"
         Me.dtpckrMCXExchangeEndTime.ShowUpDown = True
         Me.dtpckrMCXExchangeEndTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrMCXExchangeEndTime.TabIndex = 31
+        Me.dtpckrMCXExchangeEndTime.TabIndex = 7
         Me.dtpckrMCXExchangeEndTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblMCXExchangeEndTime
@@ -245,7 +245,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrMCXExchangeStartTime.Name = "dtpckrMCXExchangeStartTime"
         Me.dtpckrMCXExchangeStartTime.ShowUpDown = True
         Me.dtpckrMCXExchangeStartTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrMCXExchangeStartTime.TabIndex = 29
+        Me.dtpckrMCXExchangeStartTime.TabIndex = 6
         Me.dtpckrMCXExchangeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblMCXExchangeStartTime
@@ -266,7 +266,7 @@ Partial Class frmAdvancedOptions
         Me.GroupBox1.Controls.Add(Me.lblNSEExchangeStartTime)
         Me.GroupBox1.Location = New System.Drawing.Point(9, 3)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(436, 85)
+        Me.GroupBox1.Size = New System.Drawing.Size(404, 85)
         Me.GroupBox1.TabIndex = 29
         Me.GroupBox1.TabStop = False
         Me.GroupBox1.Text = "NSE"
@@ -278,7 +278,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrNSEExchangeEndTime.Name = "dtpckrNSEExchangeEndTime"
         Me.dtpckrNSEExchangeEndTime.ShowUpDown = True
         Me.dtpckrNSEExchangeEndTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrNSEExchangeEndTime.TabIndex = 31
+        Me.dtpckrNSEExchangeEndTime.TabIndex = 5
         Me.dtpckrNSEExchangeEndTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblNSEExcahngeEndTime
@@ -298,7 +298,7 @@ Partial Class frmAdvancedOptions
         Me.dtpckrNSEExchangeStartTime.Name = "dtpckrNSEExchangeStartTime"
         Me.dtpckrNSEExchangeStartTime.ShowUpDown = True
         Me.dtpckrNSEExchangeStartTime.Size = New System.Drawing.Size(134, 22)
-        Me.dtpckrNSEExchangeStartTime.TabIndex = 29
+        Me.dtpckrNSEExchangeStartTime.TabIndex = 4
         Me.dtpckrNSEExchangeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblNSEExchangeStartTime
@@ -326,7 +326,7 @@ Partial Class frmAdvancedOptions
         Me.btnSaveDelaySettings.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveDelaySettings.Name = "btnSaveDelaySettings"
         Me.btnSaveDelaySettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveDelaySettings.TabIndex = 1
+        Me.btnSaveDelaySettings.TabIndex = 0
         Me.btnSaveDelaySettings.Text = "&Save"
         Me.btnSaveDelaySettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSaveDelaySettings.UseVisualStyleBackColor = True

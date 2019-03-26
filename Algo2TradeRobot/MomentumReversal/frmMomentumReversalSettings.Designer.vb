@@ -63,7 +63,7 @@ Partial Class frmMomentumReversalSettings
         Me.btnSaveMomentumReversalSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveMomentumReversalSettings.Name = "btnSaveMomentumReversalSettings"
         Me.btnSaveMomentumReversalSettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveMomentumReversalSettings.TabIndex = 10
+        Me.btnSaveMomentumReversalSettings.TabIndex = 11
         Me.btnSaveMomentumReversalSettings.Text = "&Save"
         Me.btnSaveMomentumReversalSettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSaveMomentumReversalSettings.UseVisualStyleBackColor = True
@@ -113,7 +113,7 @@ Partial Class frmMomentumReversalSettings
         Me.txtMaxProfitPercentagePerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxProfitPercentagePerDay.Name = "txtMaxProfitPercentagePerDay"
         Me.txtMaxProfitPercentagePerDay.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxProfitPercentagePerDay.TabIndex = 26
+        Me.txtMaxProfitPercentagePerDay.TabIndex = 6
         '
         'lblMaxProfitPercentagePerDay
         '
@@ -131,7 +131,7 @@ Partial Class frmMomentumReversalSettings
         Me.txtMaxLossPercentagePerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxLossPercentagePerDay.Name = "txtMaxLossPercentagePerDay"
         Me.txtMaxLossPercentagePerDay.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxLossPercentagePerDay.TabIndex = 24
+        Me.txtMaxLossPercentagePerDay.TabIndex = 5
         '
         'lblMaxLossPercentagePerDay
         '
@@ -209,7 +209,7 @@ Partial Class frmMomentumReversalSettings
         Me.txtMinCandleRangePercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinCandleRangePercentage.Name = "txtMinCandleRangePercentage"
         Me.txtMinCandleRangePercentage.Size = New System.Drawing.Size(256, 22)
-        Me.txtMinCandleRangePercentage.TabIndex = 6
+        Me.txtMinCandleRangePercentage.TabIndex = 8
         '
         'lblMinCandleRangePercentage
         '
@@ -228,7 +228,7 @@ Partial Class frmMomentumReversalSettings
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 9
+        Me.btnBrowse.TabIndex = 10
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
@@ -273,7 +273,7 @@ Partial Class frmMomentumReversalSettings
         Me.txtCapitalProtectionPercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtCapitalProtectionPercentage.Name = "txtCapitalProtectionPercentage"
         Me.txtCapitalProtectionPercentage.Size = New System.Drawing.Size(256, 22)
-        Me.txtCapitalProtectionPercentage.TabIndex = 7
+        Me.txtCapitalProtectionPercentage.TabIndex = 9
         '
         'txtCandleWickSizePercentage
         '
@@ -281,7 +281,7 @@ Partial Class frmMomentumReversalSettings
         Me.txtCandleWickSizePercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtCandleWickSizePercentage.Name = "txtCandleWickSizePercentage"
         Me.txtCandleWickSizePercentage.Size = New System.Drawing.Size(255, 22)
-        Me.txtCandleWickSizePercentage.TabIndex = 5
+        Me.txtCandleWickSizePercentage.TabIndex = 7
         '
         'lblSignalTimeFrame
         '
