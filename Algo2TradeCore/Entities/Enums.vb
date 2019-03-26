@@ -15,8 +15,12 @@
             SMA = 1
             None
         End Enum
-        'Enum TypeOfField
-
-        'End Enum
+        Enum TypeOfField
+            Open
+            Low
+            High
+            Close
+            Volume
+        End Enum
     End Module
 End Namespace

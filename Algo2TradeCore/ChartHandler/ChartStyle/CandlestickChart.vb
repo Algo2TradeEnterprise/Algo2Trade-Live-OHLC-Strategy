@@ -50,16 +50,16 @@ Namespace ChartHandler.ChartStyle
                             With runningPayload
                                 .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
                                 .TradingSymbol = _parentInstrument.TradingSymbol
-                                .OpenPrice = historicalCandle(1)
-                                .HighPrice = historicalCandle(2)
-                                .LowPrice = historicalCandle(3)
-                                .ClosePrice = historicalCandle(4)
-                                .Volume = historicalCandle(5)
+                                .OpenPrice = New Field(TypeOfField.Open, historicalCandle(1))
+                                .HighPrice = New Field(TypeOfField.High, historicalCandle(2))
+                                .LowPrice = New Field(TypeOfField.Low, historicalCandle(3))
+                                .ClosePrice = New Field(TypeOfField.Close, historicalCandle(4))
+                                .Volume = New Field(TypeOfField.Volume, historicalCandle(5))
                                 If previousCandlePayload IsNot Nothing AndAlso
                                     .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
-                                    .DailyVolume = .Volume + previousCandlePayload.DailyVolume
+                                    .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
                                 Else
-                                    .DailyVolume = .Volume
+                                    .DailyVolume = .Volume.Value
                                 End If
                                 .PreviousPayload = previousCandlePayload
                             End With
@@ -135,17 +135,17 @@ Namespace ChartHandler.ChartStyle
                 Dim freshCandle As Boolean = False
                 If lastExistingPayload IsNot Nothing Then
                     With lastExistingPayload
-                        .HighPrice = Math.Max(lastExistingPayload.HighPrice, tickData.LastPrice)
-                        .LowPrice = Math.Min(lastExistingPayload.LowPrice, tickData.LastPrice)
-                        .ClosePrice = tickData.LastPrice
+                        .HighPrice.Value = Math.Max(lastExistingPayload.HighPrice.Value, tickData.LastPrice)
+                        .LowPrice.Value = Math.Min(lastExistingPayload.LowPrice.Value, tickData.LastPrice)
+                        .ClosePrice.Value = tickData.LastPrice
                         If .PreviousPayload IsNot Nothing Then
                             If .PreviousPayload.SnapshotDateTime.Date = tickData.Timestamp.Value.Date Then
-                                .Volume = tickData.Volume - .PreviousPayload.DailyVolume
+                                .Volume.Value = tickData.Volume - .PreviousPayload.DailyVolume
                             Else
-                                .Volume = tickData.Volume
+                                .Volume.Value = tickData.Volume
                             End If
                         Else
-                            .Volume = tickData.Volume
+                            .Volume.Value = tickData.Volume
                         End If
                         .DailyVolume = tickData.Volume
                         .NumberOfTicks += 1
@@ -189,11 +189,11 @@ Namespace ChartHandler.ChartStyle
                             fillPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
                             With fillPayload
                                 .TradingSymbol = _parentInstrument.TradingSymbol
-                                .OpenPrice = previousCandle.ClosePrice
-                                .HighPrice = previousCandle.ClosePrice
-                                .LowPrice = previousCandle.ClosePrice
-                                .ClosePrice = previousCandle.ClosePrice
-                                .Volume = 0
+                                .OpenPrice = New Field(TypeOfField.Open, previousCandle.ClosePrice.Value)
+                                .HighPrice = New Field(TypeOfField.High, previousCandle.ClosePrice.Value)
+                                .LowPrice = New Field(TypeOfField.Low, previousCandle.ClosePrice.Value)
+                                .ClosePrice = New Field(TypeOfField.Close, previousCandle.ClosePrice.Value)
+                                .Volume = New Field(TypeOfField.Volume, 0)
                                 .DailyVolume = tickData.Volume
                                 .SnapshotDateTime = timeToCalculateFrom.AddMinutes(time)
                                 .PreviousPayload = previousCandle
@@ -207,11 +207,11 @@ Namespace ChartHandler.ChartStyle
                     Dim currentPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
                     With currentPayload
                         .TradingSymbol = _parentInstrument.TradingSymbol
-                        .OpenPrice = tickData.LastPrice
-                        .HighPrice = tickData.LastPrice
-                        .LowPrice = tickData.LastPrice
-                        .ClosePrice = tickData.LastPrice
-                        .Volume = tickData.Volume
+                        .OpenPrice = New Field(TypeOfField.Open, tickData.LastPrice)
+                        .HighPrice = New Field(TypeOfField.High, tickData.LastPrice)
+                        .LowPrice = New Field(TypeOfField.Low, tickData.LastPrice)
+                        .ClosePrice = New Field(TypeOfField.Close, tickData.LastPrice)
+                        .Volume = New Field(TypeOfField.Volume, tickData.Volume)
                         .DailyVolume = tickData.Volume
                         .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(tickData.Timestamp.Value)
                         .PreviousPayload = previousCandle
@@ -245,15 +245,15 @@ Namespace ChartHandler.ChartStyle
                 End If
 
 
-                If freshCandle Then
-                    For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
-                                                                                  Return x.Key
-                                                                              End Function)
-                        If payload.Value.PreviousPayload IsNot Nothing Then
-                            Debug.WriteLine(payload.Value.ToString())
-                        End If
-                    Next
-                End If
+                'If freshCandle Then
+                '    For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
+                '                                                                  Return x.Key
+                '                                                              End Function)
+                '        If payload.Value.PreviousPayload IsNot Nothing Then
+                '            Debug.WriteLine(payload.Value.ToString())
+                '        End If
+                '    Next
+                'End If
 
                 ''TODO: Below loop is for checking purpose
                 'Try
@@ -300,16 +300,16 @@ Namespace ChartHandler.ChartStyle
                 outputConsumer.ChartPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
                 Dim runninPayload As New OHLCPayload(payloadSource)
                 With runninPayload
-                    .OpenPrice = currentPayload.OpenPrice
-                    .HighPrice = currentPayload.HighPrice
-                    .LowPrice = currentPayload.LowPrice
-                    .ClosePrice = currentPayload.ClosePrice
+                    .OpenPrice = New Field(TypeOfField.Open, currentPayload.OpenPrice.Value)
+                    .HighPrice = New Field(TypeOfField.High, currentPayload.HighPrice.Value)
+                    .LowPrice = New Field(TypeOfField.Low, currentPayload.LowPrice.Value)
+                    .ClosePrice = New Field(TypeOfField.Close, currentPayload.ClosePrice.Value)
                     .DailyVolume = currentPayload.DailyVolume
                     .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
                     .PreviousPayload = Nothing
                     .SnapshotDateTime = blockDateInThisTimeframe
                     .TradingSymbol = currentPayload.TradingSymbol
-                    .Volume = currentPayload.Volume
+                    .Volume = New Field(TypeOfField.Volume, currentPayload.Volume.Value)
                 End With
                 outputConsumer.ChartPayloads.GetOrAdd(blockDateInThisTimeframe, runninPayload)
             Else
@@ -339,17 +339,17 @@ Namespace ChartHandler.ChartStyle
                     End If
 
                     If currentPayload.SnapshotDateTime = blockDateInThisTimeframe AndAlso currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical Then
-                        lastExistingPayload.OpenPrice = currentPayload.OpenPrice
+                        lastExistingPayload.OpenPrice.Value = currentPayload.OpenPrice.Value
                     End If
                     With lastExistingPayload
-                        .HighPrice = Math.Max(.HighPrice, currentPayload.HighPrice)
-                        .LowPrice = Math.Min(.LowPrice, currentPayload.LowPrice)
-                        .ClosePrice = currentPayload.ClosePrice
+                        .HighPrice.Value = Math.Max(.HighPrice.Value, currentPayload.HighPrice.Value)
+                        .LowPrice.Value = Math.Min(.LowPrice.Value, currentPayload.LowPrice.Value)
+                        .ClosePrice.Value = currentPayload.ClosePrice.Value
                         .PreviousPayload = previousPayload
                         If .PreviousPayload IsNot Nothing AndAlso .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
-                            .Volume = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
+                            .Volume.Value = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
                         Else
-                            .Volume = currentPayload.DailyVolume
+                            .Volume.Value = currentPayload.DailyVolume
                         End If
                         .DailyVolume = currentPayload.DailyVolume
                         .PayloadGeneratedBy = payloadSource
@@ -378,10 +378,10 @@ Namespace ChartHandler.ChartStyle
                     End If
 
                     With runninPayload
-                        .OpenPrice = currentPayload.OpenPrice
-                        .HighPrice = currentPayload.HighPrice
-                        .LowPrice = currentPayload.LowPrice
-                        .ClosePrice = currentPayload.ClosePrice
+                        .OpenPrice = New Field(TypeOfField.Open, currentPayload.OpenPrice.Value)
+                        .HighPrice = New Field(TypeOfField.High, currentPayload.HighPrice.Value)
+                        .LowPrice = New Field(TypeOfField.Low, currentPayload.LowPrice.Value)
+                        .ClosePrice = New Field(TypeOfField.Close, currentPayload.ClosePrice.Value)
                         .DailyVolume = currentPayload.DailyVolume
                         .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
                         .PreviousPayload = previousPayload
@@ -389,9 +389,9 @@ Namespace ChartHandler.ChartStyle
                         .TradingSymbol = currentPayload.TradingSymbol
                         If .PreviousPayload IsNot Nothing AndAlso
                             .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
-                            .Volume = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
+                            .Volume = New Field(TypeOfField.Volume, currentPayload.DailyVolume - .PreviousPayload.DailyVolume)
                         Else
-                            .Volume = currentPayload.DailyVolume
+                            .Volume = New Field(TypeOfField.Volume, currentPayload.DailyVolume)
                         End If
                     End With
                     outputConsumer.ChartPayloads.GetOrAdd(runninPayload.SnapshotDateTime, runninPayload)

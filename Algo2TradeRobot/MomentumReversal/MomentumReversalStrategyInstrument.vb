@@ -33,7 +33,7 @@ Public Class MomentumReversalStrategyInstrument
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame) With
                 {
-                    .OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New SMA()}
+                    .OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New SMAConsumer()}
                 }
                 RawPayloadConsumers.Add(chartConsumer)
             Else
@@ -150,10 +150,10 @@ Public Class MomentumReversalStrategyInstrument
                     (differenceInBothWicks = 0 AndAlso runningCandlePayload.PreviousPayload.CandleColor = Color.White)) AndAlso
                     runningCandlePayload.PreviousPayload.CandleWicks.Top > benchmarkWicksSize Then
 
-                    MRTradePrice = runningCandlePayload.PreviousPayload.HighPrice
+                    MRTradePrice = runningCandlePayload.PreviousPayload.HighPrice.Value
                     price = MRTradePrice + Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     triggerPrice = MRTradePrice + CalculateBuffer(MRTradePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                    stoplossPrice = runningCandlePayload.PreviousPayload.LowPrice - CalculateBuffer(runningCandlePayload.PreviousPayload.LowPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    stoplossPrice = runningCandlePayload.PreviousPayload.LowPrice.Value - CalculateBuffer(runningCandlePayload.PreviousPayload.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     target = Math.Round(ConvertFloorCeling((triggerPrice - stoplossPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     If MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade <> Decimal.MinValue Then
                         target = Math.Min(target, MRTradePrice * MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade / 100)
@@ -174,10 +174,10 @@ Public Class MomentumReversalStrategyInstrument
                     (differenceInBothWicks = 0 AndAlso runningCandlePayload.PreviousPayload.CandleColor = Color.Red)) AndAlso
                     runningCandlePayload.PreviousPayload.CandleWicks.Bottom > benchmarkWicksSize Then
 
-                    MRTradePrice = runningCandlePayload.PreviousPayload.LowPrice
+                    MRTradePrice = runningCandlePayload.PreviousPayload.LowPrice.Value
                     price = MRTradePrice - Math.Round(ConvertFloorCeling(MRTradePrice * 0.3 / 100, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     triggerPrice = MRTradePrice - CalculateBuffer(MRTradePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                    stoplossPrice = runningCandlePayload.PreviousPayload.HighPrice + CalculateBuffer(runningCandlePayload.PreviousPayload.HighPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    stoplossPrice = runningCandlePayload.PreviousPayload.HighPrice.Value + CalculateBuffer(runningCandlePayload.PreviousPayload.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     target = Math.Round(ConvertFloorCeling((stoplossPrice - triggerPrice) * MRUserSettings.TargetMultiplier, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                     If MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade <> Decimal.MinValue Then
                         target = Math.Min(target, MRTradePrice * MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade / 100)
@@ -236,11 +236,11 @@ Public Class MomentumReversalStrategyInstrument
                     Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrderId, Me.ParentStrategy.UserSettings.SignalTimeFrame)
                     If signalCandle IsNot Nothing Then
                         If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
-                            potentialSLPrice = signalCandle.LowPrice - CalculateBuffer(signalCandle.LowPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                            potentialSLPrice = signalCandle.LowPrice.Value - CalculateBuffer(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                             triggerPrice = Await GetModifiedStoplossAsync(parentOrderPrice, potentialSLPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
                             triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                         ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
-                            potentialSLPrice = signalCandle.HighPrice + CalculateBuffer(signalCandle.HighPrice, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                            potentialSLPrice = signalCandle.HighPrice.Value + CalculateBuffer(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                             triggerPrice = Await GetModifiedStoplossAsync(potentialSLPrice, parentOrderPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
                             triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                         End If

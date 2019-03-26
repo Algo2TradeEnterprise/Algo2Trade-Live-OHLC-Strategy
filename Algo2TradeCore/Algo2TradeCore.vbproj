@@ -86,9 +86,8 @@
     <Compile Include="Adapter\ZerodhaTicker.vb" />
     <Compile Include="ChartHandler\Indicator\Indicator.vb" />
     <Compile Include="Entities\Exchange.vb" />
-    <Compile Include="Entities\Fields\IField.vb" />
-    <Compile Include="Entities\Fields\IntegerField.vb" />
-    <Compile Include="Entities\Indicators\SMA.vb" />
+    <Compile Include="Entities\Field.vb" />
+    <Compile Include="Entities\Indicators\SMAConsumer.vb" />
     <Compile Include="Entities\IUserMargin.vb" />
     <Compile Include="Entities\PlaceOrderParameters.vb" />
     <Compile Include="Entities\IBrokerageAttributes.vb" />

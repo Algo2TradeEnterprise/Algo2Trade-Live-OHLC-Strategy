@@ -1,5 +1,5 @@
 ﻿Namespace Entities.Indicators
-    Public Class SMA
+    Public Class SMAConsumer
         Inherits PayloadToIndicatorConsumer
         Public Sub New()
             MyBase.New(Indicator.SMA)

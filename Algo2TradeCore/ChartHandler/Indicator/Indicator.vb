@@ -64,13 +64,15 @@ Namespace ChartHandler.Indicator
         End Sub
 
 #Region "Private Function"
-        Private Async Function CalcualteSMAx(ByVal smaTime As Date, ByVal smaOn As Object, ByVal outputConsumer As SMA, ByVal startTime As Date, ByVal endTime As Date) As Task
+        Private Async Function CalcualteSMAx(ByVal smaTime As Date, ByVal smaOn As Object, ByVal outputConsumer As SMAConsumer, ByVal startTime As Date, ByVal endTime As Date) As Task
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
 
         End Function
 #End Region
 
 #Region "Public Functions"
-        Public Async Function CalculateSMA(ByVal smaTime As Date, ByVal smaOn As Object, ByVal outputConsumer As SMA) As Task
+        Public Async Function CalculateSMA(ByVal smaTime As Date, ByVal smaOn As Object, ByVal outputConsumer As SMAConsumer) As Task
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             If outputConsumer.SMAPayloads IsNot Nothing AndAlso outputConsumer.SMAPayloads.Count > 0 Then
                 If outputConsumer.SMAPayloads.ContainsKey(smaTime) Then
 
