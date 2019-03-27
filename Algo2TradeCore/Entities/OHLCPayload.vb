@@ -84,9 +84,10 @@ Namespace Entities
 
 
         Public Overrides Function ToString() As String
-            Return String.Format("TradingSymbol:{0}, Open:{1}, High:{2}, Low:{3}, Close:{4}, Volume:{5}, Timestamp:{6}, Source:{7}, DailyVolume:{8}",
+            Return String.Format("TradingSymbol:{0}, Open:{1}, High:{2}, Low:{3}, Close:{4}, Volume:{5}, Timestamp:{6}, Source:{7}, DailyVolume:{8}, PreviousCandleTime:{9}",
                                  Me.TradingSymbol, Me.OpenPrice.Value, Me.HighPrice.Value, Me.LowPrice.Value, Me.ClosePrice.Value, Me.Volume.Value,
-                                 Me.SnapshotDateTime.ToString(), Me.PayloadGeneratedBy.ToString, Me.DailyVolume)
+                                 Me.SnapshotDateTime.ToString(), Me.PayloadGeneratedBy.ToString, Me.DailyVolume,
+                                 If(Me.PreviousPayload Is Nothing, "Nothing", Me.PreviousPayload.SnapshotDateTime.ToString()))
         End Function
         Public Overrides Function Equals(obj As Object) As Boolean
             Dim compareWith As OHLCPayload = obj

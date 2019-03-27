@@ -46,7 +46,6 @@ Namespace ChartHandler.ChartStyle
                             End If
                         End If
                         For Each historicalCandle In historicalCandles
-
                             Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
 
                             'Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
@@ -93,7 +92,7 @@ Namespace ChartHandler.ChartStyle
                                         End If
                                         .PreviousPayload = previousCandlePayload
                                     End With
-                                    previousCandlePayload = runningPayload
+                                    ''''previousCandlePayload = runningPayload
                                     'Now that the candle is created, add it to the collection
                                     existingOrAddedPayload = _parentInstrument.RawPayloads.GetOrAdd(runningSnapshotTime, runningPayload)
                                 Else
@@ -109,23 +108,32 @@ Namespace ChartHandler.ChartStyle
                                                                                     historicalCandle(4),
                                                                                     historicalCandle(5),
                                                                                     runningSnapshotTime)
-                                With _parentInstrument.RawPayloads(runningSnapshotTime)
-                                    .SnapshotDateTime = runningSnapshotTime
-                                    .TradingSymbol = _parentInstrument.TradingSymbol
-                                    .OpenPrice.Value = historicalCandle(1)
-                                    .HighPrice.Value = historicalCandle(2)
-                                    .LowPrice.Value = historicalCandle(3)
-                                    .ClosePrice.Value = historicalCandle(4)
-                                    .Volume.Value = historicalCandle(5)
-                                    If previousCandlePayload IsNot Nothing AndAlso
-                                        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
-                                        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
-                                    Else
-                                        .DailyVolume = .Volume.Value
-                                    End If
-                                    .PreviousPayload = previousCandlePayload
-                                End With
-                                previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
+
+                                UpdateHistoricalCandleStick(runningSnapshotTime,
+                                                            historicalCandle(1),
+                                                            historicalCandle(2),
+                                                            historicalCandle(3),
+                                                            historicalCandle(4),
+                                                            historicalCandle(5),
+                                                            previousCandlePayload)
+                                'With _parentInstrument.RawPayloads(runningSnapshotTime)
+                                '    .PayloadGeneratedBy = IPayload.PayloadSource.Historical
+                                '    .SnapshotDateTime = runningSnapshotTime
+                                '    .TradingSymbol = _parentInstrument.TradingSymbol
+                                '    .OpenPrice.Value = historicalCandle(1)
+                                '    .HighPrice.Value = historicalCandle(2)
+                                '    .LowPrice.Value = historicalCandle(3)
+                                '    .ClosePrice.Value = historicalCandle(4)
+                                '    .Volume.Value = historicalCandle(5)
+                                '    If previousCandlePayload IsNot Nothing AndAlso
+                                '        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                                '        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                                '    Else
+                                '        .DailyVolume = .Volume.Value
+                                '    End If
+                                '    .PreviousPayload = previousCandlePayload
+                                'End With
+                                ''''If Not candleNeedsUpdate Then previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
                                 '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
                             ElseIf Not existingOrAddedPayload.Equals(historicalCandle(1),
                                                                                     historicalCandle(2),
@@ -137,32 +145,40 @@ Namespace ChartHandler.ChartStyle
                             End If
                             If candleNeedsUpdate OrElse freshCandleAdded Then
                                 ''existingOrAddedPayload = runningPayload
-                                With _parentInstrument.RawPayloads(runningSnapshotTime)
-                                    .SnapshotDateTime = runningSnapshotTime
-                                    .TradingSymbol = _parentInstrument.TradingSymbol
-                                    .OpenPrice.Value = historicalCandle(1)
-                                    .HighPrice.Value = historicalCandle(2)
-                                    .LowPrice.Value = historicalCandle(3)
-                                    .ClosePrice.Value = historicalCandle(4)
-                                    .Volume.Value = historicalCandle(5)
-                                    If previousCandlePayload IsNot Nothing AndAlso
-                                        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
-                                        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
-                                    Else
-                                        .DailyVolume = .Volume.Value
-                                    End If
-                                    .PreviousPayload = previousCandlePayload
-                                End With
-                                previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
+                                UpdateHistoricalCandleStick(runningSnapshotTime,
+                                                            historicalCandle(1),
+                                                            historicalCandle(2),
+                                                            historicalCandle(3),
+                                                            historicalCandle(4),
+                                                            historicalCandle(5),
+                                                            previousCandlePayload)
+                                'With _parentInstrument.RawPayloads(runningSnapshotTime)
+                                '    .SnapshotDateTime = runningSnapshotTime
+                                '    .TradingSymbol = _parentInstrument.TradingSymbol
+                                '    .OpenPrice.Value = historicalCandle(1)
+                                '    .HighPrice.Value = historicalCandle(2)
+                                '    .LowPrice.Value = historicalCandle(3)
+                                '    .ClosePrice.Value = historicalCandle(4)
+                                '    .Volume.Value = historicalCandle(5)
+                                '    If previousCandlePayload IsNot Nothing AndAlso
+                                '        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                                '        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                                '    Else
+                                '        .DailyVolume = .Volume.Value
+                                '    End If
+                                '    .PreviousPayload = previousCandlePayload
+                                'End With
+                                ''''previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
 
                                 '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
                                 If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                                     For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                                        'Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, _parentInstrument.RawPayloads(runningSnapshotTime)).ConfigureAwait(False)
+                                        Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, _parentInstrument.RawPayloads(runningSnapshotTime)).ConfigureAwait(False)
                                     Next
                                 End If
                             End If
                             'End If
+                            previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
                         Next
                         _parentInstrument.IsHistoricalCompleted = True
                         'TODO: Below loop is for checking purpose
@@ -293,7 +309,7 @@ Namespace ChartHandler.ChartStyle
                     End With
                     runningPayloads.Add(currentPayload)
                     tickWasProcessed = True
-                    Debug.WriteLine(currentPayload.ToString())
+                    'Debug.WriteLine(currentPayload.ToString())
                     ''TODO: Below loop is for checking purpose
                     'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
                     '                                                              Return x.Key
@@ -329,21 +345,21 @@ Namespace ChartHandler.ChartStyle
                 '    Next
                 'End If
 
-                ''TODO: Below loop is for checking purpose
-                'Try
-                '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
-                '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
-                '        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
-                '                                                                     Return x.Key
-                '                                                                 End Function)
-                '            If payload.Value.PreviousPayload IsNot Nothing Then
-                '                Debug.WriteLine(payload.Value.ToString())
-                '            End If
-                '        Next
-                '    End If
-                'Catch ex As Exception
-                '    Throw ex
-                'End Try
+                'TODO: Below loop is for checking purpose
+                Try
+                    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
+                        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
+                                                                                     Return x.Key
+                                                                                 End Function)
+                            If payload.Value.PreviousPayload IsNot Nothing Then
+                                Debug.WriteLine(payload.Value.ToString())
+                            End If
+                        Next
+                    End If
+                Catch ex As Exception
+                    Throw ex
+                End Try
             Catch ex As Exception
                 logger.Error("GetChartFromTickAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
@@ -355,7 +371,7 @@ Namespace ChartHandler.ChartStyle
         End Function
 
         Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
-            logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
+            'logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim blockDateInThisTimeframe As New Date(currentPayload.SnapshotDateTime.Year,
                                                     currentPayload.SnapshotDateTime.Month,
@@ -486,7 +502,32 @@ Namespace ChartHandler.ChartStyle
             End If
 
         End Function
-
+        Public Function UpdateHistoricalCandleStick(ByVal runningCandleTime As Date,
+                                                    ByVal open As Decimal,
+                                                    ByVal high As Decimal,
+                                                    ByVal low As Decimal,
+                                                    ByVal close As Decimal,
+                                                    ByVal volume As Long,
+                                                    ByVal previousCandlePayload As OHLCPayload) As OHLCPayload
+            With _parentInstrument.RawPayloads(runningCandleTime)
+                .PayloadGeneratedBy = IPayload.PayloadSource.Historical
+                .SnapshotDateTime = runningCandleTime
+                .TradingSymbol = _parentInstrument.TradingSymbol
+                .OpenPrice.Value = open
+                .HighPrice.Value = high
+                .LowPrice.Value = low
+                .ClosePrice.Value = close
+                .Volume.Value = volume
+                If previousCandlePayload IsNot Nothing AndAlso
+                    .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                    .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                Else
+                    .DailyVolume = .Volume.Value
+                End If
+                .PreviousPayload = previousCandlePayload
+            End With
+            Return _parentInstrument.RawPayloads(runningCandleTime)
+        End Function
         Public Overrides Function ToString() As String
             Return Me.GetType.ToString
         End Function
