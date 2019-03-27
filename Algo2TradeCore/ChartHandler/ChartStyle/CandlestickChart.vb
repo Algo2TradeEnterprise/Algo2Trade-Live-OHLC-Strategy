@@ -45,6 +45,9 @@ Namespace ChartHandler.ChartStyle
                                 'Debug.WriteLine(previousCandle.ToString)
                             End If
                         End If
+                        Dim s As Stopwatch = New Stopwatch
+                        s.Start()
+
                         For Each historicalCandle In historicalCandles
                             Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
 
@@ -180,6 +183,8 @@ Namespace ChartHandler.ChartStyle
                             'End If
                             previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
                         Next
+                        s.Stop()
+                        Debug.WriteLine(String.Format("{0}, Time:{1}", _parentInstrument.TradingSymbol, s.ElapsedMilliseconds))
                         _parentInstrument.IsHistoricalCompleted = True
                         'TODO: Below loop is for checking purpose
                         'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
@@ -329,7 +334,7 @@ Namespace ChartHandler.ChartStyle
                     End If
                     If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                         For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                            Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayloads).ConfigureAwait(False)
+                            'Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayloads).ConfigureAwait(False)
                         Next
                     End If
                 End If
@@ -345,21 +350,21 @@ Namespace ChartHandler.ChartStyle
                 '    Next
                 'End If
 
-                'TODO: Below loop is for checking purpose
-                Try
-                    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
-                    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
-                        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
-                                                                                     Return x.Key
-                                                                                 End Function)
-                            If payload.Value.PreviousPayload IsNot Nothing Then
-                                Debug.WriteLine(payload.Value.ToString())
-                            End If
-                        Next
-                    End If
-                Catch ex As Exception
-                    Throw ex
-                End Try
+                ''TODO: Below loop is for checking purpose
+                'Try
+                '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
+                '        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
+                '                                                                     Return x.Key
+                '                                                                 End Function)
+                '            If payload.Value.PreviousPayload IsNot Nothing Then
+                '                Debug.WriteLine(payload.Value.ToString())
+                '            End If
+                '        Next
+                '    End If
+                'Catch ex As Exception
+                '    Throw ex
+                'End Try
             Catch ex As Exception
                 logger.Error("GetChartFromTickAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
@@ -385,7 +390,6 @@ Namespace ChartHandler.ChartStyle
             ElseIf currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical Then
                 payloadSource = IPayload.PayloadSource.CalculatedHistorical
             End If
-
             If outputConsumer.ChartPayloads Is Nothing Then
                 outputConsumer.ChartPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
                 Dim runninPayload As New OHLCPayload(payloadSource)
@@ -444,6 +448,7 @@ Namespace ChartHandler.ChartStyle
                         .DailyVolume = currentPayload.DailyVolume
                         .PayloadGeneratedBy = payloadSource
                     End With
+                    'Exit Function
 
                     'If currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
                     '    If lastExistingPayload.PreviousPayload IsNot Nothing Then Debug.WriteLine(lastExistingPayload)
@@ -484,7 +489,7 @@ Namespace ChartHandler.ChartStyle
                             .Volume = New Field(TypeOfField.Volume, currentPayload.DailyVolume)
                         End If
                     End With
-                    outputConsumer.ChartPayloads.GetOrAdd(runninPayload.SnapshotDateTime, runninPayload)
+                    outputConsumer.ChartPayloads.TryAdd(runninPayload.SnapshotDateTime, runninPayload)
 
                     ''TODO: Below loop is for checking purpose
                     'For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
