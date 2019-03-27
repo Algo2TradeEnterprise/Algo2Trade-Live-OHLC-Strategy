@@ -109,6 +109,23 @@ Namespace ChartHandler.ChartStyle
                                                                                     historicalCandle(4),
                                                                                     historicalCandle(5),
                                                                                     runningSnapshotTime)
+                                With _parentInstrument.RawPayloads(runningSnapshotTime)
+                                    .SnapshotDateTime = runningSnapshotTime
+                                    .TradingSymbol = _parentInstrument.TradingSymbol
+                                    .OpenPrice.Value = historicalCandle(1)
+                                    .HighPrice.Value = historicalCandle(2)
+                                    .LowPrice.Value = historicalCandle(3)
+                                    .ClosePrice.Value = historicalCandle(4)
+                                    .Volume.Value = historicalCandle(5)
+                                    If previousCandlePayload IsNot Nothing AndAlso
+                                        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
+                                        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
+                                    Else
+                                        .DailyVolume = .Volume.Value
+                                    End If
+                                    .PreviousPayload = previousCandlePayload
+                                End With
+                                previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
                                 '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
                             ElseIf Not existingOrAddedPayload.Equals(historicalCandle(1),
                                                                                     historicalCandle(2),
@@ -141,7 +158,7 @@ Namespace ChartHandler.ChartStyle
                                 '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
                                 If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                                     For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                                        Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, _parentInstrument.RawPayloads(runningSnapshotTime)).ConfigureAwait(False)
+                                        'Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, _parentInstrument.RawPayloads(runningSnapshotTime)).ConfigureAwait(False)
                                     Next
                                 End If
                             End If
@@ -338,7 +355,7 @@ Namespace ChartHandler.ChartStyle
         End Function
 
         Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
-            'logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
+            logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim blockDateInThisTimeframe As New Date(currentPayload.SnapshotDateTime.Year,
                                                     currentPayload.SnapshotDateTime.Month,
