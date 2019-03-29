@@ -4,6 +4,7 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities.Indicators
 Imports Algo2TradeCore.ChartHandler.ChartStyle
+Imports System.Drawing
 
 Namespace ChartHandler.Indicator
     Public Class IndicatorManeger
@@ -208,6 +209,68 @@ Namespace ChartHandler.Indicator
                     End If
 
                     outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, atrValue, Function(key, value) atrValue)
+                Next
+            End If
+        End Function
+        Public Async Function CalculateSupertrend(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SupertrendConsumer) As Task
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+            If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
+                outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
+
+                Await CalculateATR(timeToCalculateFrom, outputConsumer.SupportingATRConsumer)
+
+                Dim requiredDataSet As IEnumerable(Of Date) =
+                    outputConsumer.ParentConsumer.ConsumerPayloads.Keys.Where(Function(x)
+                                                                                  Return x >= timeToCalculateFrom
+                                                                              End Function)
+
+                For Each runningInputDate In requiredDataSet.OrderBy(Function(x)
+                                                                         Return x
+                                                                     End Function)
+                    If outputConsumer.ConsumerPayloads Is Nothing Then outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
+
+                    Dim supertrendValue As SupertrendConsumer.SupertrendPayload = Nothing
+                    If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, supertrendValue) Then
+                        supertrendValue = New SupertrendConsumer.SupertrendPayload
+                    End If
+
+                    Dim previousSupertrendValues As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = Nothing
+                    Dim previousSupertrendValue As SupertrendConsumer.SupertrendPayload = Nothing
+                    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                        previousSupertrendValues = outputConsumer.ConsumerPayloads.Where(Function(x)
+                                                                                             Return x.Key < runningInputDate
+                                                                                         End Function)
+                        If previousSupertrendValues IsNot Nothing AndAlso previousSupertrendValues.Count > 0 Then
+                            previousSupertrendValue = previousSupertrendValues.OrderBy(Function(y)
+                                                                                           Return y.Key
+                                                                                       End Function).LastOrDefault.Value
+                        End If
+                    End If
+
+                    Dim currentPayload As OHLCPayload = outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate)
+                    If currentPayload.PreviousPayload IsNot Nothing AndAlso previousSupertrendValue IsNot Nothing Then
+                        Dim basicUpperband As Decimal = ((currentPayload.HighPrice.Value + currentPayload.LowPrice.Value) / 2) + (outputConsumer.SupertrendMultiplier * CType(outputConsumer.SupportingATRConsumer.ConsumerPayloads(runningInputDate), ATRConsumer.ATRPayload).ATR.Value)
+                        Dim basicLowerband As Decimal = ((currentPayload.HighPrice.Value + currentPayload.LowPrice.Value) / 2) - (outputConsumer.SupertrendMultiplier * CType(outputConsumer.SupportingATRConsumer.ConsumerPayloads(runningInputDate), ATRConsumer.ATRPayload).ATR.Value)
+                        supertrendValue.FinalUpperBand = If(basicUpperband < previousSupertrendValue.FinalUpperBand Or currentPayload.PreviousPayload.ClosePrice.Value > previousSupertrendValue.FinalUpperBand, basicUpperband, previousSupertrendValue.FinalUpperBand)
+                        supertrendValue.FinalLowerBand = If(basicLowerband > previousSupertrendValue.FinalLowerBand Or currentPayload.PreviousPayload.ClosePrice.Value < previousSupertrendValue.FinalLowerBand, basicLowerband, previousSupertrendValue.FinalLowerBand)
+                        If previousSupertrendValue.FinalUpperBand = previousSupertrendValue.Supertrend.Value AndAlso
+                            currentPayload.ClosePrice.Value <= supertrendValue.FinalUpperBand Then
+                            supertrendValue.Supertrend.Value = supertrendValue.FinalUpperBand
+                        ElseIf previousSupertrendValue.FinalUpperBand = previousSupertrendValue.Supertrend.Value AndAlso
+                            currentPayload.ClosePrice.Value >= supertrendValue.FinalUpperBand Then
+                            supertrendValue.Supertrend.Value = supertrendValue.FinalLowerBand
+                        ElseIf previousSupertrendValue.FinalLowerBand = previousSupertrendValue.Supertrend.Value AndAlso
+                            currentPayload.ClosePrice.Value >= supertrendValue.FinalLowerBand Then
+                            supertrendValue.Supertrend.Value = supertrendValue.FinalLowerBand
+                        ElseIf previousSupertrendValue.FinalLowerBand = previousSupertrendValue.Supertrend.Value AndAlso
+                            currentPayload.ClosePrice.Value <= supertrendValue.FinalLowerBand Then
+                            supertrendValue.Supertrend.Value = supertrendValue.FinalUpperBand
+                        End If
+                    Else
+                        supertrendValue.Supertrend.Value = 0
+                    End If
+                    supertrendValue.SupertrendColor = If(currentPayload.ClosePrice.Value < supertrendValue.Supertrend.Value, Color.Red, Color.Green)
+                    outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, supertrendValue, Function(key, value) supertrendValue)
                 Next
             End If
         End Function

@@ -397,7 +397,18 @@ Namespace Strategies
                                                                     currentCandle,
                                                                     runningRawPayloadConsumer).ConfigureAwait(False)
                         If candleCreator.IndicatorCreator Is Nothing Then candleCreator.IndicatorCreator = New ChartHandler.Indicator.IndicatorManeger(Me.ParentStrategy.ParentController, candleCreator, _cts)
-                        ' Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
+                        Dim c As Integer = 1
+                        For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
+                            If c < 3 Then
+                                Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer).ConfigureAwait(False)
+                                Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer).ConfigureAwait(False)
+                            Else
+                                Await candleCreator.IndicatorCreator.CalculateSupertrend(currentXMinute, consumer).ConfigureAwait(False)
+                            End If
+                            c += 1
+                        Next
+                        'Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
+                        'Await candleCreator.IndicatorCreator.CalculateSupertrend(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
                         ' Await candleCreator.IndicatorCreator.CalculateATR(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.LastOrDefault).ConfigureAwait(False)
                     End If
                 Next

@@ -32,8 +32,10 @@ Public Class MomentumReversalStrategyInstrument
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-                chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New EMAConsumer(chartConsumer, 20, TypeOfField.Close), New ATRConsumer(chartConsumer, 14)}
-                'chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New ATRConsumer(chartConsumer, 14)}
+                chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
+                    {New EMAConsumer(chartConsumer, 5, TypeOfField.Close),
+                     New EMAConsumer(chartConsumer, 20, TypeOfField.Close),
+                     New SupertrendConsumer(chartConsumer, 7, 3)}
                 RawPayloadConsumers.Add(chartConsumer)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))

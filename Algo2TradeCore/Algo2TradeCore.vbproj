@@ -90,6 +90,7 @@
     <Compile Include="Entities\Indicators\ATRConsumer.vb" />
     <Compile Include="Entities\Indicators\EMAConsumer.vb" />
     <Compile Include="Entities\Indicators\SMAConsumer.vb" />
+    <Compile Include="Entities\Indicators\SupertrendConsumer.vb" />
     <Compile Include="Entities\IUserMargin.vb" />
     <Compile Include="Entities\PlaceOrderParameters.vb" />
     <Compile Include="Entities\IBrokerageAttributes.vb" />

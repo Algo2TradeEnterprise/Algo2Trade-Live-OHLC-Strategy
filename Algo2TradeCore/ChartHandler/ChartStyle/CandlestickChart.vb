@@ -397,7 +397,7 @@ Namespace ChartHandler.ChartStyle
                 '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
                 '                                                                        Return x.Key
                 '                                                                    End Function)
-                '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.ATRConsumer.ATRPayload).ATR.Value.ToString())
+                '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.SupertrendConsumer.SupertrendPayload).Supertrend.Value.ToString() + "    " + CType(payload.Value, Indicators.SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString())
                 '        Next
                 '    End If
                 'Catch ex As Exception
