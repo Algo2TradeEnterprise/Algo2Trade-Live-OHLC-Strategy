@@ -4,32 +4,37 @@ Namespace Entities
     Public Class OHLCPayload
         Implements IPayload
 
-        Public Sub New(ByVal payloadGeneratedBy As IPayload.PayloadSource)
+        Public Sub New(ByVal payloadGeneratedBy As PayloadSource)
             Me._PayloadGeneratedBy = payloadGeneratedBy
+            Me.OpenPrice = New Field(TypeOfField.Open)
+            Me.HighPrice = New Field(TypeOfField.High)
+            Me.LowPrice = New Field(TypeOfField.Low)
+            Me.ClosePrice = New Field(TypeOfField.Close)
+            Me.Volume = New Field(TypeOfField.Volume)
         End Sub
         Public Property TradingSymbol As String Implements IPayload.TradingSymbol
-        Public Property OpenPrice As Field Implements IPayload.OpenPrice
-        Public Property HighPrice As Field Implements IPayload.HighPrice
-        Public Property LowPrice As Field Implements IPayload.LowPrice
-        Public Property ClosePrice As Field Implements IPayload.ClosePrice
-        Public Property Volume As Field Implements IPayload.Volume
-        Public Property DailyVolume As Long Implements IPayload.DailyVolume
-        Public Property SnapshotDateTime As Date Implements IPayload.SnapshotDateTime
-        Public Property PreviousPayload As IPayload Implements IPayload.PreviousPayload
-        Public Property NumberOfTicks As Integer Implements IPayload.NumberOfTicks
+        Public Property OpenPrice As Field 'Implements IPayload.OpenPrice
+        Public Property HighPrice As Field 'Implements IPayload.HighPrice
+        Public Property LowPrice As Field 'Implements IPayload.LowPrice
+        Public Property ClosePrice As Field 'Implements IPayload.ClosePrice
+        Public Property Volume As Field 'Implements IPayload.Volume
+        Public Property DailyVolume As Long 'Implements IPayload.DailyVolume
+        Public Property SnapshotDateTime As Date 'Implements IPayload.SnapshotDateTime
+        Public Property PreviousPayload As OHLCPayload 'Implements IPayload.PreviousPayload
+        Public Property NumberOfTicks As Integer 'Implements IPayload.NumberOfTicks
 
-        Private _PayloadGeneratedBy As IPayload.PayloadSource
-        Public Property PayloadGeneratedBy As IPayload.PayloadSource Implements IPayload.PayloadGeneratedBy
+        Private _PayloadGeneratedBy As PayloadSource
+        Public Property PayloadGeneratedBy As PayloadSource 'Implements IPayload.PayloadGeneratedBy
             Get
                 Return _PayloadGeneratedBy
             End Get
-            Set(value As IPayload.PayloadSource)
+            Set(value As PayloadSource)
                 _PayloadGeneratedBy = value
             End Set
         End Property
 
         Private _CandleColor As Color
-        Public ReadOnly Property CandleColor As Color Implements IPayload.CandleColor
+        Public ReadOnly Property CandleColor As Color 'Implements IPayload.CandleColor
             Get
                 If Me.ClosePrice.Value > Me.OpenPrice.Value Then
                     _CandleColor = Color.Green
@@ -43,7 +48,7 @@ Namespace Entities
         End Property
 
         Private _CandleRange As Decimal
-        Public ReadOnly Property CandleRange As Decimal Implements IPayload.CandleRange
+        Public ReadOnly Property CandleRange As Decimal 'Implements IPayload.CandleRange
             Get
                 _CandleRange = Me.HighPrice.Value - Me.LowPrice.Value
                 Return _CandleRange
@@ -51,17 +56,17 @@ Namespace Entities
         End Property
 
         Private _CandleRangePercentage As Decimal
-        Public ReadOnly Property CandleRangePercentage As Decimal Implements IPayload.CandleRangePercentage
+        Public ReadOnly Property CandleRangePercentage As Decimal 'Implements IPayload.CandleRangePercentage
             Get
                 _CandleRangePercentage = Me.CandleRange * 100 / Me.ClosePrice.Value
                 Return _CandleRangePercentage
             End Get
         End Property
 
-        Private _CandleWicks As IPayload.Wicks
-        Public ReadOnly Property CandleWicks As IPayload.Wicks Implements IPayload.CandleWicks
+        Private _CandleWicks As Wicks
+        Public ReadOnly Property CandleWicks As Wicks 'Implements IPayload.CandleWicks
             Get
-                If _CandleWicks Is Nothing Then _CandleWicks = New IPayload.Wicks
+                If _CandleWicks Is Nothing Then _CandleWicks = New Wicks
                 If Me.CandleColor = Color.Green Then
                     With _CandleWicks
                         .Top = Me.HighPrice.Value - Me.ClosePrice.Value
@@ -115,5 +120,16 @@ Namespace Entities
                 Utilities.Time.IsTimeEqualTillSeconds(.SnapshotDateTime, snapshotDateTime)
             End With
         End Function
+        Enum PayloadSource
+            Tick
+            Historical
+            CalculatedTick
+            CalculatedHistorical
+            None
+        End Enum
+        Class Wicks
+            Public Property Top As Double
+            Public Property Bottom As Double
+        End Class
     End Class
 End Namespace

@@ -193,13 +193,14 @@ Namespace Strategies
                 End If
 
                 If XMinutePayloadConsumer IsNot Nothing AndAlso
-                    XMinutePayloadConsumer.ChartPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ChartPayloads.Count > 0 Then
-                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                        XMinutePayloadConsumer.ChartPayloads.Where(Function(y)
-                                                                       Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, XMinutePayloadConsumer.ChartPayloads.Keys.Max)
-                                                                   End Function)
+                    XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
+                    'Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                    '    XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
+                    '                                                      Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key, XMinutePayloadConsumer.ConsumerPayloads.Keys.Max)
+                    '                                                  End Function)
 
-                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then ret = lastExistingPayloads.LastOrDefault.Value
+                    'If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then ret = lastExistingPayloads.LastOrDefault.Value
+                    ret = XMinutePayloadConsumer.ConsumerPayloads(XMinutePayloadConsumer.ConsumerPayloads.Keys.Max)
                 End If
             End If
             Return ret
@@ -264,9 +265,9 @@ Namespace Strategies
                                     End If
 
                                     If XMinutePayloadConsumer IsNot Nothing AndAlso
-                                        XMinutePayloadConsumer.ChartPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ChartPayloads.Count > 0 AndAlso
-                                        XMinutePayloadConsumer.ChartPayloads.ContainsKey(signalCandleTime) Then
-                                        ret = XMinutePayloadConsumer.ChartPayloads(signalCandleTime)
+                                        XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 AndAlso
+                                        XMinutePayloadConsumer.ConsumerPayloads.ContainsKey(signalCandleTime) Then
+                                        ret = XMinutePayloadConsumer.ConsumerPayloads(signalCandleTime)
                                     End If
                                 End If
                             End If
@@ -392,9 +393,12 @@ Namespace Strategies
             If RawPayloadConsumers IsNot Nothing AndAlso RawPayloadConsumers.Count > 0 Then
                 For Each runningRawPayloadConsumer In RawPayloadConsumers
                     If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart Then
-                        Await candleCreator.ConvertTimeframeAsync(CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe,
+                        Dim currentXMinute As Date = Await candleCreator.ConvertTimeframeAsync(CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe,
                                                                     currentCandle,
                                                                     runningRawPayloadConsumer).ConfigureAwait(False)
+                        If candleCreator.IndicatorCreator Is Nothing Then candleCreator.IndicatorCreator = New ChartHandler.Indicator.IndicatorManeger(Me.ParentStrategy.ParentController, candleCreator, _cts)
+                        ' Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
+                        ' Await candleCreator.IndicatorCreator.CalculateATR(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.LastOrDefault).ConfigureAwait(False)
                     End If
                 Next
             End If

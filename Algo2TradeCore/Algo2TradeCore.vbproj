@@ -87,6 +87,8 @@
     <Compile Include="ChartHandler\Indicator\Indicator.vb" />
     <Compile Include="Entities\Exchange.vb" />
     <Compile Include="Entities\Field.vb" />
+    <Compile Include="Entities\Indicators\ATRConsumer.vb" />
+    <Compile Include="Entities\Indicators\EMAConsumer.vb" />
     <Compile Include="Entities\Indicators\SMAConsumer.vb" />
     <Compile Include="Entities\IUserMargin.vb" />
     <Compile Include="Entities\PlaceOrderParameters.vb" />

@@ -11,16 +11,20 @@
             CDS
             None
         End Enum
-        Enum Indicator
-            SMA = 1
-            None
-        End Enum
+        'Enum Indicator
+        '    SMA = 1
+        '    None
+        'End Enum
         Enum TypeOfField
             Open
             Low
             High
             Close
             Volume
+            SMA
+            EMA
+            ATR
+            Supertrend
         End Enum
     End Module
 End Namespace

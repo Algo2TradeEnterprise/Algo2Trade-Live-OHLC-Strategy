@@ -129,7 +129,7 @@ Public Class OHLStrategyInstrument
                 Dim dummyPayload As OHLCPayload = Nothing
                 If TradableInstrument.LastTick.Open = TradableInstrument.LastTick.High Then
                     entryPrice = OHLTradePrice - buffer
-                    dummyPayload = New OHLCPayload(IPayload.PayloadSource.None) With {
+                    dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {
                         .SnapshotDateTime = TradableInstrument.LastTick.Timestamp
                     }
                     parameters = New PlaceOrderParameters With
@@ -142,7 +142,7 @@ Public Class OHLStrategyInstrument
                                 .SignalCandle = dummyPayload}
                 ElseIf TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
                     entryPrice = OHLTradePrice + buffer
-                    dummyPayload = New OHLCPayload(IPayload.PayloadSource.None) With {
+                    dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {
                         .SnapshotDateTime = TradableInstrument.LastTick.Timestamp
                     }
                     parameters = New PlaceOrderParameters With

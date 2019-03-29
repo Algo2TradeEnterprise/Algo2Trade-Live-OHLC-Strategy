@@ -32,10 +32,8 @@ Public Class MomentumReversalStrategyInstrument
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-                'With
-                '{
-                '    '.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New SMAConsumer()}
-                '}
+                chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New EMAConsumer(chartConsumer, 20, TypeOfField.Close), New ATRConsumer(chartConsumer, 14)}
+                'chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New ATRConsumer(chartConsumer, 14)}
                 RawPayloadConsumers.Add(chartConsumer)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
@@ -115,7 +113,7 @@ Public Class MomentumReversalStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If Now < MRUserSettings.LastTradeEntryTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= MRUserSettings.TradeStartTime AndAlso
-            runningCandlePayload.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Not IsActiveInstrument() AndAlso Me.GetTotalExecutedOrders() < MRUserSettings.InstrumentsData(instrumentName.ToUpper).NumberOfTrade AndAlso
             Not IsAnyTradeExitedInCurrentTimeframeCandle(MRUserSettings.SignalTimeFrame, runningCandlePayload.SnapshotDateTime) AndAlso
             Me.GetOverallPL() > Math.Abs(MRUserSettings.InstrumentsData(instrumentName).MaxLossPerStock) * -1 AndAlso
@@ -284,7 +282,7 @@ Public Class MomentumReversalStrategyInstrument
                 For Each parentOrder In parentOrders
                     Dim parentBussinessOrder As IBusinessOrder = OrderDetails(parentOrder.OrderIdentifier)
                     Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-                    If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick Then
+                    If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick Then
                         Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrder.OrderIdentifier, Me.ParentStrategy.UserSettings.SignalTimeFrame)
                         If signalCandle IsNot Nothing AndAlso runningCandle.SnapshotDateTime >= signalCandle.SnapshotDateTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame * 2) Then
                             'Below portion have to be done in every cancel order trigger

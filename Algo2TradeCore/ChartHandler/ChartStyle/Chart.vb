@@ -3,6 +3,7 @@ Imports System.Threading
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Strategies
+Imports Algo2TradeCore.ChartHandler.Indicator
 
 Namespace ChartHandler.ChartStyle
     Public MustInherit Class Chart
@@ -66,8 +67,9 @@ Namespace ChartHandler.ChartStyle
             _subscribedStrategyInstruments = associatedStrategyInstruments
             _cts = canceller
         End Sub
+        Public Property IndicatorCreator As IndicatorManeger
         Public MustOverride Async Function GetChartFromHistoricalAsync(ByVal historicalCandlesJSONDict As Dictionary(Of String, Object)) As Task
         Public MustOverride Async Function GetChartFromTickAsync(ByVal tickData As ITick) As Task
-        Public MustOverride Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
+        Public MustOverride Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task(Of Date)
     End Class
 End Namespace

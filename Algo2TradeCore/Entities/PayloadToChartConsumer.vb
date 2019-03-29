@@ -13,7 +13,7 @@
             End Get
         End Property
         Public ReadOnly Property Timeframe As Integer
-        Public Property ChartPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+        Public Property ConsumerPayloads As Concurrent.ConcurrentDictionary(Of Date, IPayload) Implements IPayloadConsumer.ConsumerPayloads
         Public Property OnwardLevelConsumers As List(Of IPayloadConsumer) Implements IPayloadConsumer.OnwardLevelConsumers
     End Class
 End Namespace

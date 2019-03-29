@@ -45,9 +45,8 @@ Namespace ChartHandler.ChartStyle
                                 'Debug.WriteLine(previousCandle.ToString)
                             End If
                         End If
-                        Dim s As Stopwatch = New Stopwatch
-                        s.Start()
-
+                        'Dim s As Stopwatch = New Stopwatch
+                        's.Start()
                         For Each historicalCandle In historicalCandles
                             Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
 
@@ -78,15 +77,15 @@ Namespace ChartHandler.ChartStyle
                                 If Not _parentInstrument.RawPayloads.ContainsKey(runningSnapshotTime) Then
                                     freshCandleAdded = True
                                     'Create new candle and add it
-                                    Dim runningPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Historical)
+                                    Dim runningPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
                                     With runningPayload
                                         .SnapshotDateTime = runningSnapshotTime
                                         .TradingSymbol = _parentInstrument.TradingSymbol
-                                        .OpenPrice = New Field(TypeOfField.Open, historicalCandle(1))
-                                        .HighPrice = New Field(TypeOfField.High, historicalCandle(2))
-                                        .LowPrice = New Field(TypeOfField.Low, historicalCandle(3))
-                                        .ClosePrice = New Field(TypeOfField.Close, historicalCandle(4))
-                                        .Volume = New Field(TypeOfField.Volume, historicalCandle(5))
+                                        .OpenPrice.Value = historicalCandle(1)
+                                        .HighPrice.Value = historicalCandle(2)
+                                        .LowPrice.Value = historicalCandle(3)
+                                        .ClosePrice.Value = historicalCandle(4)
+                                        .Volume.Value = historicalCandle(5)
                                         If previousCandlePayload IsNot Nothing AndAlso
                                             .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
                                             .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
@@ -104,7 +103,7 @@ Namespace ChartHandler.ChartStyle
                                 End If
                             End If
                             Dim candleNeedsUpdate As Boolean = False
-                            If existingOrAddedPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
+                            If existingOrAddedPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Tick Then
                                 candleNeedsUpdate = Not existingOrAddedPayload.Equals(historicalCandle(1),
                                                                                     historicalCandle(2),
                                                                                     historicalCandle(3),
@@ -183,8 +182,8 @@ Namespace ChartHandler.ChartStyle
                             'End If
                             previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
                         Next
-                        s.Stop()
-                        Debug.WriteLine(String.Format("{0}, Time:{1}", _parentInstrument.TradingSymbol, s.ElapsedMilliseconds))
+                        's.Stop()
+                        'Debug.WriteLine(String.Format("{0}, Time:{1}", _parentInstrument.TradingSymbol, s.ElapsedMilliseconds))
                         _parentInstrument.IsHistoricalCompleted = True
                         'TODO: Below loop is for checking purpose
                         'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
@@ -192,6 +191,32 @@ Namespace ChartHandler.ChartStyle
                         '                                                          End Function)
                         '    Debug.WriteLine(payload.Value.ToString())
                         'Next
+                        'Try
+                        '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                        '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                        '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                        '                                                                        Return x.Key
+                        '                                                                    End Function)
+                        '            If CType(payload.Value, OHLCPayload).PreviousPayload IsNot Nothing Then
+                        '                Debug.WriteLine(payload.Value.ToString())
+                        '            End If
+                        '        Next
+                        '    End If
+                        'Catch ex As Exception
+                        '    Throw ex
+                        'End Try
+                        'Try
+                        '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
+                        '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                        '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                        '                                                                        Return x.Key
+                        '                                                                    End Function)
+                        '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.EMAConsumer.EMAPayload).EMA.Value.ToString())
+                        '        Next
+                        '    End If
+                        'Catch ex As Exception
+                        '    Throw ex
+                        'End Try
                     End If
                 End If
             Catch ex As Exception
@@ -244,7 +269,7 @@ Namespace ChartHandler.ChartStyle
                         End If
                         .DailyVolume = tickData.Volume
                         .NumberOfTicks += 1
-                        .PayloadGeneratedBy = IPayload.PayloadSource.Tick
+                        .PayloadGeneratedBy = OHLCPayload.PayloadSource.Tick
                     End With
                     tickWasProcessed = True
                 ElseIf lastExistingPayload Is Nothing Then
@@ -254,9 +279,9 @@ Namespace ChartHandler.ChartStyle
                     Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                         _parentInstrument.RawPayloads.Where(Function(y)
                                                                 Return y.Key < tickData.Timestamp.Value AndAlso
-                                                                (y.Value.PayloadGeneratedBy = IPayload.PayloadSource.Tick OrElse
+                                                                (y.Value.PayloadGeneratedBy = OHLCPayload.PayloadSource.Tick OrElse
                                                                 (_parentInstrument.IsHistoricalCompleted AndAlso
-                                                                y.Value.PayloadGeneratedBy = IPayload.PayloadSource.Historical))
+                                                                y.Value.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
                                                             End Function)
 
                     If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
@@ -281,14 +306,14 @@ Namespace ChartHandler.ChartStyle
                         Dim timeGap As Integer = DateDiff(DateInterval.Minute, timeToCalculateFrom, tickData.Timestamp.Value)
                         Dim fillPayload As OHLCPayload = Nothing
                         For time As Integer = 0 To timeGap - 1
-                            fillPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
+                            fillPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
                             With fillPayload
                                 .TradingSymbol = _parentInstrument.TradingSymbol
-                                .OpenPrice = New Field(TypeOfField.Open, previousCandle.ClosePrice.Value)
-                                .HighPrice = New Field(TypeOfField.High, previousCandle.ClosePrice.Value)
-                                .LowPrice = New Field(TypeOfField.Low, previousCandle.ClosePrice.Value)
-                                .ClosePrice = New Field(TypeOfField.Close, previousCandle.ClosePrice.Value)
-                                .Volume = New Field(TypeOfField.Volume, 0)
+                                .OpenPrice.Value = previousCandle.ClosePrice.Value
+                                .HighPrice.Value = previousCandle.ClosePrice.Value
+                                .LowPrice.Value = previousCandle.ClosePrice.Value
+                                .ClosePrice.Value = previousCandle.ClosePrice.Value
+                                .Volume.Value = 0
                                 .DailyVolume = tickData.Volume
                                 .SnapshotDateTime = timeToCalculateFrom.AddMinutes(time)
                                 .PreviousPayload = previousCandle
@@ -299,14 +324,14 @@ Namespace ChartHandler.ChartStyle
                         Next
                     End If
 
-                    Dim currentPayload As OHLCPayload = New OHLCPayload(IPayload.PayloadSource.Tick)
+                    Dim currentPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
                     With currentPayload
                         .TradingSymbol = _parentInstrument.TradingSymbol
-                        .OpenPrice = New Field(TypeOfField.Open, tickData.LastPrice)
-                        .HighPrice = New Field(TypeOfField.High, tickData.LastPrice)
-                        .LowPrice = New Field(TypeOfField.Low, tickData.LastPrice)
-                        .ClosePrice = New Field(TypeOfField.Close, tickData.LastPrice)
-                        .Volume = New Field(TypeOfField.Volume, tickData.Volume)
+                        .OpenPrice.Value = tickData.LastPrice
+                        .HighPrice.Value = tickData.LastPrice
+                        .LowPrice.Value = tickData.LastPrice
+                        .ClosePrice.Value = tickData.LastPrice
+                        .Volume.Value = tickData.Volume
                         .DailyVolume = tickData.Volume
                         .SnapshotDateTime = Utilities.Time.GetDateTimeTillMinutes(tickData.Timestamp.Value)
                         .PreviousPayload = previousCandle
@@ -334,7 +359,7 @@ Namespace ChartHandler.ChartStyle
                     End If
                     If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                         For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                            'Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayloads).ConfigureAwait(False)
+                            Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, runningPayloads).ConfigureAwait(False)
                         Next
                     End If
                 End If
@@ -353,13 +378,26 @@ Namespace ChartHandler.ChartStyle
                 ''TODO: Below loop is for checking purpose
                 'Try
                 '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
-                '    If freshCandle AndAlso outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
-                '        For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
-                '                                                                     Return x.Key
-                '                                                                 End Function)
-                '            If payload.Value.PreviousPayload IsNot Nothing Then
+                '    If freshCandle AndAlso outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                '                                                                        Return x.Key
+                '                                                                    End Function)
+                '            If CType(payload.Value, OHLCPayload).PreviousPayload IsNot Nothing Then
                 '                Debug.WriteLine(payload.Value.ToString())
                 '            End If
+                '        Next
+                '    End If
+                'Catch ex As Exception
+                '    Throw ex
+                'End Try
+                ''TODO: Below loop is for checking purpose
+                'Try
+                '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
+                '    If freshCandle AndAlso outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                '                                                                        Return x.Key
+                '                                                                    End Function)
+                '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.ATRConsumer.ATRPayload).ATR.Value.ToString())
                 '        Next
                 '    End If
                 'Catch ex As Exception
@@ -375,7 +413,7 @@ Namespace ChartHandler.ChartStyle
             End Try
         End Function
 
-        Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task
+        Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task(Of Date)
             'logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim blockDateInThisTimeframe As New Date(currentPayload.SnapshotDateTime.Year,
@@ -384,55 +422,55 @@ Namespace ChartHandler.ChartStyle
                                                     currentPayload.SnapshotDateTime.Hour,
                                                     Math.Floor(currentPayload.SnapshotDateTime.Minute / timeframe) * timeframe, 0)
 
-            Dim payloadSource As IPayload.PayloadSource = IPayload.PayloadSource.None
-            If currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
-                payloadSource = IPayload.PayloadSource.CalculatedTick
-            ElseIf currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical Then
-                payloadSource = IPayload.PayloadSource.CalculatedHistorical
+            Dim payloadSource As OHLCPayload.PayloadSource = OHLCPayload.PayloadSource.None
+            If currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Tick Then
+                payloadSource = OHLCPayload.PayloadSource.CalculatedTick
+            ElseIf currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical Then
+                payloadSource = OHLCPayload.PayloadSource.CalculatedHistorical
             End If
-            If outputConsumer.ChartPayloads Is Nothing Then
-                outputConsumer.ChartPayloads = New Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
+            If outputConsumer.ConsumerPayloads Is Nothing Then
+                outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
                 Dim runninPayload As New OHLCPayload(payloadSource)
                 With runninPayload
-                    .OpenPrice = New Field(TypeOfField.Open, currentPayload.OpenPrice.Value)
-                    .HighPrice = New Field(TypeOfField.High, currentPayload.HighPrice.Value)
-                    .LowPrice = New Field(TypeOfField.Low, currentPayload.LowPrice.Value)
-                    .ClosePrice = New Field(TypeOfField.Close, currentPayload.ClosePrice.Value)
+                    .OpenPrice.Value = currentPayload.OpenPrice.Value
+                    .HighPrice.Value = currentPayload.HighPrice.Value
+                    .LowPrice.Value = currentPayload.LowPrice.Value
+                    .ClosePrice.Value = currentPayload.ClosePrice.Value
                     .DailyVolume = currentPayload.DailyVolume
                     .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
                     .PreviousPayload = Nothing
                     .SnapshotDateTime = blockDateInThisTimeframe
                     .TradingSymbol = currentPayload.TradingSymbol
-                    .Volume = New Field(TypeOfField.Volume, currentPayload.Volume.Value)
+                    .Volume.Value = currentPayload.Volume.Value
                 End With
-                outputConsumer.ChartPayloads.GetOrAdd(blockDateInThisTimeframe, runninPayload)
+                outputConsumer.ConsumerPayloads.GetOrAdd(blockDateInThisTimeframe, runninPayload)
             Else
                 Dim lastExistingPayload As OHLCPayload = Nothing
-                If outputConsumer.ChartPayloads IsNot Nothing AndAlso outputConsumer.ChartPayloads.Count > 0 Then
-                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                    outputConsumer.ChartPayloads.Where(Function(x)
-                                                           Return x.Key = blockDateInThisTimeframe
-                                                       End Function)
+                If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                    outputConsumer.ConsumerPayloads.Where(Function(x)
+                                                              Return x.Key = blockDateInThisTimeframe
+                                                          End Function)
                     If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then lastExistingPayload = lastExistingPayloads.LastOrDefault.Value
                 End If
 
                 If lastExistingPayload IsNot Nothing Then
                     Dim previousPayload As OHLCPayload = Nothing
-                    Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                        outputConsumer.ChartPayloads.Where(Function(y)
-                                                               Return y.Key < blockDateInThisTimeframe AndAlso
-                                                                (y.Value.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick OrElse
+                    Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                        outputConsumer.ConsumerPayloads.Where(Function(y)
+                                                                  Return y.Key < blockDateInThisTimeframe AndAlso
+                                                                (CType(y.Value, OHLCPayload).PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick OrElse
                                                                 Interlocked.Read(_historicalLock) = 0 OrElse
                                                                 (Interlocked.Read(_historicalLock) = 1 AndAlso
-                                                                currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical))
-                                                           End Function)
+                                                                currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
+                                                              End Function)
                     If previousPayloads IsNot Nothing AndAlso previousPayloads.Count > 0 Then
                         previousPayload = previousPayloads.OrderByDescending(Function(x)
                                                                                  Return x.Key
                                                                              End Function).FirstOrDefault.Value
                     End If
 
-                    If currentPayload.SnapshotDateTime = blockDateInThisTimeframe AndAlso currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical Then
+                    If currentPayload.SnapshotDateTime = blockDateInThisTimeframe AndAlso currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical Then
                         lastExistingPayload.OpenPrice.Value = currentPayload.OpenPrice.Value
                     End If
                     With lastExistingPayload
@@ -448,35 +486,33 @@ Namespace ChartHandler.ChartStyle
                         .DailyVolume = currentPayload.DailyVolume
                         .PayloadGeneratedBy = payloadSource
                     End With
-                    'Exit Function
 
                     'If currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
                     '    If lastExistingPayload.PreviousPayload IsNot Nothing Then Debug.WriteLine(lastExistingPayload)
                     'End If
                     'Debug.WriteLine(lastExistingPayload)
                 Else
-                    Dim runninPayload As New OHLCPayload(payloadSource)
-
                     Dim previousPayload As OHLCPayload = Nothing
-                    Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
-                        outputConsumer.ChartPayloads.Where(Function(y)
-                                                               Return y.Key < blockDateInThisTimeframe AndAlso
-                                                                (y.Value.PayloadGeneratedBy = IPayload.PayloadSource.CalculatedTick OrElse
+                    Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                        outputConsumer.ConsumerPayloads.Where(Function(y)
+                                                                  Return y.Key < blockDateInThisTimeframe AndAlso
+                                                                (CType(y.Value, OHLCPayload).PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick OrElse
                                                                 Interlocked.Read(_historicalLock) = 0 OrElse
                                                                 (Interlocked.Read(_historicalLock) = 1 AndAlso
-                                                                currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Historical))
-                                                           End Function)
+                                                                currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
+                                                              End Function)
                     If previousPayloads IsNot Nothing AndAlso previousPayloads.Count > 0 Then
                         previousPayload = previousPayloads.OrderByDescending(Function(x)
                                                                                  Return x.Key
                                                                              End Function).FirstOrDefault.Value
                     End If
 
+                    Dim runninPayload As New OHLCPayload(payloadSource)
                     With runninPayload
-                        .OpenPrice = New Field(TypeOfField.Open, currentPayload.OpenPrice.Value)
-                        .HighPrice = New Field(TypeOfField.High, currentPayload.HighPrice.Value)
-                        .LowPrice = New Field(TypeOfField.Low, currentPayload.LowPrice.Value)
-                        .ClosePrice = New Field(TypeOfField.Close, currentPayload.ClosePrice.Value)
+                        .OpenPrice.Value = currentPayload.OpenPrice.Value
+                        .HighPrice.Value = currentPayload.HighPrice.Value
+                        .LowPrice.Value = currentPayload.LowPrice.Value
+                        .ClosePrice.Value = currentPayload.ClosePrice.Value
                         .DailyVolume = currentPayload.DailyVolume
                         .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
                         .PreviousPayload = previousPayload
@@ -484,12 +520,12 @@ Namespace ChartHandler.ChartStyle
                         .TradingSymbol = currentPayload.TradingSymbol
                         If .PreviousPayload IsNot Nothing AndAlso
                             .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
-                            .Volume = New Field(TypeOfField.Volume, currentPayload.DailyVolume - .PreviousPayload.DailyVolume)
+                            .Volume.Value = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
                         Else
-                            .Volume = New Field(TypeOfField.Volume, currentPayload.DailyVolume)
+                            .Volume.Value = currentPayload.DailyVolume
                         End If
                     End With
-                    outputConsumer.ChartPayloads.TryAdd(runninPayload.SnapshotDateTime, runninPayload)
+                    outputConsumer.ConsumerPayloads.GetOrAdd(runninPayload.SnapshotDateTime, runninPayload)
 
                     ''TODO: Below loop is for checking purpose
                     'For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
@@ -505,7 +541,7 @@ Namespace ChartHandler.ChartStyle
                     'Debug.WriteLine(runninPayload.PreviousPayload.ToString)
                 End If
             End If
-
+            Return blockDateInThisTimeframe
         End Function
         Public Function UpdateHistoricalCandleStick(ByVal runningCandleTime As Date,
                                                     ByVal open As Decimal,
@@ -515,7 +551,7 @@ Namespace ChartHandler.ChartStyle
                                                     ByVal volume As Long,
                                                     ByVal previousCandlePayload As OHLCPayload) As OHLCPayload
             With _parentInstrument.RawPayloads(runningCandleTime)
-                .PayloadGeneratedBy = IPayload.PayloadSource.Historical
+                .PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical
                 .SnapshotDateTime = runningCandleTime
                 .TradingSymbol = _parentInstrument.TradingSymbol
                 .OpenPrice.Value = open

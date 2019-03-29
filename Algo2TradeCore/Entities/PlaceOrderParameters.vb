@@ -9,7 +9,7 @@ Namespace Entities
         Public Property SquareOffValue As Decimal = Nothing
         Public Property StoplossValue As Decimal = Nothing
         'Public Property Tag As String = Nothing
-        Public Property SignalCandle As IPayload = Nothing
+        Public Property SignalCandle As OHLCPayload = Nothing
         Public Overrides Function ToString() As String
             Return String.Format("{0}{1}{2}{3}{4}{5}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, If(SignalCandle Is Nothing, "Nothing", SignalCandle.SnapshotDateTime.ToString()))
         End Function
