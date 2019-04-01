@@ -1152,6 +1152,7 @@ Public Class frmMainTabbed
         If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then
             miUserDetails_Click(sender, e)
         End If
+        Me.Text = String.Format("Algo2Trade Robot v{0}", My.Application.Info.Version)
         EnableDisableUIEx(UIMode.Idle, GetType(OHLStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))

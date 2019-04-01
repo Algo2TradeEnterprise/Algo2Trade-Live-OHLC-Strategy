@@ -9,7 +9,7 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("Algo2Trade Robot")>
-<Assembly: AssemblyDescription("")>
+<Assembly: AssemblyDescription("Together, lets get richer")>
 <Assembly: AssemblyCompany("Hubristic Purveyor Pvt. Ltd.")>
 <Assembly: AssemblyProduct("Algo2Trade Live")>
 <Assembly: AssemblyCopyright("Copyright ©  2018")>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")>
 
-<Assembly: AssemblyVersion("1.0.0.0")>
-<Assembly: AssemblyFileVersion("1.0.0.0")>
+<Assembly: AssemblyVersion("2.0.0.0")>
+<Assembly: AssemblyFileVersion("2.0.0.0")>
