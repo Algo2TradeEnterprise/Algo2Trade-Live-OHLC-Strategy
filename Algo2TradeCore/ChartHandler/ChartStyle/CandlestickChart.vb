@@ -3,6 +3,8 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Controller
 Imports NLog
 Imports Algo2TradeCore.Strategies
+Imports System.Text
+
 Namespace ChartHandler.ChartStyle
     Public Class CandleStickChart
         Inherits Chart
@@ -217,6 +219,18 @@ Namespace ChartHandler.ChartStyle
                         'Catch ex As Exception
                         '    Throw ex
                         'End Try
+                        'Try
+                        '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
+                        '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                        '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                        '                                                                        Return x.Key
+                        '                                                                    End Function)
+                        '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.EMAConsumer.EMAPayload).EMA.Value.ToString())
+                        '        Next
+                        '    End If
+                        'Catch ex As Exception
+                        '    Throw ex
+                        'End Try
                     End If
                 End If
             Catch ex As Exception
@@ -294,35 +308,35 @@ Namespace ChartHandler.ChartStyle
                     End If
 
                     'Fill 0 volume Candles
-                    If previousCandle IsNot Nothing AndAlso
-                        Utilities.Time.GetDateTimeTillMinutes(Now) <= Utilities.Time.GetDateTimeTillMinutes(Me._parentInstrument.ExchangeDetails.ExchangeEndTime) AndAlso
-                        Not Utilities.Time.IsDateTimeEqualTillMinutes(tickData.Timestamp.Value, previousCandle.SnapshotDateTime.AddMinutes(1)) Then
-                        Dim timeToCalculateFrom As Date = Date.MinValue
-                        If previousCandle.SnapshotDateTime < Me._parentInstrument.ExchangeDetails.ExchangeStartTime Then
-                            timeToCalculateFrom = Me._parentInstrument.ExchangeDetails.ExchangeStartTime
-                        Else
-                            timeToCalculateFrom = previousCandle.SnapshotDateTime.AddMinutes(1)
-                        End If
-                        Dim timeGap As Integer = DateDiff(DateInterval.Minute, timeToCalculateFrom, tickData.Timestamp.Value)
-                        Dim fillPayload As OHLCPayload = Nothing
-                        For time As Integer = 0 To timeGap - 1
-                            fillPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
-                            With fillPayload
-                                .TradingSymbol = _parentInstrument.TradingSymbol
-                                .OpenPrice.Value = previousCandle.ClosePrice.Value
-                                .HighPrice.Value = previousCandle.ClosePrice.Value
-                                .LowPrice.Value = previousCandle.ClosePrice.Value
-                                .ClosePrice.Value = previousCandle.ClosePrice.Value
-                                .Volume.Value = 0
-                                .DailyVolume = tickData.Volume
-                                .SnapshotDateTime = timeToCalculateFrom.AddMinutes(time)
-                                .PreviousPayload = previousCandle
-                                .NumberOfTicks = 1
-                            End With
-                            previousCandle = fillPayload
-                            runningPayloads.Add(fillPayload)
-                        Next
-                    End If
+                    'If previousCandle IsNot Nothing AndAlso
+                    '    Utilities.Time.GetDateTimeTillMinutes(Now) <= Utilities.Time.GetDateTimeTillMinutes(Me._parentInstrument.ExchangeDetails.ExchangeEndTime) AndAlso
+                    '    Not Utilities.Time.IsDateTimeEqualTillMinutes(tickData.Timestamp.Value, previousCandle.SnapshotDateTime.AddMinutes(1)) Then
+                    '    Dim timeToCalculateFrom As Date = Date.MinValue
+                    '    If previousCandle.SnapshotDateTime < Me._parentInstrument.ExchangeDetails.ExchangeStartTime Then
+                    '        timeToCalculateFrom = Me._parentInstrument.ExchangeDetails.ExchangeStartTime
+                    '    Else
+                    '        timeToCalculateFrom = previousCandle.SnapshotDateTime.AddMinutes(1)
+                    '    End If
+                    '    Dim timeGap As Integer = DateDiff(DateInterval.Minute, timeToCalculateFrom, tickData.Timestamp.Value)
+                    '    Dim fillPayload As OHLCPayload = Nothing
+                    '    For time As Integer = 0 To timeGap - 1
+                    '        fillPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
+                    '        With fillPayload
+                    '            .TradingSymbol = _parentInstrument.TradingSymbol
+                    '            .OpenPrice.Value = previousCandle.ClosePrice.Value
+                    '            .HighPrice.Value = previousCandle.ClosePrice.Value
+                    '            .LowPrice.Value = previousCandle.ClosePrice.Value
+                    '            .ClosePrice.Value = previousCandle.ClosePrice.Value
+                    '            .Volume.Value = 0
+                    '            .DailyVolume = tickData.Volume
+                    '            .SnapshotDateTime = timeToCalculateFrom.AddMinutes(time)
+                    '            .PreviousPayload = previousCandle
+                    '            .NumberOfTicks = 1
+                    '        End With
+                    '        previousCandle = fillPayload
+                    '        runningPayloads.Add(fillPayload)
+                    '    Next
+                    'End If
 
                     Dim currentPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
                     With currentPayload
@@ -397,7 +411,7 @@ Namespace ChartHandler.ChartStyle
                 '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
                 '                                                                        Return x.Key
                 '                                                                    End Function)
-                '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.SupertrendConsumer.SupertrendPayload).Supertrend.Value.ToString() + "    " + CType(payload.Value, Indicators.SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString())
+                '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.EMAConsumer.EMAPayload).EMA.Value.ToString())
                 '        Next
                 '    End If
                 'Catch ex As Exception
@@ -569,6 +583,7 @@ Namespace ChartHandler.ChartStyle
             End With
             Return _parentInstrument.RawPayloads(runningCandleTime)
         End Function
+
         Public Overrides Function ToString() As String
             Return Me.GetType.ToString
         End Function

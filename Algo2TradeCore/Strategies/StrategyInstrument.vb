@@ -408,8 +408,8 @@ Namespace Strategies
                             c += 1
                         Next
                         'Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
-                        'Await candleCreator.IndicatorCreator.CalculateSupertrend(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
-                        ' Await candleCreator.IndicatorCreator.CalculateATR(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.LastOrDefault).ConfigureAwait(False)
+                        'Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
+                        'Await candleCreator.IndicatorCreator.CalculateATR(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.LastOrDefault).ConfigureAwait(False)
                     End If
                 Next
             End If
