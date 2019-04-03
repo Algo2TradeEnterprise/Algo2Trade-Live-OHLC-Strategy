@@ -112,6 +112,21 @@
     <Compile Include="AmiSignal\AmiSignalStrategyInstrument.vb" />
     <Compile Include="AmiSignal\AmiSignalUserInputs.vb" />
     <Compile Include="Common.vb" />
+    <Compile Include="EMA_Supertrend\EMA_SupertrendStrategy.vb" />
+    <Compile Include="EMA_Supertrend\EMA_SupertrendStrategyInstrument.vb" />
+    <Compile Include="EMA_Supertrend\EMA_SupertrendStrategyUserInputs.vb" />
+    <Compile Include="EMA_Supertrend\frmEMA_SupertrendSettings.Designer.vb">
+      <DependentUpon>frmEMA_SupertrendSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="EMA_Supertrend\frmEMA_SupertrendSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EMA_Supertrend\frmEMA_SupertrendTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmEMA_SupertrendTradableInstrumentList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="EMA_Supertrend\frmEMA_SupertrendTradableInstrumentList.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmAbout.Designer.vb">
       <DependentUpon>frmAbout.vb</DependentUpon>
     </Compile>
@@ -183,6 +198,12 @@
     <Compile Include="OHL\OHLUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="EMA_Supertrend\frmEMA_SupertrendSettings.resx">
+      <DependentUpon>frmEMA_SupertrendSettings.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="EMA_Supertrend\frmEMA_SupertrendTradableInstrumentList.resx">
+      <DependentUpon>frmEMA_SupertrendTradableInstrumentList.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="frmAbout.resx">
       <DependentUpon>frmAbout.vb</DependentUpon>
     </EmbeddedResource>

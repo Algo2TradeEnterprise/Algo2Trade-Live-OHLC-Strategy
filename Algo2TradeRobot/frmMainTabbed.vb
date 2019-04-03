@@ -503,7 +503,6 @@ Public Class frmMainTabbed
         Dim newForm As New frmMomentumReversalTradableInstrumentList(_MRTradableInstruments)
         newForm.ShowDialog()
     End Sub
-
 #End Region
 
 #Region "OHL"
@@ -894,6 +893,226 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
+#Region "EMA & Supertrend Strategy"
+    Private _EMA_SupertrendUserInputs As EMA_SupertrendStrategyUserInputs = Nothing
+    Private _EMA_SupertrendDashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _EMA_SupertrendTradableInstruments As IEnumerable(Of EMA_SupertrendStrategyInstrument) = Nothing
+    Private Sub sfdgvEMA_SupertrendMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvEMA_SupertrendMainDashboard.FilterPopupShowing
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(EMA_SupertrendStrategy))
+    End Sub
+    Private Sub sfdgvEMA_SupertrendMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvEMA_SupertrendMainDashboard.AutoGeneratingColumn
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(EMA_SupertrendStrategy))
+    End Sub
+    Private Async Function EMA_SupertrendWorkerAsync() As Task
+        If GetObjectText_ThreadSafe(btnEMA_SupertrendStart) = Common.LOGIN_PENDING Then
+            MsgBox("Cannot start as another strategy is loggin in")
+            Exit Function
+        End If
+
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
+        _cts.Token.ThrowIfCancellationRequested()
+        _lastException = Nothing
+
+        Try
+            EnableDisableUIEx(UIMode.Active, GetType(EMA_SupertrendStrategy))
+            EnableDisableUIEx(UIMode.BlockOther, GetType(EMA_SupertrendStrategy))
+
+            OnHeartbeat("Validating Strategy user settings")
+            If File.Exists("EMA_SupertrendSettings.Strategy.a2t") Then
+                Dim fs As Stream = New FileStream("EMA_SupertrendSettings.Strategy.a2t", FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _EMA_SupertrendUserInputs = CType(bf.Deserialize(fs), EMA_SupertrendStrategyUserInputs)
+                fs.Close()
+                _EMA_SupertrendUserInputs.InstrumentsData = Nothing
+                _EMA_SupertrendUserInputs.FillInstrumentDetails(_EMA_SupertrendUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
+            End If
+
+            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
+
+            If _commonController IsNot Nothing Then
+                _commonController.RefreshCancellationToken(_cts)
+            Else
+                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
+
+                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
+                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
+                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+
+                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
+                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                AddHandler _commonController.TickerError, AddressOf OnTickerError
+                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+
+#Region "Login"
+                Dim loginMessage As String = Nothing
+                While True
+                    _cts.Token.ThrowIfCancellationRequested()
+                    _connection = Nothing
+                    loginMessage = Nothing
+                    Try
+                        OnHeartbeat("Attempting to get connection to Zerodha API")
+                        _cts.Token.ThrowIfCancellationRequested()
+                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
+                    Catch cx As OperationCanceledException
+                        loginMessage = cx.Message
+                        logger.Error(cx)
+                        Exit While
+                    Catch ex As Exception
+                        loginMessage = ex.Message
+                        logger.Error(ex)
+                    End Try
+                    If _connection Is Nothing Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
+                            'No need to retry as its a password failure
+                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                            Exit While
+                        Else
+                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                        End If
+                    Else
+                        Exit While
+                    End If
+                End While
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing Then
+                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                    Else
+                        Throw New ApplicationException("No connection to Zerodha API could be established")
+                    End If
+                End If
+#End Region
+
+                OnHeartbeat("Completing all pre-automation requirements")
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+
+                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+            End If 'Common controller
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(EMA_SupertrendStrategy))
+
+            Dim emaSupertrendStrategyToExecute As New EMA_SupertrendStrategy(_commonController, 4, _EMA_SupertrendUserInputs, 5, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", emaSupertrendStrategyToExecute.ToString), New List(Of Object) From {emaSupertrendStrategyToExecute})
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.SubscribeStrategyAsync(emaSupertrendStrategyToExecute).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _EMA_SupertrendTradableInstruments = emaSupertrendStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblEMA_SupertrendTradableInstrument, String.Format("Tradable Instruments: {0}", _EMA_SupertrendTradableInstruments.Count))
+            SetObjectEnableDisable_ThreadSafe(linklblEMA_SupertrendTradableInstrument, True)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(emaSupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _EMA_SupertrendDashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Await emaSupertrendStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            _lastException = fex
+        Catch cx As OperationCanceledException
+            logger.Error(cx)
+            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
+        Catch ex As Exception
+            logger.Error(ex)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        Finally
+            ProgressStatus("No pending actions")
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(EMA_SupertrendStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(EMA_SupertrendStrategy))
+        End Try
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
+    End Function
+    Private Async Sub btnEMA_SupertrendStart_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendStart.Click
+        PreviousDayCleanup()
+        Await Task.Run(AddressOf EMA_SupertrendWorkerAsync).ConfigureAwait(False)
+
+        If _lastException IsNot Nothing Then
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnEMA_SupertrendStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                Debug.WriteLine("Restart for daily refresh")
+                logger.Debug("Restarting the application again for daily refresh")
+                btnEMA_SupertrendStart_Click(sender, e)
+            End If
+        End If
+    End Sub
+    Private Sub tmrEMA_SupertrendTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrEMA_SupertrendTickerStatus.Tick
+        FlashTickerBulbEx(GetType(EMA_SupertrendStrategy))
+    End Sub
+    Private Async Sub btnEMA_SupertrendStop_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendStop.Click
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _cts.Cancel()
+    End Sub
+    Private Sub btnEMA_SupertrendSettings_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendSettings.Click
+        Dim newForm As New frmEMA_SupertrendSettings(_EMA_SupertrendUserInputs)
+        newForm.ShowDialog()
+    End Sub
+    Private Sub linklblEMA_SupertrendTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblEMA_SupertrendTradableInstrument.LinkClicked
+        Dim newForm As New frmEMA_SupertrendTradableInstrumentList(_EMA_SupertrendTradableInstruments)
+        newForm.ShowDialog()
+    End Sub
+#End Region
+
 #Region "Common to all stratgeies"
 
 #Region "EX function"
@@ -993,6 +1212,42 @@ Public Class frmMainTabbed
                     SetObjectEnableDisable_ThreadSafe(btnAmiSignalStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, Nothing)
             End Select
+        ElseIf source Is GetType(EMA_SupertrendStrategy) Then
+            Select Case mode
+                Case UIMode.Active
+                    SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStop, True)
+                Case UIMode.BlockOther
+                    If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnOHLStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnOHLStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnMomentumReversalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnMomentumReversalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnMomentumReversalStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, Common.LOGIN_PENDING)
+                    End If
+                Case UIMode.ReleaseOther
+                    If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnOHLStart, "Start")
+                        SetObjectText_ThreadSafe(btnOHLStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnMomentumReversalStart, "Start")
+                        SetObjectText_ThreadSafe(btnMomentumReversalStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, Common.LOGIN_PENDING)
+                    End If
+                Case UIMode.Idle
+                    SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStop, False)
+                    SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, Nothing)
+            End Select
         End If
     End Sub
     Private Sub FlashTickerBulbEx(ByVal source As Object)
@@ -1007,6 +1262,9 @@ Public Class frmMainTabbed
         ElseIf source Is GetType(AmiSignalStrategy) Then
             blbTickerStatusCommon = blbAmiSignalTickerStatus
             tmrTickerStatusCommon = tmrAmiSignalTickerStatus
+        ElseIf source Is GetType(EMA_SupertrendStrategy) Then
+            blbTickerStatusCommon = blbEMA_SupertrendTickerStatus
+            tmrTickerStatusCommon = tmrEMA_SupertrendTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
@@ -1034,6 +1292,8 @@ Public Class frmMainTabbed
             blbTickerStatusCommon = blbMomentumReversalTickerStatus
         ElseIf source Is GetType(AmiSignalStrategy) Then
             blbTickerStatusCommon = blbAmiSignalTickerStatus
+        ElseIf source Is GetType(EMA_SupertrendStrategy) Then
+            blbTickerStatusCommon = blbEMA_SupertrendTickerStatus
         End If
         blbTickerStatusCommon.Color = color
     End Sub
@@ -1051,6 +1311,8 @@ Public Class frmMainTabbed
             sfdgvCommon = sfdgvMomentumReversalMainDashboard
         ElseIf source Is GetType(AmiSignalStrategy) Then
             sfdgvCommon = sfdgvAmiSignalMainDashboard
+        ElseIf source Is GetType(EMA_SupertrendStrategy) Then
+            sfdgvCommon = sfdgvEMA_SupertrendMainDashboard
         End If
 
         Dim eFilterPopupShowingEventArgsCommon As FilterPopupShowingEventArgs = Nothing
@@ -1112,12 +1374,18 @@ Public Class frmMainTabbed
                 Case LogMode.One
                     SetListAddItem_ThreadSafe(lstAmiSignalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
+        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(EMA_SupertrendStrategy) Then
+            Select Case mode
+                Case LogMode.One
+                    SetListAddItem_ThreadSafe(lstEMA_SupertrendLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+            End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
                     SetListAddItem_ThreadSafe(lstOHLLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstAmiSignalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstEMA_SupertrendLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -1156,6 +1424,7 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(OHLStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(EMA_SupertrendStrategy))
         'tabMain.TabPages.Remove(tabOHL)
         'tabMain.TabPages.Remove(tabMomentumReversal)
         'tabMain.TabPages.Remove(tabAmiSignal)
@@ -1164,12 +1433,14 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Pink)
+        ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
         ColorTickerBulbEx(GetType(OHLStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Lime)
+        ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
@@ -1177,6 +1448,7 @@ Public Class frmMainTabbed
             ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Pink)
+            ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -1189,6 +1461,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(OHLStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Yellow)
+        ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
@@ -1241,6 +1514,8 @@ Public Class frmMainTabbed
                     BindingListAdd_ThreadSafe(_OHLdashboadList, item)
                 Case GetType(AmiSignalStrategy)
                     BindingListAdd_ThreadSafe(_AmidashboadList, item)
+                Case GetType(EMA_SupertrendStrategy)
+                    BindingListAdd_ThreadSafe(_EMA_SupertrendDashboadList, item)
                 Case Else
                     Throw New NotImplementedException
             End Select
@@ -1261,12 +1536,16 @@ Public Class frmMainTabbed
                 _AmidashboadList = Nothing
                 _AmidashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
                 SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _AmidashboadList)
+            Case GetType(EMA_SupertrendStrategy)
+                _EMA_SupertrendDashboadList = Nothing
+                _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _AmidashboadList)
             Case Else
                 Throw New NotImplementedException
         End Select
         SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
+        SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
     End Sub
-
 #End Region
 
 #End Region

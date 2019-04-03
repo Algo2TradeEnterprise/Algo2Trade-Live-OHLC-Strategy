@@ -34,10 +34,10 @@ Public Class AmiSignalStrategyInstrument
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-        RawPayloadConsumers = New List(Of IPayloadConsumer)
+        RawPayloadDependentConsumers = New List(Of IPayloadConsumer)
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
-                RawPayloadConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
+                RawPayloadDependentConsumers.Add(New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame))
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
@@ -65,7 +65,7 @@ Public Class AmiSignalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 'Dim exitOrderDetails As Object = Nothing
-                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = IsTriggerReceivedForExitOrder()
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
                     Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
                     ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
@@ -81,8 +81,8 @@ Public Class AmiSignalStrategyInstrument
         End Try
     End Function
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
-        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 0, 0)
 
         If Now() < lastTradeEntryTime AndAlso Me.EntrySignals IsNot Nothing AndAlso Me.EntrySignals.Count = 1 Then
@@ -134,13 +134,14 @@ Public Class AmiSignalStrategyInstrument
         Return ret
     End Function
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
-        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of ExecuteCommandAction, IOrder))
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         If Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
             Dim currentExitSignal As AmiSignal = ExitSignals.FirstOrDefault.Value
             If currentExitSignal.Direction = APIAdapter.TransactionType.Buy AndAlso currentExitSignal.OrderTimestamp = Date.MinValue Then
@@ -153,7 +154,15 @@ Public Class AmiSignalStrategyInstrument
         End If
         Return ret
     End Function
-
+    Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder) As Task
+        If order IsNot Nothing AndAlso Not order.Status = "COMPLETE" Then
+            Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder)) From
+            {
+                New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, order)
+            }
+            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, cancellableOrder).ConfigureAwait(False)
+        End If
+    End Function
     Private Async Function DeleteProcessedOrderAsync(ByVal orderData As IBusinessOrder) As Task
         'logger.Debug("DeleteProcessedOrderAsync, parameters:{0}", Utilities.Strings.JsonSerialize(orderData))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)

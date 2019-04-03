@@ -56,6 +56,10 @@ Namespace ChartHandler.Indicator
         Public Property ParentController As APIStrategyController
         Private ReadOnly _parentChart As CandleStickChart
         Private ReadOnly _cts As New CancellationTokenSource
+        Protected _SMALock As Integer
+        Protected _EMALock As Integer
+        Protected _ATRLock As Integer
+        Protected _SupertrendLock As Integer
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                       ByVal assoicatedParentChart As CandleStickChart,
                       ByVal canceller As CancellationTokenSource)
@@ -68,6 +72,10 @@ Namespace ChartHandler.Indicator
         Public Async Function CalculateSMA(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SMAConsumer) As Task
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
+                While Interlocked.Read(_SMALock) > 0
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                End While
+                Interlocked.Increment(_SMALock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
                     Dim requiredDataSet As IEnumerable(Of Date) =
@@ -102,14 +110,18 @@ Namespace ChartHandler.Indicator
                         outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, smaValue, Function(key, value) smaValue)
                     Next
                 End If
-            Catch ex As Exception
-                logger.Error(ex)
-                Throw ex
+            Finally
+                Interlocked.Decrement(_SMALock)
+                If Interlocked.Read(_SMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why SMA lock is not released. Value:{0}", Interlocked.Read(_SMALock)))
             End Try
         End Function
         Public Async Function CalculateEMA(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As EMAConsumer) As Task
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
+                While Interlocked.Read(_EMALock) > 0
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                End While
+                Interlocked.Increment(_EMALock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
 
@@ -145,7 +157,7 @@ Namespace ChartHandler.Indicator
                         Select Case outputConsumer.EMAField
                             Case TypeOfField.Close
                                 If previousEMAValues Is Nothing OrElse (previousEMAValues IsNot Nothing AndAlso previousEMAValues.Count < outputConsumer.EMAPeriod) Then
-                                    Await CalculateSMA(timeToCalculateFrom, outputConsumer.SupportingSMAConsumer)
+                                    Await CalculateSMA(timeToCalculateFrom, outputConsumer.SupportingSMAConsumer).ConfigureAwait(False)
                                     emaValue.EMA.Value = CType(outputConsumer.SupportingSMAConsumer.ConsumerPayloads(runningInputDate), SMAConsumer.SMAPayload).SMA.Value
                                 Else
                                     emaValue.EMA.Value = (CType(outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate), OHLCPayload).ClosePrice.Value * (2 / (1 + outputConsumer.EMAPeriod))) + (previousEMAValue.EMA.Value * (1 - (2 / (1 + outputConsumer.EMAPeriod))))
@@ -154,14 +166,18 @@ Namespace ChartHandler.Indicator
                         outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, emaValue, Function(key, value) emaValue)
                     Next
                 End If
-            Catch ex As Exception
-                logger.Error(ex)
-                Throw ex
+            Finally
+                Interlocked.Decrement(_EMALock)
+                If Interlocked.Read(_EMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why EMA lock is not released. Value:{0}", Interlocked.Read(_EMALock)))
             End Try
         End Function
         Public Async Function CalculateATR(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As ATRConsumer) As Task
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
+                While Interlocked.Read(_ATRLock) > 0
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                End While
+                Interlocked.Increment(_ATRLock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
                     Dim requiredDataSet As IEnumerable(Of Date) =
@@ -222,27 +238,31 @@ Namespace ChartHandler.Indicator
                         outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, atrValue, Function(key, value) atrValue)
                     Next
                 End If
-            Catch ex As Exception
-                logger.Error(ex)
-                Throw ex
+            Finally
+                Interlocked.Decrement(_ATRLock)
+                If Interlocked.Read(_ATRLock) <> 0 Then Throw New ApplicationException(String.Format("Check why ATR lock is not released. Value:{0}", Interlocked.Read(_ATRLock)))
             End Try
         End Function
         Public Async Function CalculateSupertrend(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SupertrendConsumer) As Task
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
+                While Interlocked.Read(_SupertrendLock) > 0
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                End While
+                Interlocked.Increment(_SupertrendLock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
 
-                    Await CalculateATR(timeToCalculateFrom, outputConsumer.SupportingATRConsumer)
-
-                    Dim requiredDataSet As IEnumerable(Of Date) =
+                    Dim requiredDataSet As List(Of Date) =
                         outputConsumer.ParentConsumer.ConsumerPayloads.Keys.Where(Function(x)
                                                                                       Return x >= timeToCalculateFrom
-                                                                                  End Function)
+                                                                                  End Function).OrderBy(Function(x)
+                                                                                                            Return x
+                                                                                                        End Function).ToList
 
-                    For Each runningInputDate In requiredDataSet.OrderBy(Function(x)
-                                                                             Return x
-                                                                         End Function)
+                    Await CalculateATR(timeToCalculateFrom, outputConsumer.SupportingATRConsumer).ConfigureAwait(False)
+
+                    For Each runningInputDate In requiredDataSet
                         If outputConsumer.ConsumerPayloads Is Nothing Then outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
 
                         Dim supertrendValue As SupertrendConsumer.SupertrendPayload = Nothing
@@ -289,9 +309,9 @@ Namespace ChartHandler.Indicator
                         outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, supertrendValue, Function(key, value) supertrendValue)
                     Next
                 End If
-            Catch ex As Exception
-                logger.Error(ex)
-                Throw ex
+            Finally
+                Interlocked.Decrement(_SupertrendLock)
+                If Interlocked.Read(_SupertrendLock) <> 0 Then Throw New ApplicationException(String.Format("Check why Supertrend lock is not released. Value:{0}", Interlocked.Read(_SupertrendLock)))
             End Try
         End Function
 #End Region

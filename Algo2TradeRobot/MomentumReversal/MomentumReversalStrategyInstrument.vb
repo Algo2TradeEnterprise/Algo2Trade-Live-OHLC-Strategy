@@ -28,15 +28,15 @@ Public Class MomentumReversalStrategyInstrument
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-        RawPayloadConsumers = New List(Of IPayloadConsumer)
+        RawPayloadDependentConsumers = New List(Of IPayloadConsumer)
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-                chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
-                    {New EMAConsumer(chartConsumer, 5, TypeOfField.Close),
-                     New EMAConsumer(chartConsumer, 20, TypeOfField.Close),
-                     New SupertrendConsumer(chartConsumer, 7, 3)}
-                RawPayloadConsumers.Add(chartConsumer)
+                'chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
+                '    {New EMAConsumer(chartConsumer, 5, TypeOfField.Close),
+                '     New EMAConsumer(chartConsumer, 20, TypeOfField.Close),
+                '     New SupertrendConsumer(chartConsumer, 7, 3)}
+                RawPayloadDependentConsumers.Add(chartConsumer)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
@@ -85,7 +85,7 @@ Public Class MomentumReversalStrategyInstrument
                 End If
                 'End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = IsTriggerReceivedForExitOrder()
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
                     Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
                 End If
@@ -102,6 +102,7 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(MRUserSettings.SignalTimeFrame)
         Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeDetails.ExchangeType)
@@ -159,7 +160,7 @@ Public Class MomentumReversalStrategyInstrument
                     If MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade <> Decimal.MinValue Then
                         target = Math.Min(target, MRTradePrice * MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade / 100)
                     End If
-                    stoploss = Await GetModifiedStoplossAsync(triggerPrice, stoplossPrice, quantity).ConfigureAwait(False)
+                    stoploss = GetModifiedStoplossAsync(triggerPrice, stoplossPrice, quantity)
 
                     If Me.TradableInstrument.LastTick.LastPrice < triggerPrice Then
                         parameters = New PlaceOrderParameters With
@@ -183,7 +184,7 @@ Public Class MomentumReversalStrategyInstrument
                     If MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade <> Decimal.MinValue Then
                         target = Math.Min(target, MRTradePrice * MRUserSettings.InstrumentsData(instrumentName).MaxTargetPercentagePerTrade / 100)
                     End If
-                    stoploss = Await GetModifiedStoplossAsync(stoplossPrice, triggerPrice, quantity).ConfigureAwait(False)
+                    stoploss = GetModifiedStoplossAsync(stoplossPrice, triggerPrice, quantity)
 
                     If Me.TradableInstrument.LastTick.LastPrice > triggerPrice Then
                         parameters = New PlaceOrderParameters With
@@ -224,8 +225,8 @@ Public Class MomentumReversalStrategyInstrument
     End Function
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-            Dim currentTime As Date = Now
             For Each parentOrderId In OrderDetails.Keys
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
                 If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso
@@ -238,11 +239,11 @@ Public Class MomentumReversalStrategyInstrument
                     If signalCandle IsNot Nothing Then
                         If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                             potentialSLPrice = signalCandle.LowPrice.Value - CalculateBuffer(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            triggerPrice = Await GetModifiedStoplossAsync(parentOrderPrice, potentialSLPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
+                            triggerPrice = GetModifiedStoplossAsync(parentOrderPrice, potentialSLPrice, parentBusinessOrder.ParentOrder.Quantity)
                             triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice - triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                         ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                             potentialSLPrice = signalCandle.HighPrice.Value + CalculateBuffer(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            triggerPrice = Await GetModifiedStoplossAsync(potentialSLPrice, parentOrderPrice, parentBusinessOrder.ParentOrder.Quantity).ConfigureAwait(False)
+                            triggerPrice = GetModifiedStoplossAsync(potentialSLPrice, parentOrderPrice, parentBusinessOrder.ParentOrder.Quantity)
                             triggerPrice = Math.Round(ConvertFloorCeling(parentOrderPrice + triggerPrice, Convert.ToDouble(TradableInstrument.TickSize), RoundOfType.Celing), 2)
                         End If
 
@@ -272,8 +273,9 @@ Public Class MomentumReversalStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of ExecuteCommandAction, IOrder))
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
         If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
             Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
@@ -305,8 +307,16 @@ Public Class MomentumReversalStrategyInstrument
         End If
         Return ret
     End Function
-    Private Async Function GetModifiedStoplossAsync(ByVal entryPrice As Decimal, ByVal stoplossPrice As Decimal, ByVal quantity As Integer) As Task(Of Decimal)
-        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+    Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder) As Task
+        If order IsNot Nothing AndAlso Not order.Status = "COMPLETE" Then
+            Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder)) From
+            {
+                New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, order)
+            }
+            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, cancellableOrder).ConfigureAwait(False)
+        End If
+    End Function
+    Private Function GetModifiedStoplossAsync(ByVal entryPrice As Decimal, ByVal stoplossPrice As Decimal, ByVal quantity As Integer) As Decimal
         Dim ret As Decimal = Nothing
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
         Dim capitalRequiredWithMargin As Decimal = (entryPrice * quantity / 30)

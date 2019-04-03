@@ -1,6 +1,4 @@
-﻿Imports Utilities.DAL
-Imports System.IO
-Imports System.Runtime.Serialization.Formatters.Binary
+﻿Imports System.IO
 Imports System.Threading
 
 Public Class frmMomentumReversalSettings

@@ -165,7 +165,7 @@ Public Class MomentumReversalUserInputs
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
-                                Dim instrumentData As New MomentumReversalUserInputs.InstrumentDetails
+                                Dim instrumentData As New InstrumentDetails
                                 instrumentData.InstrumentName = instrumentName.ToUpper
                                 If marketCash AndAlso marketFuture Then
                                     instrumentData.MarketType = IInstrument.TypeOfInstrument.None
@@ -185,7 +185,7 @@ Public Class MomentumReversalUserInputs
                                 instrumentData.MaxTargetPercentagePerTrade = maxTargetPercentagePerTrade
                                 instrumentData.MaxLossPerStock = maxLossPerStock
                                 instrumentData.MaxProfitPerStock = maxProfitPerStock
-                                If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, MomentumReversalUserInputs.InstrumentDetails)
+                                If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.InstrumentName) Then
                                     Throw New ApplicationException(String.Format("Duplicate Instrument Name {0}", instrumentData.InstrumentName))
                                 End If

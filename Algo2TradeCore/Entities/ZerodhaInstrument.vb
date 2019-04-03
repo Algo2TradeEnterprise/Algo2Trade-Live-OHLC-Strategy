@@ -55,7 +55,19 @@ Namespace Entities
                 Return WrappedInstrument.TradingSymbol
             End Get
         End Property
+
+        Public ReadOnly Property RawInstrumentName As String Implements IInstrument.RawInstrumentName
+            Get
+                If Me.TradingSymbol.Contains("FUT") Then
+                    Return Me.TradingSymbol.Remove(Me.TradingSymbol.Count - 8)
+                Else
+                    Return Me.TradingSymbol
+                End If
+            End Get
+        End Property
+
         Public Property WrappedInstrument As Instrument
+
         Public ReadOnly Property Broker As APISource Implements IInstrument.Broker
             Get
                 Return APISource.Zerodha

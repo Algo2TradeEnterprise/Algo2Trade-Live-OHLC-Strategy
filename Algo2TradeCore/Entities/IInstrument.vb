@@ -8,6 +8,7 @@
         ReadOnly Property Segment As String
         ReadOnly Property TickSize As Decimal
         ReadOnly Property TradingSymbol As String
+        ReadOnly Property RawInstrumentName As String
         Property QuantityMultiplier As Long
         Property BrokerageCategory As String
         ReadOnly Property Broker As APISource

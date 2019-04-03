@@ -26,5 +26,9 @@
             ATR
             Supertrend
         End Enum
+        Public Enum CrossDirection
+            Above = 1
+            Below
+        End Enum
     End Module
 End Namespace

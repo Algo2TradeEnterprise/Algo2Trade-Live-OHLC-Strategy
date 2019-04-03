@@ -30,6 +30,20 @@ Partial Class frmMainTabbed
         Me.miAdvancedOptions = New System.Windows.Forms.ToolStripMenuItem()
         Me.miAbout = New System.Windows.Forms.ToolStripMenuItem()
         Me.tabMain = New System.Windows.Forms.TabControl()
+        Me.tabEMA_Supertrend = New System.Windows.Forms.TabPage()
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnEMA_SupertrendStop = New System.Windows.Forms.Button()
+        Me.btnEMA_SupertrendStart = New System.Windows.Forms.Button()
+        Me.Panel4 = New System.Windows.Forms.Panel()
+        Me.blbEMA_SupertrendTickerStatus = New Bulb.LedBulb()
+        Me.lblEMA_SupertrendTickerStatus = New System.Windows.Forms.Label()
+        Me.btnEMA_SupertrendSettings = New System.Windows.Forms.Button()
+        Me.linklblEMA_SupertrendTradableInstrument = New System.Windows.Forms.LinkLabel()
+        Me.pnlEMA5_20STBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlEMA5_20STBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.lstEMA_SupertrendLog = New System.Windows.Forms.ListBox()
+        Me.sfdgvEMA_SupertrendMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tabMomentumReversal = New System.Windows.Forms.TabPage()
         Me.pnlMomentumReversalMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlMomentumReversalTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
@@ -52,6 +66,8 @@ Partial Class frmMainTabbed
         Me.Panel2 = New System.Windows.Forms.Panel()
         Me.blbOHLTickerStatus = New Bulb.LedBulb()
         Me.lblOHLTickerStatus = New System.Windows.Forms.Label()
+        Me.btnOHLSettings = New System.Windows.Forms.Button()
+        Me.linklblOHLTradableInstruments = New System.Windows.Forms.LinkLabel()
         Me.pnlOHLBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox3 = New System.Windows.Forms.PictureBox()
         Me.pnlOHLBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
@@ -73,10 +89,16 @@ Partial Class frmMainTabbed
         Me.tmrMomentumReversalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.btnOHLSettings = New System.Windows.Forms.Button()
-        Me.linklblOHLTradableInstruments = New System.Windows.Forms.LinkLabel()
+        Me.tmrEMA_SupertrendTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
+        Me.tabEMA_Supertrend.SuspendLayout()
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.SuspendLayout()
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.SuspendLayout()
+        Me.Panel4.SuspendLayout()
+        Me.pnlEMA5_20STBodyVerticalSplitter.SuspendLayout()
+        Me.pnlEMA5_20STBodyHorizontalSplitter.SuspendLayout()
+        CType(Me.sfdgvEMA_SupertrendMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.tabMomentumReversal.SuspendLayout()
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.SuspendLayout()
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.SuspendLayout()
@@ -142,6 +164,7 @@ Partial Class frmMainTabbed
         '
         'tabMain
         '
+        Me.tabMain.Controls.Add(Me.tabEMA_Supertrend)
         Me.tabMain.Controls.Add(Me.tabMomentumReversal)
         Me.tabMain.Controls.Add(Me.tabOHL)
         Me.tabMain.Controls.Add(Me.tabAmiSignal)
@@ -152,6 +175,204 @@ Partial Class frmMainTabbed
         Me.tabMain.SelectedIndex = 0
         Me.tabMain.Size = New System.Drawing.Size(1371, 722)
         Me.tabMain.TabIndex = 1
+        '
+        'tabEMA_Supertrend
+        '
+        Me.tabEMA_Supertrend.Controls.Add(Me.pnlEMA5_20STMainPanelHorizontalSplitter)
+        Me.tabEMA_Supertrend.Location = New System.Drawing.Point(4, 25)
+        Me.tabEMA_Supertrend.Name = "tabEMA_Supertrend"
+        Me.tabEMA_Supertrend.Size = New System.Drawing.Size(1363, 693)
+        Me.tabEMA_Supertrend.TabIndex = 3
+        Me.tabEMA_Supertrend.Text = "EMA & Supertrend Strategy"
+        Me.tabEMA_Supertrend.UseVisualStyleBackColor = True
+        '
+        'pnlEMA5_20STMainPanelHorizontalSplitter
+        '
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Controls.Add(Me.pnlEMA5_20STTopHeaderVerticalSplitter, 0, 0)
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Controls.Add(Me.pnlEMA5_20STBodyVerticalSplitter, 0, 1)
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Location = New System.Drawing.Point(0, 0)
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Name = "pnlEMA5_20STMainPanelHorizontalSplitter"
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 693)
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.TabIndex = 1
+        '
+        'pnlEMA5_20STTopHeaderVerticalSplitter
+        '
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnCount = 15
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.btnEMA_SupertrendStop, 0, 0)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.btnEMA_SupertrendStart, 0, 0)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.Panel4, 14, 0)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.btnEMA_SupertrendSettings, 9, 0)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.linklblEMA_SupertrendTradableInstrument, 10, 0)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Name = "pnlEMA5_20STTopHeaderVerticalSplitter"
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.RowCount = 1
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1355, 40)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnEMA_SupertrendStop
+        '
+        Me.btnEMA_SupertrendStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnEMA_SupertrendStop.Location = New System.Drawing.Point(94, 4)
+        Me.btnEMA_SupertrendStop.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnEMA_SupertrendStop.Name = "btnEMA_SupertrendStop"
+        Me.btnEMA_SupertrendStop.Size = New System.Drawing.Size(82, 32)
+        Me.btnEMA_SupertrendStop.TabIndex = 10
+        Me.btnEMA_SupertrendStop.Text = "Stop"
+        Me.btnEMA_SupertrendStop.UseVisualStyleBackColor = True
+        '
+        'btnEMA_SupertrendStart
+        '
+        Me.btnEMA_SupertrendStart.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnEMA_SupertrendStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnEMA_SupertrendStart.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnEMA_SupertrendStart.Name = "btnEMA_SupertrendStart"
+        Me.btnEMA_SupertrendStart.Size = New System.Drawing.Size(82, 32)
+        Me.btnEMA_SupertrendStart.TabIndex = 2
+        Me.btnEMA_SupertrendStart.Text = "Start"
+        Me.btnEMA_SupertrendStart.UseVisualStyleBackColor = True
+        '
+        'Panel4
+        '
+        Me.Panel4.Controls.Add(Me.blbEMA_SupertrendTickerStatus)
+        Me.Panel4.Controls.Add(Me.lblEMA_SupertrendTickerStatus)
+        Me.Panel4.Location = New System.Drawing.Point(1201, 4)
+        Me.Panel4.Margin = New System.Windows.Forms.Padding(4)
+        Me.Panel4.Name = "Panel4"
+        Me.Panel4.Size = New System.Drawing.Size(146, 31)
+        Me.Panel4.TabIndex = 9
+        '
+        'blbEMA_SupertrendTickerStatus
+        '
+        Me.blbEMA_SupertrendTickerStatus.Color = System.Drawing.Color.Pink
+        Me.blbEMA_SupertrendTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
+        Me.blbEMA_SupertrendTickerStatus.Location = New System.Drawing.Point(99, 0)
+        Me.blbEMA_SupertrendTickerStatus.Margin = New System.Windows.Forms.Padding(4)
+        Me.blbEMA_SupertrendTickerStatus.Name = "blbEMA_SupertrendTickerStatus"
+        Me.blbEMA_SupertrendTickerStatus.On = True
+        Me.blbEMA_SupertrendTickerStatus.Size = New System.Drawing.Size(47, 31)
+        Me.blbEMA_SupertrendTickerStatus.TabIndex = 7
+        Me.blbEMA_SupertrendTickerStatus.Text = "LedBulb1"
+        '
+        'lblEMA_SupertrendTickerStatus
+        '
+        Me.lblEMA_SupertrendTickerStatus.AutoSize = True
+        Me.lblEMA_SupertrendTickerStatus.Location = New System.Drawing.Point(9, 9)
+        Me.lblEMA_SupertrendTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblEMA_SupertrendTickerStatus.Name = "lblEMA_SupertrendTickerStatus"
+        Me.lblEMA_SupertrendTickerStatus.Size = New System.Drawing.Size(91, 17)
+        Me.lblEMA_SupertrendTickerStatus.TabIndex = 9
+        Me.lblEMA_SupertrendTickerStatus.Text = "Ticker Status"
+        '
+        'btnEMA_SupertrendSettings
+        '
+        Me.btnEMA_SupertrendSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnEMA_SupertrendSettings.Location = New System.Drawing.Point(814, 4)
+        Me.btnEMA_SupertrendSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnEMA_SupertrendSettings.Name = "btnEMA_SupertrendSettings"
+        Me.btnEMA_SupertrendSettings.Size = New System.Drawing.Size(82, 32)
+        Me.btnEMA_SupertrendSettings.TabIndex = 11
+        Me.btnEMA_SupertrendSettings.Text = "Settings"
+        Me.btnEMA_SupertrendSettings.UseVisualStyleBackColor = True
+        '
+        'linklblEMA_SupertrendTradableInstrument
+        '
+        Me.linklblEMA_SupertrendTradableInstrument.AutoSize = True
+        Me.linklblEMA_SupertrendTradableInstrument.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblEMA_SupertrendTradableInstrument.Enabled = False
+        Me.linklblEMA_SupertrendTradableInstrument.Location = New System.Drawing.Point(903, 0)
+        Me.linklblEMA_SupertrendTradableInstrument.Name = "linklblEMA_SupertrendTradableInstrument"
+        Me.linklblEMA_SupertrendTradableInstrument.Size = New System.Drawing.Size(220, 40)
+        Me.linklblEMA_SupertrendTradableInstrument.TabIndex = 12
+        Me.linklblEMA_SupertrendTradableInstrument.TabStop = True
+        Me.linklblEMA_SupertrendTradableInstrument.Text = "Tradable Instruments: 0"
+        Me.linklblEMA_SupertrendTradableInstrument.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
+        'pnlEMA5_20STBodyVerticalSplitter
+        '
+        Me.pnlEMA5_20STBodyVerticalSplitter.ColumnCount = 2
+        Me.pnlEMA5_20STBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlEMA5_20STBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlEMA5_20STBodyVerticalSplitter.Controls.Add(Me.pnlEMA5_20STBodyHorizontalSplitter, 0, 0)
+        Me.pnlEMA5_20STBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlEMA5_20STBodyVerticalSplitter.Location = New System.Drawing.Point(4, 52)
+        Me.pnlEMA5_20STBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlEMA5_20STBodyVerticalSplitter.Name = "pnlEMA5_20STBodyVerticalSplitter"
+        Me.pnlEMA5_20STBodyVerticalSplitter.RowCount = 1
+        Me.pnlEMA5_20STBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlEMA5_20STBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 637.0!))
+        Me.pnlEMA5_20STBodyVerticalSplitter.Size = New System.Drawing.Size(1355, 637)
+        Me.pnlEMA5_20STBodyVerticalSplitter.TabIndex = 1
+        '
+        'pnlEMA5_20STBodyHorizontalSplitter
+        '
+        Me.pnlEMA5_20STBodyHorizontalSplitter.ColumnCount = 1
+        Me.pnlEMA5_20STBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Controls.Add(Me.lstEMA_SupertrendLog, 0, 1)
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Controls.Add(Me.sfdgvEMA_SupertrendMainDashboard, 0, 0)
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Name = "pnlEMA5_20STBodyHorizontalSplitter"
+        Me.pnlEMA5_20STBodyHorizontalSplitter.RowCount = 2
+        Me.pnlEMA5_20STBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlEMA5_20STBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlEMA5_20STBodyHorizontalSplitter.Size = New System.Drawing.Size(940, 629)
+        Me.pnlEMA5_20STBodyHorizontalSplitter.TabIndex = 0
+        '
+        'lstEMA_SupertrendLog
+        '
+        Me.lstEMA_SupertrendLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstEMA_SupertrendLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
+        Me.lstEMA_SupertrendLog.FormattingEnabled = True
+        Me.lstEMA_SupertrendLog.ItemHeight = 16
+        Me.lstEMA_SupertrendLog.Location = New System.Drawing.Point(4, 444)
+        Me.lstEMA_SupertrendLog.Margin = New System.Windows.Forms.Padding(4)
+        Me.lstEMA_SupertrendLog.Name = "lstEMA_SupertrendLog"
+        Me.lstEMA_SupertrendLog.Size = New System.Drawing.Size(932, 181)
+        Me.lstEMA_SupertrendLog.TabIndex = 9
+        '
+        'sfdgvEMA_SupertrendMainDashboard
+        '
+        Me.sfdgvEMA_SupertrendMainDashboard.AccessibleName = "Table"
+        Me.sfdgvEMA_SupertrendMainDashboard.AllowDraggingColumns = True
+        Me.sfdgvEMA_SupertrendMainDashboard.AllowEditing = False
+        Me.sfdgvEMA_SupertrendMainDashboard.AllowFiltering = True
+        Me.sfdgvEMA_SupertrendMainDashboard.AllowResizingColumns = True
+        Me.sfdgvEMA_SupertrendMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
+        Me.sfdgvEMA_SupertrendMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
+        Me.sfdgvEMA_SupertrendMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.sfdgvEMA_SupertrendMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvEMA_SupertrendMainDashboard.Margin = New System.Windows.Forms.Padding(4)
+        Me.sfdgvEMA_SupertrendMainDashboard.Name = "sfdgvEMA_SupertrendMainDashboard"
+        Me.sfdgvEMA_SupertrendMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
+        Me.sfdgvEMA_SupertrendMainDashboard.Size = New System.Drawing.Size(932, 432)
+        Me.sfdgvEMA_SupertrendMainDashboard.TabIndex = 6
+        Me.sfdgvEMA_SupertrendMainDashboard.Text = "SfDataGrid1"
         '
         'tabMomentumReversal
         '
@@ -467,6 +688,30 @@ Partial Class frmMainTabbed
         Me.lblOHLTickerStatus.TabIndex = 9
         Me.lblOHLTickerStatus.Text = "Ticker Status"
         '
+        'btnOHLSettings
+        '
+        Me.btnOHLSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnOHLSettings.Location = New System.Drawing.Point(805, 4)
+        Me.btnOHLSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnOHLSettings.Name = "btnOHLSettings"
+        Me.btnOHLSettings.Size = New System.Drawing.Size(81, 31)
+        Me.btnOHLSettings.TabIndex = 12
+        Me.btnOHLSettings.Text = "Settings"
+        Me.btnOHLSettings.UseVisualStyleBackColor = True
+        '
+        'linklblOHLTradableInstruments
+        '
+        Me.linklblOHLTradableInstruments.AutoSize = True
+        Me.linklblOHLTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblOHLTradableInstruments.Enabled = False
+        Me.linklblOHLTradableInstruments.Location = New System.Drawing.Point(893, 0)
+        Me.linklblOHLTradableInstruments.Name = "linklblOHLTradableInstruments"
+        Me.linklblOHLTradableInstruments.Size = New System.Drawing.Size(218, 39)
+        Me.linklblOHLTradableInstruments.TabIndex = 13
+        Me.linklblOHLTradableInstruments.TabStop = True
+        Me.linklblOHLTradableInstruments.Text = "Tradable Instruments: 0"
+        Me.linklblOHLTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
         'pnlOHLBodyVerticalSplitter
         '
         Me.pnlOHLBodyVerticalSplitter.ColumnCount = 2
@@ -736,29 +981,9 @@ Partial Class frmMainTabbed
         '
         Me.tmrAmiSignalTickerStatus.Enabled = True
         '
-        'btnOHLSettings
+        'tmrEMA_SupertrendTickerStatus
         '
-        Me.btnOHLSettings.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnOHLSettings.Location = New System.Drawing.Point(805, 4)
-        Me.btnOHLSettings.Margin = New System.Windows.Forms.Padding(4)
-        Me.btnOHLSettings.Name = "btnOHLSettings"
-        Me.btnOHLSettings.Size = New System.Drawing.Size(81, 31)
-        Me.btnOHLSettings.TabIndex = 12
-        Me.btnOHLSettings.Text = "Settings"
-        Me.btnOHLSettings.UseVisualStyleBackColor = True
-        '
-        'linklblOHLTradableInstruments
-        '
-        Me.linklblOHLTradableInstruments.AutoSize = True
-        Me.linklblOHLTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.linklblOHLTradableInstruments.Enabled = False
-        Me.linklblOHLTradableInstruments.Location = New System.Drawing.Point(893, 0)
-        Me.linklblOHLTradableInstruments.Name = "linklblOHLTradableInstruments"
-        Me.linklblOHLTradableInstruments.Size = New System.Drawing.Size(218, 39)
-        Me.linklblOHLTradableInstruments.TabIndex = 13
-        Me.linklblOHLTradableInstruments.TabStop = True
-        Me.linklblOHLTradableInstruments.Text = "Tradable Instruments: 0"
-        Me.linklblOHLTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        Me.tmrEMA_SupertrendTickerStatus.Enabled = True
         '
         'frmMainTabbed
         '
@@ -776,6 +1001,15 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.ResumeLayout(False)
         Me.msMainMenuStrip.PerformLayout()
         Me.tabMain.ResumeLayout(False)
+        Me.tabEMA_Supertrend.ResumeLayout(False)
+        Me.pnlEMA5_20STMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.PerformLayout()
+        Me.Panel4.ResumeLayout(False)
+        Me.Panel4.PerformLayout()
+        Me.pnlEMA5_20STBodyVerticalSplitter.ResumeLayout(False)
+        Me.pnlEMA5_20STBodyHorizontalSplitter.ResumeLayout(False)
+        CType(Me.sfdgvEMA_SupertrendMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.tabMomentumReversal.ResumeLayout(False)
         Me.pnlMomentumReversalMainPanelHorizontalSplitter.ResumeLayout(False)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.ResumeLayout(False)
@@ -860,4 +1094,19 @@ Partial Class frmMainTabbed
     Friend WithEvents linklblMomentumReversalTradableInstrument As LinkLabel
     Friend WithEvents btnOHLSettings As Button
     Friend WithEvents linklblOHLTradableInstruments As LinkLabel
+    Friend WithEvents tabEMA_Supertrend As TabPage
+    Friend WithEvents pnlEMA5_20STMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents pnlEMA5_20STTopHeaderVerticalSplitter As TableLayoutPanel
+    Friend WithEvents btnEMA_SupertrendStop As Button
+    Friend WithEvents btnEMA_SupertrendStart As Button
+    Friend WithEvents Panel4 As Panel
+    Friend WithEvents blbEMA_SupertrendTickerStatus As Bulb.LedBulb
+    Friend WithEvents lblEMA_SupertrendTickerStatus As Label
+    Friend WithEvents btnEMA_SupertrendSettings As Button
+    Friend WithEvents linklblEMA_SupertrendTradableInstrument As LinkLabel
+    Friend WithEvents pnlEMA5_20STBodyVerticalSplitter As TableLayoutPanel
+    Friend WithEvents pnlEMA5_20STBodyHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents lstEMA_SupertrendLog As ListBox
+    Friend WithEvents sfdgvEMA_SupertrendMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
+    Friend WithEvents tmrEMA_SupertrendTickerStatus As Timer
 End Class

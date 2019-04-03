@@ -97,16 +97,16 @@ Namespace Strategies
         Protected _WaitDurationOnConnectionFailure As TimeSpan = TimeSpan.FromSeconds(5)
         Protected _WaitDurationOnServiceUnavailbleFailure As TimeSpan = TimeSpan.FromSeconds(30)
         Protected _WaitDurationOnAnyFailure As TimeSpan = TimeSpan.FromSeconds(10)
+        Public Property ParentStrategy As Strategy
+        Public Property TradableInstrument As IInstrument
+        Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+        Public Property RawPayloadDependentConsumers As List(Of IPayloadConsumer)
         Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
             TradableInstrument = associatedInstrument
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
         End Sub
-        Public Property ParentStrategy As Strategy
-        Public Property TradableInstrument As IInstrument
-        Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
-        Public Property RawPayloadConsumers As List(Of IPayloadConsumer)
 
 #Region "Required Functions"
         Protected Function CalculateBuffer(ByVal price As Double, ByVal tickSize As Decimal, ByVal floorOrCeiling As RoundOfType) As Double
@@ -116,81 +116,25 @@ Namespace Strategies
             bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, tickSize, floorOrCeiling)
             Return bufferPrice
         End Function
-        Protected Overridable Function GetAllActiveOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of IOrder)
-            Dim ret As List(Of IOrder) = Nothing
-            Dim direction As String = Nothing
-            If signalDirection = APIAdapter.TransactionType.Buy Then
-                direction = "BUY"
-            ElseIf signalDirection = APIAdapter.TransactionType.Sell Then
-                direction = "SELL"
-            End If
-            If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-                For Each parentOrderId In OrderDetails.Keys
-                    Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
-                    If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
-                        If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
-                            'If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
-                            If Not parentBusinessOrder.ParentOrder.Status = "REJECTED" Then
-                                If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
-                                    Dim parentNeedToInsert As Boolean = False
-                                    For Each slOrder In parentBusinessOrder.SLOrder
-                                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
-                                            If ret Is Nothing Then ret = New List(Of IOrder)
-                                            ret.Add(slOrder)
-                                            parentNeedToInsert = True
-                                        End If
-                                    Next
-                                    If ret Is Nothing Then ret = New List(Of IOrder)
-                                    If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
-                                End If
-                                If ret Is Nothing Then ret = New List(Of IOrder)
-                                If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
-                                If parentBusinessOrder.ParentOrder.Status = "TRIGGER PENDING" Then ret.Add(parentBusinessOrder.ParentOrder)
-                            End If
-                        End If
-                    End If
-                Next
-            End If
-            Return ret
-        End Function
-        Protected Overridable Function GetActiveOrder(ByVal signalDirection As APIAdapter.TransactionType) As IBusinessOrder
-            'logger.Debug("GetActiveOrder, parameters:Nothing")
-            Dim ret As IBusinessOrder = Nothing
-            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
-            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
-                Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
-                                                                                  Return x.ParentOrderIdentifier Is Nothing
-                                                                              End Function)
-                If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
-                    ret = OrderDetails(parentOrders.FirstOrDefault.OrderIdentifier)
-                End If
-            End If
-            Return ret
-        End Function
-        Protected Overridable Function GetAllCancelableOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of Tuple(Of ExecuteCommandAction, IOrder))
-            Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
-            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
-            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
-                For Each activeOrder In allActiveOrders
-                    If Not activeOrder.Status = "COMPLETE" Then
-                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, activeOrder))
-                    End If
-                Next
-            End If
-            Return ret
-        End Function
-        Public Overridable Function GetXMinuteCurrentCandle(ByVal timeFrame As Integer) As OHLCPayload
+        Public Function GetXMinuteCurrentCandle(ByVal timeFrame As Integer) As OHLCPayload
             Dim ret As OHLCPayload = Nothing
-            If Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
-                Dim XMinutePayloadConsumers As IEnumerable(Of IPayloadConsumer) = RawPayloadConsumers.Where(Function(x)
-                                                                                                                Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
-                                                                                                                      CType(x, PayloadToChartConsumer).Timeframe = timeFrame
-                                                                                                            End Function)
-                Dim XMinutePayloadConsumer As PayloadToChartConsumer = Nothing
-                If XMinutePayloadConsumers IsNot Nothing AndAlso XMinutePayloadConsumers.Count > 0 Then
-                    XMinutePayloadConsumer = XMinutePayloadConsumers.FirstOrDefault
-                End If
+            If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
+                'Indibar
+                'Dim XMinutePayloadConsumers As IEnumerable(Of IPayloadConsumer) = RawPayloadConsumers.Where(Function(x)
+                '                                                                                                Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
+                '                                                                                                      CType(x, PayloadToChartConsumer).Timeframe = timeFrame
+                '                                                                                            End Function)
+                'Dim XMinutePayloadConsumer As PayloadToChartConsumer = Nothing
+                'If XMinutePayloadConsumers IsNot Nothing AndAlso XMinutePayloadConsumers.Count > 0 Then
+                '    XMinutePayloadConsumer = XMinutePayloadConsumers.FirstOrDefault
+                'End If
+                Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
+                                                                                                             If x.GetType Is GetType(PayloadToChartConsumer) Then
+                                                                                                                 Return CType(x, PayloadToChartConsumer).Timeframe = timeFrame
+                                                                                                             Else
+                                                                                                                 Return Nothing
+                                                                                                             End If
+                                                                                                         End Function)
 
                 If XMinutePayloadConsumer IsNot Nothing AndAlso
                     XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
@@ -202,6 +146,83 @@ Namespace Strategies
                     'If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then ret = lastExistingPayloads.LastOrDefault.Value
                     ret = XMinutePayloadConsumer.ConsumerPayloads(XMinutePayloadConsumer.ConsumerPayloads.Keys.Max)
                 End If
+            End If
+            Return ret
+        End Function
+        Public Function IsCrossover(ByVal firstDummyConsumer As PayloadToIndicatorConsumer,
+                                           ByVal secondDummyConsumer As PayloadToIndicatorConsumer,
+                                           ByVal firstDummyConsumerField As TypeOfField,
+                                           ByVal secondDummyConsumerField As TypeOfField,
+                                           ByVal currentCandle As OHLCPayload,
+                                           ByVal crossSide As Enums.CrossDirection) As Boolean
+            Dim ret As Boolean = False
+            If currentCandle IsNot Nothing AndAlso currentCandle.PreviousPayload IsNot Nothing AndAlso currentCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
+                Dim firstConsumer As PayloadToIndicatorConsumer = GetConsumer(RawPayloadDependentConsumers, firstDummyConsumer)
+                Dim secondConsumer As PayloadToIndicatorConsumer = GetConsumer(RawPayloadDependentConsumers, secondDummyConsumer)
+
+                If firstConsumer IsNot Nothing AndAlso secondConsumer IsNot Nothing AndAlso
+                    firstConsumer.ConsumerPayloads IsNot Nothing AndAlso firstConsumer.ConsumerPayloads.Count > 0 AndAlso
+                    secondConsumer.ConsumerPayloads IsNot Nothing AndAlso secondConsumer.ConsumerPayloads.Count > 0 Then
+                    Dim firstConsumerPreviousValue As IPayload = Nothing
+                    Dim firstConsumerCurrentValue As IPayload = Nothing
+                    Dim secondConsumerPreviousValue As IPayload = Nothing
+                    Dim secondConsumerCurrentValue As IPayload = Nothing
+                    If firstConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.PreviousPayload.SnapshotDateTime) Then
+                        firstConsumerPreviousValue = firstConsumer.ConsumerPayloads(currentCandle.PreviousPayload.PreviousPayload.SnapshotDateTime)
+                    End If
+                    If firstConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.SnapshotDateTime) Then
+                        firstConsumerCurrentValue = firstConsumer.ConsumerPayloads(currentCandle.PreviousPayload.SnapshotDateTime)
+                    End If
+                    If secondConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.PreviousPayload.SnapshotDateTime) Then
+                        secondConsumerPreviousValue = secondConsumer.ConsumerPayloads(currentCandle.PreviousPayload.PreviousPayload.SnapshotDateTime)
+                    End If
+                    If secondConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.SnapshotDateTime) Then
+                        secondConsumerCurrentValue = secondConsumer.ConsumerPayloads(currentCandle.PreviousPayload.SnapshotDateTime)
+                    End If
+
+                    If firstConsumerPreviousValue IsNot Nothing AndAlso firstConsumerCurrentValue IsNot Nothing AndAlso
+                        secondConsumerPreviousValue IsNot Nothing AndAlso secondConsumerCurrentValue IsNot Nothing Then
+                        Dim firstConsumerPreviousValueField As Field = GetFieldFromType(firstConsumerPreviousValue, firstDummyConsumerField)
+                        Dim firstConsumerCurrentValueField As Field = GetFieldFromType(firstConsumerCurrentValue, firstDummyConsumerField)
+                        Dim secondConsumerPreviousValueField As Field = GetFieldFromType(secondConsumerPreviousValue, secondDummyConsumerField)
+                        Dim secondConsumerCurrentValueField As Field = GetFieldFromType(secondConsumerCurrentValue, secondDummyConsumerField)
+                        Select Case crossSide
+                            Case CrossDirection.Above
+                                ret = firstConsumerPreviousValueField.Value < secondConsumerPreviousValueField.Value AndAlso
+                                    firstConsumerCurrentValueField.Value > secondConsumerCurrentValueField.Value
+                            Case CrossDirection.Below
+                                ret = firstConsumerPreviousValueField.Value > secondConsumerPreviousValueField.Value AndAlso
+                                    firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
+                        End Select
+                    End If
+                End If
+            End If
+            Return ret
+        End Function
+        Public Function GetFieldFromType(ByVal ownerClassObj As Object, ByVal fieldType As TypeOfField) As Field
+            Dim ret As Field = Nothing
+            Dim propInfos As System.Reflection.PropertyInfo() = ownerClassObj.GetType.GetProperties()
+            If propInfos IsNot Nothing AndAlso propInfos.Count > 0 Then
+                For Each runningPropInfo In propInfos
+                    If runningPropInfo.PropertyType Is GetType(Field) AndAlso CType(runningPropInfo.GetValue(ownerClassObj), Field).FieldType = fieldType Then
+                        ret = runningPropInfo.GetValue(ownerClassObj)
+                        Exit For
+                    End If
+                Next
+            End If
+            Return ret
+        End Function
+        Public Function GetConsumer(ByVal startLevelConsumers As List(Of IPayloadConsumer), ByVal dummyConsumerToFind As IPayloadConsumer) As IPayloadConsumer
+            Dim ret As IPayloadConsumer = Nothing
+            If startLevelConsumers IsNot Nothing AndAlso startLevelConsumers.Count > 0 Then
+                For Each runningConsumer In startLevelConsumers
+                    If runningConsumer.ToString.Equals(dummyConsumerToFind.ToString) Then
+                        ret = runningConsumer
+                    Else
+                        ret = GetConsumer(runningConsumer.OnwardLevelConsumers, dummyConsumerToFind)
+                    End If
+                    If ret IsNot Nothing Then Exit For
+                Next
             End If
             Return ret
         End Function
@@ -254,11 +275,11 @@ Namespace Strategies
                                     ret = Me.TradableInstrument.RawPayloads(signalCandleTime)
                                 End If
                             Else
-                                If Me.RawPayloadConsumers IsNot Nothing AndAlso Me.RawPayloadConsumers.Count > 0 Then
-                                    Dim XMinutePayloadConsumers As IEnumerable(Of IPayloadConsumer) = RawPayloadConsumers.Where(Function(x)
-                                                                                                                                    Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
+                                If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
+                                    Dim XMinutePayloadConsumers As IEnumerable(Of IPayloadConsumer) = RawPayloadDependentConsumers.Where(Function(x)
+                                                                                                                                             Return x.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart AndAlso
                                                                                                                                           CType(x, PayloadToChartConsumer).Timeframe = timeFrame
-                                                                                                                                End Function)
+                                                                                                                                         End Function)
                                     Dim XMinutePayloadConsumer As PayloadToChartConsumer = Nothing
                                     If XMinutePayloadConsumers IsNot Nothing AndAlso XMinutePayloadConsumers.Count > 0 Then
                                         XMinutePayloadConsumer = XMinutePayloadConsumers.FirstOrDefault
@@ -390,8 +411,8 @@ Namespace Strategies
         End Function
         Public Overridable Async Function PopulateChartAndIndicatorsAsync(ByVal candleCreator As Chart, ByVal currentCandle As OHLCPayload) As Task
             'logger.Debug("PopulateChartAndIndicatorsAsync, parameters:{0},{1}", candleCreator.ToString, currentCandle.ToString)
-            If RawPayloadConsumers IsNot Nothing AndAlso RawPayloadConsumers.Count > 0 Then
-                For Each runningRawPayloadConsumer In RawPayloadConsumers
+            If RawPayloadDependentConsumers IsNot Nothing AndAlso RawPayloadDependentConsumers.Count > 0 Then
+                For Each runningRawPayloadConsumer In RawPayloadDependentConsumers
                     If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart Then
                         Dim currentXMinute As Date = Await candleCreator.ConvertTimeframeAsync(CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe,
                                                                     currentCandle,
@@ -544,11 +565,79 @@ Namespace Strategies
             End If
             Await Me.ParentStrategy.SignalManager.UIRefresh(Me, True).ConfigureAwait(False)
         End Function
+        Protected Overridable Function GetAllActiveOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of IOrder)
+            Dim ret As List(Of IOrder) = Nothing
+            Dim direction As String = Nothing
+            If signalDirection = APIAdapter.TransactionType.Buy Then
+                direction = "BUY"
+            ElseIf signalDirection = APIAdapter.TransactionType.Sell Then
+                direction = "SELL"
+            End If
+            If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+                For Each parentOrderId In OrderDetails.Keys
+                    Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                    If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
+                        If direction Is Nothing OrElse parentBusinessOrder.ParentOrder.TransactionType.ToUpper = direction.ToUpper Then
+                            'If parentBusinessOrder.ParentOrder.Status = "COMPLETE" OrElse parentBusinessOrder.ParentOrder.Status = "OPEN" Then
+                            If Not parentBusinessOrder.ParentOrder.Status = "REJECTED" Then
+                                If parentBusinessOrder.SLOrder IsNot Nothing AndAlso parentBusinessOrder.SLOrder.Count > 0 Then
+                                    Dim parentNeedToInsert As Boolean = False
+                                    For Each slOrder In parentBusinessOrder.SLOrder
+                                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                                            If ret Is Nothing Then ret = New List(Of IOrder)
+                                            ret.Add(slOrder)
+                                            parentNeedToInsert = True
+                                        End If
+                                    Next
+                                    If ret Is Nothing Then ret = New List(Of IOrder)
+                                    If parentNeedToInsert Then ret.Add(parentBusinessOrder.ParentOrder)
+                                End If
+                                If ret Is Nothing Then ret = New List(Of IOrder)
+                                If parentBusinessOrder.ParentOrder.Status = "OPEN" Then ret.Add(parentBusinessOrder.ParentOrder)
+                                If parentBusinessOrder.ParentOrder.Status = "TRIGGER PENDING" Then ret.Add(parentBusinessOrder.ParentOrder)
+                            End If
+                        End If
+                    End If
+                Next
+            End If
+            Return ret
+        End Function
+        Protected Overridable Function GetActiveOrder(ByVal signalDirection As APIAdapter.TransactionType) As IBusinessOrder
+            'logger.Debug("GetActiveOrder, parameters:Nothing")
+            Dim ret As IBusinessOrder = Nothing
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+                Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                                  Return x.ParentOrderIdentifier Is Nothing
+                                                                              End Function)
+                If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
+                    ret = OrderDetails(parentOrders.FirstOrDefault.OrderIdentifier)
+                End If
+            End If
+            Return ret
+        End Function
+        Protected Overridable Function GetAllCancelableOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of Tuple(Of ExecuteCommandAction, IOrder))
+            Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+                For Each activeOrder In allActiveOrders
+                    If Not activeOrder.Status = "COMPLETE" Then
+                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, activeOrder))
+                    End If
+                Next
+            End If
+            Return ret
+        End Function
         Public Overridable Async Function ForceExitAllTradesAsync() As Task
             'logger.Debug("ForceExitAllTradesAsync, parameters:Nothing")
             Try
-                Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, Nothing).ConfigureAwait(False)
-                Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, Nothing).ConfigureAwait(False)
+                Dim allCancelableOrders As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = GetAllCancelableOrders(APIAdapter.TransactionType.None)
+                If allCancelableOrders IsNot Nothing AndAlso allCancelableOrders.Count > 0 Then
+                    For Each cancelableOrder In allCancelableOrders
+                        Await ForceExitSpecificTradeAsync(cancelableOrder.Item2).ConfigureAwait(False)
+                    Next
+                End If
             Catch cex As OperationCanceledException
                 logger.Error(cex)
                 Me.ParentStrategy.ParentController.OrphanException = cex
@@ -563,7 +652,8 @@ Namespace Strategies
         Public MustOverride Async Function MonitorAsync() As Task
         Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
         Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
-        Protected MustOverride Function IsTriggerReceivedForExitOrder() As List(Of Tuple(Of ExecuteCommandAction, IOrder))
+        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
+        Protected MustOverride Async Function ForceExitSpecificTradeAsync(ByVal order As IOrder) As Task
 #End Region
 
 #Region "Excecute Command"
@@ -710,9 +800,9 @@ Namespace Strategies
                                 Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
                                 Select Case command
                                     Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
-                                        cancelOrderTriggers = GetAllCancelableOrders(APIAdapter.TransactionType.None)
+                                        cancelOrderTriggers = data
                                     Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder
-                                        cancelOrderTriggers = IsTriggerReceivedForExitOrder()
+                                        cancelOrderTriggers = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
                                 End Select
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
                                     Dim tasks = cancelOrderTriggers.Select(Async Function(x)

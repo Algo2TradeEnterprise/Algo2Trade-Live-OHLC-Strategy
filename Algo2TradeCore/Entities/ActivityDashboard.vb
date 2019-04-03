@@ -145,13 +145,13 @@ Namespace Entities
 
         <System.ComponentModel.Browsable(False)>
         Public Property CancelActivity As Activity
-        <Display(Name:="Cancel Request Time", Order:=13)>
+        <Display(Name:="Exit Request Time", Order:=13)>
         Public ReadOnly Property CancelRequestTime As Date
             Get
                 Return CancelActivity.RequestTime
             End Get
         End Property
-        <Display(Name:="Cancel Request Status", Order:=14)>
+        <Display(Name:="Exit Request Status", Order:=14)>
         Public ReadOnly Property CancelRequestStatus As SignalStatusType
             Get
                 Return CancelActivity.RequestStatus
