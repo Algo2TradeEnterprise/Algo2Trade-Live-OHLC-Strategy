@@ -897,6 +897,7 @@ Public Class frmMainTabbed
     Private _EMA_SupertrendUserInputs As EMA_SupertrendStrategyUserInputs = Nothing
     Private _EMA_SupertrendDashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private _EMA_SupertrendTradableInstruments As IEnumerable(Of EMA_SupertrendStrategyInstrument) = Nothing
+    Private _EMASupertrendStrategyToExecute As EMA_SupertrendStrategy = Nothing
     Private Sub sfdgvEMA_SupertrendMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvEMA_SupertrendMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(EMA_SupertrendStrategy))
     End Sub
@@ -1026,24 +1027,25 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(EMA_SupertrendStrategy))
 
-            Dim emaSupertrendStrategyToExecute As New EMA_SupertrendStrategy(_commonController, 4, _EMA_SupertrendUserInputs, 5, _cts)
-            OnHeartbeatEx(String.Format("Running strategy:{0}", emaSupertrendStrategyToExecute.ToString), New List(Of Object) From {emaSupertrendStrategyToExecute})
+            _EMASupertrendStrategyToExecute = New EMA_SupertrendStrategy(_commonController, 4, _EMA_SupertrendUserInputs, 5, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", _EMASupertrendStrategyToExecute.ToString), New List(Of Object) From {_EMASupertrendStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(emaSupertrendStrategyToExecute).ConfigureAwait(False)
+            Await _commonController.SubscribeStrategyAsync(_EMASupertrendStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _EMA_SupertrendTradableInstruments = emaSupertrendStrategyToExecute.TradableStrategyInstruments
+            _EMA_SupertrendTradableInstruments = _EMASupertrendStrategyToExecute.TradableStrategyInstruments
             SetObjectText_ThreadSafe(linklblEMA_SupertrendTradableInstrument, String.Format("Tradable Instruments: {0}", _EMA_SupertrendTradableInstruments.Count))
             SetObjectEnableDisable_ThreadSafe(linklblEMA_SupertrendTradableInstrument, True)
+            SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(emaSupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(_EMASupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _EMA_SupertrendDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
 
-            Await emaSupertrendStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+            Await _EMASupertrendStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch aex As AdapterBusinessException
             logger.Error(aex)
             If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
@@ -1098,6 +1100,8 @@ Public Class frmMainTabbed
         FlashTickerBulbEx(GetType(EMA_SupertrendStrategy))
     End Sub
     Private Async Sub btnEMA_SupertrendStop_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendStop.Click
+        SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, False)
+        SetObjectEnableDisable_ThreadSafe(linklblEMA_SupertrendTradableInstrument, False)
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
         If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
         If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
@@ -1110,6 +1114,9 @@ Public Class frmMainTabbed
     Private Sub linklblEMA_SupertrendTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblEMA_SupertrendTradableInstrument.LinkClicked
         Dim newForm As New frmEMA_SupertrendTradableInstrumentList(_EMA_SupertrendTradableInstruments)
         newForm.ShowDialog()
+    End Sub
+    Private Sub btnEMA_SupertrendExitAll_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendExitAll.Click
+        If _EMASupertrendStrategyToExecute IsNot Nothing Then _EMASupertrendStrategyToExecute.ExitAllTrades = True
     End Sub
 #End Region
 

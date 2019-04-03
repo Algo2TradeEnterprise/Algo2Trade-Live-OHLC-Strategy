@@ -1,2 +1,2 @@
 Instrument Name,Number Of Lots,Stoploss %,Target %,Intermediate Target %,Low Volatility Start Time,Low Volatility Exit Time,Low Volatility Target %
-CRUDEOILM,1,0.3,0.1,0.05,10:00:00,10:15:00,0.35
+CRUDEOILM,1,0.3,0.5,0.2,15:00:00,16:00:00,0.025

@@ -11,12 +11,14 @@ Public Class EMA_SupertrendStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Public Property ExitAllTrades As Boolean
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As EMA_SupertrendStrategyUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        Me.ExitAllTrades = False
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -137,6 +139,9 @@ Public Class EMA_SupertrendStrategy
         Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(Me.TradableInstrumentsAsPerStrategy.FirstOrDefault.ExchangeDetails.ExchangeType)
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
+            Return True
+        ElseIf ExitAllTrades Then
+            logger.Warn("Exit All Button")
             Return True
         ElseIf Me.GetTotalPL <= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxLossPercentagePerDay) * -1 / 100 Then
             logger.Warn("MTM Reached")

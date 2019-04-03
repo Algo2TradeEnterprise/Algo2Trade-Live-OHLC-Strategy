@@ -60,7 +60,7 @@ Public Class OHLStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim placeOrderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take AndAlso
                     Interlocked.Read(_OHLStrategyProtect) = 0 Then
                     Interlocked.Increment(_OHLStrategyProtect)
@@ -86,7 +86,7 @@ Public Class OHLStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Dim currentTime As Date = Now
@@ -180,7 +180,7 @@ Public Class OHLStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         'If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
@@ -228,7 +228,7 @@ Public Class OHLStrategyInstrument
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException

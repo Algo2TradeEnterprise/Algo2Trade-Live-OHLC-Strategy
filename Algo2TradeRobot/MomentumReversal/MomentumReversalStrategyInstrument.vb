@@ -64,7 +64,7 @@ Public Class MomentumReversalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim placeOrderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
                     placeOrderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
                     ''To store signal candle in order collection
@@ -79,13 +79,13 @@ Public Class MomentumReversalStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
                 'If slDelayCtr = 3 Then
                 '    slDelayCtr = 0
-                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync().ConfigureAwait(False)
+                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
                 If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                     Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                 End If
                 'End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
                     Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
                 End If
@@ -100,7 +100,7 @@ Public Class MomentumReversalStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim MRUserSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
@@ -223,7 +223,7 @@ Public Class MomentumReversalStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
@@ -273,7 +273,7 @@ Public Class MomentumReversalStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)

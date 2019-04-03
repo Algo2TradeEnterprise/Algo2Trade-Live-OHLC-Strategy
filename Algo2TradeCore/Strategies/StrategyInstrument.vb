@@ -428,9 +428,6 @@ Namespace Strategies
                             End If
                             c += 1
                         Next
-                        'Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
-                        'Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.FirstOrDefault).ConfigureAwait(False)
-                        'Await candleCreator.IndicatorCreator.CalculateATR(currentXMinute, runningRawPayloadConsumer.OnwardLevelConsumers.LastOrDefault).ConfigureAwait(False)
                     End If
                 Next
             End If
@@ -650,9 +647,9 @@ Namespace Strategies
 
 #Region "Public MustOverride Functions"
         Public MustOverride Async Function MonitorAsync() As Task
-        Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
-        Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
-        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
+        Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+        Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
         Protected MustOverride Async Function ForceExitSpecificTradeAsync(ByVal order As IOrder) As Task
 #End Region
 
@@ -689,13 +686,13 @@ Namespace Strategies
                     End While
                     _APIAdapter.SetAPIAccessToken(Me.ParentStrategy.ParentController.APIConnection.AccessToken)
 
-                    logger.Debug("Firing command:{0}", command.ToString)
+                    logger.Debug("Firing command:{0} for {1}", command.ToString, Me.TradableInstrument.TradingSymbol)
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
                         Select Case command
                             Case ExecuteCommands.PlaceBOLimitMISOrder
-                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
 
@@ -733,7 +730,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.ModifyStoplossOrder
-                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync().ConfigureAwait(False)
+                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(True).ConfigureAwait(False)
                                 If modifyStoplossOrderTriggers IsNot Nothing AndAlso modifyStoplossOrderTriggers.Count > 0 Then
                                     Dim tasks = modifyStoplossOrderTriggers.Select(Async Function(x)
                                                                                        Try
@@ -762,34 +759,6 @@ Namespace Strategies
                                                                                        Return True
                                                                                    End Function)
                                     Await Task.WhenAll(tasks).ConfigureAwait(False)
-
-                                    'For Each modifyStoplossOrderTrigger In modifyStoplossOrderTriggers
-                                    '    If modifyStoplossOrderTrigger.Item1 = ExecuteCommandAction.Take Then
-
-                                    '        Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(modifyStoplossOrderTrigger.Item2.Tag, Now, modifyStoplossOrderTrigger.Item3)
-
-                                    '        Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    '        modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=modifyStoplossOrderTrigger.Item2.OrderIdentifier,
-                                    '                                                                                 triggerPrice:=modifyStoplossOrderTrigger.Item3).ConfigureAwait(False)
-                                    '        If modifyStoplossOrderResponse IsNot Nothing Then
-                                    '            logger.Debug("Modify stoploss order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(modifyStoplossOrderResponse))
-                                    '            Me.ParentStrategy.SignalManager.ActivateStoplossModifyActivity(modifyStoplossOrderTrigger.Item2.Tag, Now)
-                                    '            lastException = Nothing
-                                    '            allOKWithoutException = True
-                                    '            _cts.Token.ThrowIfCancellationRequested()
-                                    '            ret = modifyStoplossOrderResponse
-                                    '            _cts.Token.ThrowIfCancellationRequested()
-                                    '            Exit For
-                                    '        Else
-                                    '            Throw New ApplicationException(String.Format("Modify stoploss order did not succeed"))
-                                    '        End If
-                                    '    Else
-                                    '        lastException = Nothing
-                                    '        allOKWithoutException = True
-                                    '        _cts.Token.ThrowIfCancellationRequested()
-                                    '        Exit For
-                                    '    End If
-                                    'Next
                                 Else
                                     lastException = Nothing
                                     allOKWithoutException = True
@@ -802,7 +771,7 @@ Namespace Strategies
                                     Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
                                         cancelOrderTriggers = data
                                     Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder
-                                        cancelOrderTriggers = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
+                                        cancelOrderTriggers = Await IsTriggerReceivedForExitOrderAsync(True).ConfigureAwait(False)
                                 End Select
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
                                     Dim tasks = cancelOrderTriggers.Select(Async Function(x)
@@ -838,40 +807,6 @@ Namespace Strategies
                                                                                Return True
                                                                            End Function)
                                     Await Task.WhenAll(tasks).ConfigureAwait(False)
-
-                                    'For Each cancelOrderTrigger In cancelOrderTriggers
-                                    '    If cancelOrderTrigger.Item1 = ExecuteCommandAction.Take Then
-
-                                    '        Me.ParentStrategy.SignalManager.HandleCancelActivity(cancelOrderTrigger.Item2.Tag, Now)
-
-                                    '        Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    '        Select Case command
-                                    '            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
-                                    '                cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=cancelOrderTrigger.Item2.OrderIdentifier,
-                                    '                                                                           parentOrderID:=cancelOrderTrigger.Item2.ParentOrderIdentifier).ConfigureAwait(False)
-                                    '            Case ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelCOOrder
-                                    '                cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=cancelOrderTrigger.Item2.OrderIdentifier,
-                                    '                                                                           parentOrderID:=cancelOrderTrigger.Item2.ParentOrderIdentifier).ConfigureAwait(False)
-                                    '        End Select
-                                    '        If cancelOrderResponse IsNot Nothing Then
-                                    '            logger.Debug("Cancel order is completed, cancelOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
-                                    '            Me.ParentStrategy.SignalManager.ActivateCancelActivity(cancelOrderTrigger.Item2.Tag, Now)
-                                    '            lastException = Nothing
-                                    '            allOKWithoutException = True
-                                    '            _cts.Token.ThrowIfCancellationRequested()
-                                    '            ret = cancelOrderResponse
-                                    '            _cts.Token.ThrowIfCancellationRequested()
-                                    '            Exit For
-                                    '        Else
-                                    '            Throw New ApplicationException(String.Format("Cancel order did not succeed"))
-                                    '        End If
-                                    '    Else
-                                    '        lastException = Nothing
-                                    '        allOKWithoutException = True
-                                    '        _cts.Token.ThrowIfCancellationRequested()
-                                    '        Exit For
-                                    '    End If
-                                    'Next
                                 Else
                                     lastException = Nothing
                                     allOKWithoutException = True
@@ -879,7 +814,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceBOSLMISOrder
-                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
 
@@ -918,7 +853,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceCOMarketMISOrder
-                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
 

@@ -33,6 +33,7 @@ Partial Class frmMainTabbed
         Me.tabEMA_Supertrend = New System.Windows.Forms.TabPage()
         Me.pnlEMA5_20STMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlEMA5_20STTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnEMA_SupertrendExitAll = New System.Windows.Forms.Button()
         Me.btnEMA_SupertrendStop = New System.Windows.Forms.Button()
         Me.btnEMA_SupertrendStart = New System.Windows.Forms.Button()
         Me.Panel4 = New System.Windows.Forms.Panel()
@@ -220,6 +221,7 @@ Partial Class frmMainTabbed
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.btnEMA_SupertrendExitAll, 0, 0)
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.btnEMA_SupertrendStop, 0, 0)
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.btnEMA_SupertrendStart, 0, 0)
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.Controls.Add(Me.Panel4, 14, 0)
@@ -233,6 +235,18 @@ Partial Class frmMainTabbed
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1355, 40)
         Me.pnlEMA5_20STTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnEMA_SupertrendExitAll
+        '
+        Me.btnEMA_SupertrendExitAll.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnEMA_SupertrendExitAll.Enabled = False
+        Me.btnEMA_SupertrendExitAll.Location = New System.Drawing.Point(184, 4)
+        Me.btnEMA_SupertrendExitAll.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnEMA_SupertrendExitAll.Name = "btnEMA_SupertrendExitAll"
+        Me.btnEMA_SupertrendExitAll.Size = New System.Drawing.Size(82, 32)
+        Me.btnEMA_SupertrendExitAll.TabIndex = 13
+        Me.btnEMA_SupertrendExitAll.Text = "Exit All"
+        Me.btnEMA_SupertrendExitAll.UseVisualStyleBackColor = True
         '
         'btnEMA_SupertrendStop
         '
@@ -1109,4 +1123,5 @@ Partial Class frmMainTabbed
     Friend WithEvents lstEMA_SupertrendLog As ListBox
     Friend WithEvents sfdgvEMA_SupertrendMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrEMA_SupertrendTickerStatus As Timer
+    Friend WithEvents btnEMA_SupertrendExitAll As Button
 End Class

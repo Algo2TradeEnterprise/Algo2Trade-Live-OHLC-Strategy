@@ -70,7 +70,6 @@ Namespace ChartHandler.Indicator
 
 #Region "Public Functions"
         Public Async Function CalculateSMA(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SMAConsumer) As Task
-            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
                 While Interlocked.Read(_SMALock) > 0
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
@@ -116,9 +115,9 @@ Namespace ChartHandler.Indicator
             End Try
         End Function
         Public Async Function CalculateEMA(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As EMAConsumer) As Task
-            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
                 While Interlocked.Read(_EMALock) > 0
+                    Debug.WriteLine(String.Format("EMAConsumer:{0}, Lock:{1}", outputConsumer.ToString, Interlocked.Read(_EMALock)))
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
                 Interlocked.Increment(_EMALock)
@@ -168,11 +167,10 @@ Namespace ChartHandler.Indicator
                 End If
             Finally
                 Interlocked.Decrement(_EMALock)
-                If Interlocked.Read(_EMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why EMA lock is not released. Value:{0}", Interlocked.Read(_EMALock)))
+                If Interlocked.Read(_EMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why EMA lock is not released. Value:{0}, Consumer:{1}, Time:{2}", Interlocked.Read(_EMALock), outputConsumer.ToString, timeToCalculateFrom.ToString))
             End Try
         End Function
         Public Async Function CalculateATR(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As ATRConsumer) As Task
-            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
                 While Interlocked.Read(_ATRLock) > 0
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
@@ -244,7 +242,6 @@ Namespace ChartHandler.Indicator
             End Try
         End Function
         Public Async Function CalculateSupertrend(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SupertrendConsumer) As Task
-            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Try
                 While Interlocked.Read(_SupertrendLock) > 0
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)

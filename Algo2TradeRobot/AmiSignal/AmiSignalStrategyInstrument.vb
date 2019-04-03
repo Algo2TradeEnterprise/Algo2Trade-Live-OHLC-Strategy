@@ -57,7 +57,7 @@ Public Class AmiSignalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim orderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync().ConfigureAwait(False)
+                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
                     orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOLimitMISOrder, Nothing).ConfigureAwait(False)
                     EntrySignals.FirstOrDefault.Value.OrderTimestamp = Now()
@@ -65,7 +65,7 @@ Public Class AmiSignalStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 'Dim exitOrderDetails As Object = Nothing
-                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Await IsTriggerReceivedForExitOrderAsync().ConfigureAwait(False)
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
                     Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
                     ExitSignals.FirstOrDefault.Value.OrderTimestamp = Now()
@@ -80,7 +80,7 @@ Public Class AmiSignalStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync() As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
         Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim lastTradeEntryTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 0, 0)
@@ -133,13 +133,13 @@ Public Class AmiSignalStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync() As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         If Me.ExitSignals IsNot Nothing AndAlso Me.ExitSignals.Count = 1 Then
