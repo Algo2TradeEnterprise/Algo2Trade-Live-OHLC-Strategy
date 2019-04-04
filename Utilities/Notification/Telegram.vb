@@ -1,5 +1,4 @@
-﻿Imports System.Net
-Imports System.Net.Http
+﻿Imports System.Net.Http
 Imports System.Threading
 Imports NLog
 Imports Utilities.Network

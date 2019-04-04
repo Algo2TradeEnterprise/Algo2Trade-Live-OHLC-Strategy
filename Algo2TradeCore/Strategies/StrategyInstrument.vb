@@ -196,18 +196,17 @@ Namespace Strategies
                                     firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
                         End Select
                         If printDetails Then
-                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CrossSide:{4}, 
-                                          CurrentCandle:{5}, FirstConsumerPreviousFieldValue:{6}, FirstConsumerCurrentFieldValue:{7}, 
-                                          SecondConsumerPreviousFieldValue:{8}, SecondConsumerCurrentFieldValue:{9}, IsCrossover:{10}, TradingSymbol:{11}",
+                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CrossSide:{4}, CurrentCandle:{5}, Condition:{6}, [{7},{8}][{9},{10}], IsCrossover:{11}, TradingSymbol:{12}",
                                           firstDummyConsumer.ToString,
                                           secondDummyConsumer.ToString,
                                           firstDummyConsumerField.ToString,
                                           secondDummyConsumerField.ToString,
                                           crossSide.ToString,
                                           currentCandle.ToString,
+                                          If(crossSide = CrossDirection.Above, "[x<y][p>q]", "[x>y][p<q]"),
                                           firstConsumerPreviousValueField.Value,
-                                          firstConsumerCurrentValueField.Value,
                                           secondConsumerPreviousValueField.Value,
+                                          firstConsumerCurrentValueField.Value,
                                           secondConsumerCurrentValueField.Value,
                                           ret,
                                           Me.TradableInstrument.TradingSymbol)

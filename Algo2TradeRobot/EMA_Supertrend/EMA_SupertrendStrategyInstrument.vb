@@ -65,19 +65,25 @@ Public Class EMA_SupertrendStrategyInstrument
                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
                     Dim placeOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
-                    Await GenerateTelegramMessageAsync("Place Order Successful").ConfigureAwait(False)
+                    If placeOrderResponse IsNot Nothing Then
+                        GenerateTelegramMessageAsync(String.Format("{0} - Place Order Successful. Reason:{1}, Direction:{2}, Time:{3}", Me.TradableInstrument.TradingSymbol, placeOrderTrigger.Item3, placeOrderTrigger.Item2.EntryDirection.ToString, Now))
+                    End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
                 If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
                     Dim modifyOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                    Await GenerateTelegramMessageAsync("Modify Order Successful").ConfigureAwait(False)
+                    If modifyOrderResponse IsNot Nothing Then
+                        GenerateTelegramMessageAsync(String.Format("{0} - Modify Order Successful. Reason:{1}, Trigger Price:{2}, Time:{3}", Me.TradableInstrument.TradingSymbol, modifyStoplossOrderTrigger.LastOrDefault.Item4, modifyStoplossOrderTrigger.LastOrDefault.Item3, Now))
+                    End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
                     Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
-                    Await GenerateTelegramMessageAsync("Cancel Order Successful").ConfigureAwait(False)
+                    If exitOrderResponse IsNot Nothing Then
+                        GenerateTelegramMessageAsync(String.Format("{0} - Exit Order Successful. Reason:{1}, Time:{2}", Me.TradableInstrument.TradingSymbol, exitOrderTrigger.LastOrDefault.Item3, Now))
+                    End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
@@ -100,13 +106,10 @@ Public Class EMA_SupertrendStrategyInstrument
 
         Try
             If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-                If forcePrint OrElse Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadPlaceOrder Then
+                If Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadPlaceOrder Then
                     lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2},
-                    PayloadGeneratedBy:{3}, IsActiveInstrument:{4}, IsHistoricalCompleted:{5}, MTM Loss: {6}, MTM Profit: {7}, 
-                    TotalStrategyPL:{8}, IsCrossover(above):{9}, IsCrossover(below):{10}, SupertrendColor:{11}, Quantity:{12},
-                    Stoploss%:{13}, IT%:{14}, T%:{15}, LVT%:{16}, LVStartTime:{17}, LVEndYime:{18}, TradingSymbol:{19}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2}, PayloadGeneratedBy:{3}, IsActiveInstrument:{4}, IsHistoricalCompleted:{5}, MTM Loss: {6}, MTM Profit: {7}, TotalStrategyPL:{8}, IsCrossover(above):{9}, IsCrossover(below):{10}, SupertrendColor:{11}, Supertrend:{12}, Quantity:{13}, Stoploss%:{14}, IT%:{15}, T%:{16}, LVT%:{17}, LVStartTime:{18}, LVEndYime:{19}, TradingSymbol:{20}",
                     emaStUserSettings.TradeStartTime,
                     emaStUserSettings.LastTradeEntryTime,
                     runningCandlePayload.SnapshotDateTime.ToString,
@@ -119,6 +122,7 @@ Public Class EMA_SupertrendStrategyInstrument
                     IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
                     IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
                     CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString,
+                    CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value,
                     Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity,
                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage,
                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
@@ -133,6 +137,7 @@ Public Class EMA_SupertrendStrategyInstrument
             logger.Error(ex)
         End Try
 
+        Dim marketPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
         Dim parameters As PlaceOrderParameters = Nothing
         If Now >= emaStUserSettings.TradeStartTime AndAlso Now <= emaStUserSettings.LastTradeEntryTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= emaStUserSettings.TradeStartTime AndAlso
@@ -141,7 +146,6 @@ Public Class EMA_SupertrendStrategyInstrument
             Me.ParentStrategy.GetTotalPL() > capitalAtDayStart * Math.Abs(emaStUserSettings.MaxLossPercentagePerDay) * -1 / 100 AndAlso
             Me.ParentStrategy.GetTotalPL() < capitalAtDayStart * Math.Abs(emaStUserSettings.MaxProfitPercentagePerDay) / 100 Then
 
-            Dim marketPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
             Dim triggerPrice As Decimal = Nothing
             Dim quantity As Integer = Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity
 
@@ -155,7 +159,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                    {.EntryDirection = APIAdapter.TransactionType.Buy,
                                    .Quantity = quantity,
                                    .TriggerPrice = triggerPrice,
-                                   .SignalCandle = runningCandlePayload.PreviousPayload}
+                                   .SignalCandle = runningCandlePayload}
             ElseIf IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, False) AndAlso
                 supertrendConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
                 (Not _useST Or CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Red) Then
@@ -166,7 +170,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                    {.EntryDirection = APIAdapter.TransactionType.Sell,
                                    .Quantity = quantity,
                                    .TriggerPrice = triggerPrice,
-                                   .SignalCandle = runningCandlePayload.PreviousPayload}
+                                   .SignalCandle = runningCandlePayload}
             End If
         End If
 
@@ -174,32 +178,38 @@ Public Class EMA_SupertrendStrategyInstrument
         If parameters IsNot Nothing Then
 
             Try
-                logger.Debug("PlaceOrder-> ************************************************")
-                logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2},
+                If forcePrint Then
+                    logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
+                    logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
+                    logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2},
                                 PayloadGeneratedBy:{3}, IsActiveInstrument:{4}, IsHistoricalCompleted:{5}, MTM Loss: {6}, MTM Profit: {7}, 
                                 TotalStrategyPL:{8}, IsCrossover(above):{9}, IsCrossover(below):{10}, SupertrendColor:{11}, Quantity:{12},
-                                Stoploss%:{13}, IT%:{14}, T%:{15}, LVT%:{16}, LVStartTime:{17}, LVEndYime:{18}, TradingSymbol:{19}",
-                                emaStUserSettings.TradeStartTime,
-                                emaStUserSettings.LastTradeEntryTime,
-                                runningCandlePayload.SnapshotDateTime.ToString,
-                                runningCandlePayload.PayloadGeneratedBy.ToString,
-                                IsActiveInstrument(),
-                                Me.TradableInstrument.IsHistoricalCompleted,
-                                capitalAtDayStart * Math.Abs(emaStUserSettings.MaxLossPercentagePerDay) * -1 / 100,
-                                capitalAtDayStart * Math.Abs(emaStUserSettings.MaxProfitPercentagePerDay) / 100,
-                                Me.ParentStrategy.GetTotalPL,
-                                IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
-                                IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
-                                CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString,
-                                Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity,
-                                emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage,
-                                emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
-                                emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).TargetPercentage,
-                                emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage,
-                                emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityStartTime.ToString,
-                                emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityExitTime.ToString,
-                                Me.TradableInstrument.TradingSymbol)
+                                Stoploss%(SL):{13}, IT%:{14}, T%:{15}, LVT%:{16}, LVStartTime:{17}, LVEndYime:{18}, 
+                                MarketPrice(MP):{19}, TriggerPrice[MP{20}MP*SL/100]:{21}, TradingSymbol:{22}",
+                                    emaStUserSettings.TradeStartTime,
+                                    emaStUserSettings.LastTradeEntryTime,
+                                    runningCandlePayload.SnapshotDateTime.ToString,
+                                    runningCandlePayload.PayloadGeneratedBy.ToString,
+                                    IsActiveInstrument(),
+                                    Me.TradableInstrument.IsHistoricalCompleted,
+                                    capitalAtDayStart * Math.Abs(emaStUserSettings.MaxLossPercentagePerDay) * -1 / 100,
+                                    capitalAtDayStart * Math.Abs(emaStUserSettings.MaxProfitPercentagePerDay) / 100,
+                                    Me.ParentStrategy.GetTotalPL,
+                                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
+                                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
+                                    CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString,
+                                    Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity,
+                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage,
+                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
+                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).TargetPercentage,
+                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage,
+                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityStartTime.ToString,
+                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityExitTime.ToString,
+                                    marketPrice,
+                                    If(parameters.EntryDirection = APIAdapter.TransactionType.Buy, "-", "+"),
+                                    parameters.TriggerPrice,
+                                    Me.TradableInstrument.TradingSymbol)
+                End If
             Catch ex As Exception
                 logger.Error(ex)
             End Try
@@ -251,22 +261,22 @@ Public Class EMA_SupertrendStrategyInstrument
                     If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
                         triggerPrice = parentBusinessOrder.ParentOrder.AveragePrice - ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor)
                         If checkIT Then
-                            Dim it As Decimal = parentBusinessOrder.ParentOrder.AveragePrice + (parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage / 100)
-                            intermediateTargetReached = runningCandlePayload.PreviousPayload.HighPrice.Value >= ConvertFloorCeling(it, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            Dim it As Decimal = parentBusinessOrder.ParentOrder.AveragePrice + ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            intermediateTargetReached = runningCandlePayload.PreviousPayload.HighPrice.Value >= it
 
                             Try
                                 If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-                                    If forcePrint OrElse Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadModifyOrder Then
+                                    If Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadModifyOrder Then
                                         lastPrevPayloadModifyOrder = runningCandlePayload.PreviousPayload.ToString
                                         logger.Debug("ModifyOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                                        logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, OrderID:{2}, OrderDirection:{3}, 
-                                                    AveragePrice:{4}, IntermediateTarget:{5}, IntermediateTargetReached:{6}, TradingSymbol:{7}",
+                                        logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, OrderID:{2}, OrderDirection:{3}, AveragePrice(AP):{4}, IntermediateTarget(AP+AP*IT/100):{5}, PreviousCandleHigh:{6}, IntermediateTargetReached:{7}, TradingSymbol:{8}",
                                                     runningCandlePayload.SnapshotDateTime.ToString,
                                                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
                                                     parentOrderId,
                                                     parentBusinessOrder.ParentOrder.TransactionType,
                                                     parentBusinessOrder.ParentOrder.AveragePrice,
-                                                    ConvertFloorCeling(it, Me.TradableInstrument.TickSize, RoundOfType.Floor),
+                                                    it,
+                                                    runningCandlePayload.PreviousPayload.HighPrice.Value,
                                                     intermediateTargetReached,
                                                     Me.TradableInstrument.TradingSymbol)
                                     End If
@@ -279,22 +289,22 @@ Public Class EMA_SupertrendStrategyInstrument
                     ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
                         triggerPrice = parentBusinessOrder.ParentOrder.AveragePrice + ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor)
                         If checkIT Then
-                            Dim it As Decimal = parentBusinessOrder.ParentOrder.AveragePrice - (parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage / 100)
-                            intermediateTargetReached = runningCandlePayload.PreviousPayload.LowPrice.Value <= ConvertFloorCeling(it, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            Dim it As Decimal = parentBusinessOrder.ParentOrder.AveragePrice - ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            intermediateTargetReached = runningCandlePayload.PreviousPayload.LowPrice.Value <= it
 
                             Try
                                 If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-                                    If forcePrint OrElse Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadModifyOrder Then
+                                    If Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadModifyOrder Then
                                         lastPrevPayloadModifyOrder = runningCandlePayload.PreviousPayload.ToString
                                         logger.Debug("ModifyOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                                        logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, OrderID:{2}, OrderDirection:{3}, 
-                                                    AveragePrice:{4}, IntermediateTarget:{5}, IntermediateTargetReached:{6}, TradingSymbol:{7}",
+                                        logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, OrderID:{2}, OrderDirection:{3}, AveragePrice(AP):{4}, IntermediateTarget(AP-AP*IT/100):{5}, PreviousCandleLow:{6}, IntermediateTargetReached:{7}, TradingSymbol:{8}",
                                                     runningCandlePayload.SnapshotDateTime.ToString,
                                                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
                                                     parentOrderId,
                                                     parentBusinessOrder.ParentOrder.TransactionType,
                                                     parentBusinessOrder.ParentOrder.AveragePrice,
-                                                    ConvertFloorCeling(it, Me.TradableInstrument.TickSize, RoundOfType.Floor),
+                                                    it,
+                                                    runningCandlePayload.PreviousPayload.LowPrice.Value,
                                                     intermediateTargetReached,
                                                     Me.TradableInstrument.TradingSymbol)
                                     End If
@@ -305,6 +315,7 @@ Public Class EMA_SupertrendStrategyInstrument
 
                         End If
                     End If
+
                     For Each slOrder In parentBusinessOrder.SLOrder
                         If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "REJECTED" Then
                             If intermediateTargetReached Then
@@ -312,20 +323,50 @@ Public Class EMA_SupertrendStrategyInstrument
                                 triggerPrice = runningCandlePayload.OpenPrice.Value
                             End If
                             If slOrder.TriggerPrice <> triggerPrice Then
-                                Try
-                                    logger.Debug("ModifyOrder-> ******************************************************************************")
-                                    logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, OrderID:{2}, OrderDirection:{3}, 
-                                            AveragePrice:{4}, TriggerPrice:{5}, TradingSymbol:{6}",
-                                    runningCandlePayload.SnapshotDateTime.ToString,
-                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
-                                    parentOrderId,
-                                    parentBusinessOrder.ParentOrder.TransactionType,
-                                    parentBusinessOrder.ParentOrder.AveragePrice,
-                                    triggerPrice,
-                                    Me.TradableInstrument.TradingSymbol)
-                                Catch ex As Exception
-                                    logger.Error(ex)
-                                End Try
+                                If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                                    Try
+                                        If forcePrint AndAlso intermediateTargetReached Then
+                                            logger.Debug("ModifyOrder-> ****************************************************************************** {0}", Me.TradableInstrument.TradingSymbol)
+                                            logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, 
+                                                    OrderID:{2}, OrderDirection:{3}, AveragePrice(AP):{4}, IntermediateTarget(AP+AP*IT/100):{5}, 
+                                                    PreviousCandleHigh:{6}, IntermediateTargetReached:{7}, TriggerPrice:{8}, Reason: SL modify for intermediate target reached, TradingSymbol:{9}",
+                                                    runningCandlePayload.SnapshotDateTime.ToString,
+                                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
+                                                    parentOrderId,
+                                                    parentBusinessOrder.ParentOrder.TransactionType,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice + ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor),
+                                                    runningCandlePayload.PreviousPayload.HighPrice.Value,
+                                                    intermediateTargetReached,
+                                                    triggerPrice,
+                                                    Me.TradableInstrument.TradingSymbol)
+                                        End If
+                                    Catch ex As Exception
+                                        logger.Error(ex)
+                                    End Try
+                                ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                                    Try
+                                        If forcePrint AndAlso intermediateTargetReached Then
+                                            logger.Debug("ModifyOrder-> ****************************************************************************** {0}", Me.TradableInstrument.TradingSymbol)
+                                            logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, IT%:{1}, 
+                                                    OrderID:{2}, OrderDirection:{3}, AveragePrice(AP):{4}, IntermediateTarget(AP+AP*IT/100):{5}, 
+                                                    PreviousCandleHigh:{6}, IntermediateTargetReached:{7}, TriggerPrice:{8}, Reason: SL modify for intermediate target reached TradingSymbol:{9}",
+                                                    runningCandlePayload.SnapshotDateTime.ToString,
+                                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage,
+                                                    parentOrderId,
+                                                    parentBusinessOrder.ParentOrder.TransactionType,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice - ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).IntemediateTargetPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor),
+                                                    runningCandlePayload.PreviousPayload.LowPrice.Value,
+                                                    intermediateTargetReached,
+                                                    triggerPrice,
+                                                    Me.TradableInstrument.TradingSymbol)
+                                        End If
+                                    Catch ex As Exception
+                                        logger.Error(ex)
+                                    End Try
+                                End If
+
                                 'Below portion have to be done in every modify stoploss order trigger
                                 Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(slOrder.Tag)
                                 If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.StoplossModifyActivity.Supporting = triggerPrice Then
@@ -335,6 +376,47 @@ Public Class EMA_SupertrendStrategyInstrument
                                         Continue For
                                     End If
                                 End If
+
+                                If parentBusinessOrder.ParentOrder.TransactionType = "BUY" Then
+                                    Try
+                                        If forcePrint AndAlso Not intermediateTargetReached Then
+                                            logger.Debug("ModifyOrder-> ****************************************************************************** {0}", Me.TradableInstrument.TradingSymbol)
+                                            logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, SL%:{1}, 
+                                                    OrderID:{2}, OrderDirection:{3}, AveragePrice(AP):{4}, Stoploss(AP-AP*SL/100):{5}, 
+                                                    TriggerPrice:{6}, Reason: Normal SL modify, TradingSymbol:{7}",
+                                                    runningCandlePayload.SnapshotDateTime.ToString,
+                                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage,
+                                                    parentOrderId,
+                                                    parentBusinessOrder.ParentOrder.TransactionType,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice - ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor),
+                                                    triggerPrice,
+                                                    Me.TradableInstrument.TradingSymbol)
+                                        End If
+                                    Catch ex As Exception
+                                        logger.Error(ex)
+                                    End Try
+                                ElseIf parentBusinessOrder.ParentOrder.TransactionType = "SELL" Then
+                                    Try
+                                        If forcePrint AndAlso Not intermediateTargetReached Then
+                                            logger.Debug("ModifyOrder-> ****************************************************************************** {0}", Me.TradableInstrument.TradingSymbol)
+                                            logger.Debug("ModifyOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, SL%:{1}, 
+                                                    OrderID:{2}, OrderDirection:{3}, AveragePrice(AP):{4}, Stoploss(AP+AP*SL/100):{5}, 
+                                                    TriggerPrice:{6}, Reason: Normal SL modify, TradingSymbol:{7}",
+                                                    runningCandlePayload.SnapshotDateTime.ToString,
+                                                    emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage,
+                                                    parentOrderId,
+                                                    parentBusinessOrder.ParentOrder.TransactionType,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice,
+                                                    parentBusinessOrder.ParentOrder.AveragePrice + ConvertFloorCeling((parentBusinessOrder.ParentOrder.AveragePrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor),
+                                                    triggerPrice,
+                                                    Me.TradableInstrument.TradingSymbol)
+                                        End If
+                                    Catch ex As Exception
+                                        logger.Error(ex)
+                                    End Try
+                                End If
+
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
                                 ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, slOrder, triggerPrice, If(intermediateTargetReached, "SL movement for Intermediate Target reached", "Normal SL movement according to SL%")))
                             End If
@@ -368,17 +450,17 @@ Public Class EMA_SupertrendStrategyInstrument
 
                                 Try
                                     If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-                                        If forcePrint OrElse Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadExitOrder Then
+                                        If Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadExitOrder Then
                                             lastPrevPayloadExitOrder = runningCandlePayload.PreviousPayload.ToString
                                             logger.Debug("ExitOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                                            logger.Debug("ExitOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, OrderID:{1}, OrderDirection:{2}, 
-                                                        IsCrossover(above):{3}, IsCrossover(below):{4}, Supertrend:{5}, TradingSymbol:{6}",
+                                            logger.Debug("ExitOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, OrderID:{1}, OrderDirection:{2}, IsCrossover(above):{3}, IsCrossover(below):{4}, Supertrend:{5}, PreviousCandleClose:{6}, TradingSymbol:{7}",
                                                         runningCandlePayload.SnapshotDateTime.ToString,
                                                         slOrder.ParentOrderIdentifier,
                                                         parentBusinessOrder.ParentOrder.TransactionType,
                                                         IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
                                                         IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
                                                         CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value,
+                                                        runningCandlePayload.PreviousPayload.ClosePrice.Value,
                                                         Me.TradableInstrument.TradingSymbol)
                                         End If
                                     End If
@@ -403,15 +485,18 @@ Public Class EMA_SupertrendStrategyInstrument
                                         If Me.TradableInstrument.LastTick.LastPrice >= target Then
                                             Try
                                                 logger.Debug("ExitOrder-> ********************************************************************")
-                                                logger.Debug("ExitOrder-> T% Or LT% reached. T%:{0}, LT%:{1}, OrderId:{2}, OrderDirection:{3}, 
-                                                        AveragePrice:{4}, LastPrice:{5}, TargetPrice:{6}, TradingSymbol:{7}",
-                                                         emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).TargetPercentage,
-                                                         emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage,
-                                                         slOrder.ParentOrderIdentifier,
-                                                         parentBusinessOrder.ParentOrder.TransactionType,
-                                                         parentBusinessOrder.ParentOrder.AveragePrice,
-                                                         Me.TradableInstrument.LastTick.LastPrice,
-                                                         target, Me.TradableInstrument.TradingSymbol)
+                                                logger.Debug("ExitOrder-> {0} reached. {1}%:{2}, OrderId:{3}, OrderDirection:{4}, 
+                                                             AveragePrice(AP):{5}, LastPrice:{6}, TargetPrice(AP+AP*{7}/100):{8}, TradingSymbol:{9}",
+                                                             If(lt, "LT%", "T%"),
+                                                             If(lt, "LT%", "T%"),
+                                                             If(lt, emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage, emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).TargetPercentage),
+                                                             slOrder.ParentOrderIdentifier,
+                                                             parentBusinessOrder.ParentOrder.TransactionType,
+                                                             parentBusinessOrder.ParentOrder.AveragePrice,
+                                                             Me.TradableInstrument.LastTick.LastPrice,
+                                                             If(lt, "LT", "T"),
+                                                             target,
+                                                             Me.TradableInstrument.TradingSymbol)
                                             Catch ex As Exception
                                                 logger.Error(ex)
                                             End Try
@@ -446,15 +531,18 @@ Public Class EMA_SupertrendStrategyInstrument
                                         End If
                                         If Me.TradableInstrument.LastTick.LastPrice <= target Then
                                             logger.Debug("ExitOrder-> ********************************************************************")
-                                            logger.Debug("ExitOrder-> T% Or LT% reached. T%:{0}, LT%:{1}, OrderId:{2}, OrderDirection:{3}, 
-                                                        AveragePrice:{4}, LastPrice:{5}, TargetPrice:{6}, TradingSymbol:{7}",
-                                                         emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).TargetPercentage,
-                                                         emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage,
-                                                         slOrder.ParentOrderIdentifier,
-                                                         parentBusinessOrder.ParentOrder.TransactionType,
-                                                         parentBusinessOrder.ParentOrder.AveragePrice,
-                                                         Me.TradableInstrument.LastTick.LastPrice,
-                                                         target, Me.TradableInstrument.TradingSymbol)
+                                            logger.Debug("ExitOrder-> {0} reached. {1}%:{2}, OrderId:{3}, OrderDirection:{4}, 
+                                                          AveragePrice(AP):{5}, LastPrice:{6}, TargetPrice(AP-AP*{7}/100):{8}, TradingSymbol:{9}",
+                                                             If(lt, "LT%", "T%"),
+                                                             If(lt, "LT%", "T%"),
+                                                             If(lt, emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage, emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).TargetPercentage),
+                                                             slOrder.ParentOrderIdentifier,
+                                                             parentBusinessOrder.ParentOrder.TransactionType,
+                                                             parentBusinessOrder.ParentOrder.AveragePrice,
+                                                             Me.TradableInstrument.LastTick.LastPrice,
+                                                             If(lt, "LT", "T"),
+                                                             target,
+                                                             Me.TradableInstrument.TradingSymbol)
                                             Await ForceExitSpecificTradeAsync(slOrder, If(lt, "Low Volatility Target% Reached", "Target% Reached")).ConfigureAwait(False)
                                         End If
                                         'Exit for Opposite direction EMA crossover
@@ -493,18 +581,20 @@ Public Class EMA_SupertrendStrategyInstrument
                                 End If
 
                                 Try
-                                    logger.Debug("ExitOrder-> **********************************************************")
-                                    logger.Debug("ExitOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, OrderID:{1}, OrderDirection:{2}, 
+                                    If forcePrint Then
+                                        logger.Debug("ExitOrder-> **********************************************************")
+                                        logger.Debug("ExitOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, OrderID:{1}, OrderDirection:{2}, 
                                                 IsCrossover(above):{3}, IsCrossover(below):{4}, Supertrend:{5}, PreviousCandleClose:{6}, ExitReason:{7}, TradingSymbol:{8}",
-                                                runningCandlePayload.SnapshotDateTime.ToString,
-                                                slOrder.ParentOrderIdentifier,
-                                                parentBusinessOrder.ParentOrder.TransactionType,
-                                                IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
-                                                IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
-                                                CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value,
-                                                runningCandlePayload.PreviousPayload.ClosePrice.Value,
-                                                exitReason,
-                                                Me.TradableInstrument.TradingSymbol)
+                                                    runningCandlePayload.SnapshotDateTime.ToString,
+                                                    slOrder.ParentOrderIdentifier,
+                                                    parentBusinessOrder.ParentOrder.TransactionType,
+                                                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
+                                                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
+                                                    CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value,
+                                                    runningCandlePayload.PreviousPayload.ClosePrice.Value,
+                                                    exitReason,
+                                                    Me.TradableInstrument.TradingSymbol)
+                                    End If
                                 Catch ex As Exception
                                     logger.Error(ex)
                                 End Try
@@ -523,10 +613,13 @@ Public Class EMA_SupertrendStrategyInstrument
     Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
         If order IsNot Nothing AndAlso Not order.Status = "COMPLETE" AndAlso Not order.Status = "CANCELLED" AndAlso Not order.Status = "REJECTED" Then
             Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
-        {
-            New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
-        }
-            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, cancellableOrder).ConfigureAwait(False)
+            {
+                New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
+            }
+            Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, cancellableOrder).ConfigureAwait(False)
+            If exitOrderResponse IsNot Nothing Then
+                GenerateTelegramMessageAsync(String.Format("{0} - Exit Order Successful. Reason:{1}, Time:{2}", Me.TradableInstrument.TradingSymbol, reason, Now))
+            End If
         End If
     End Function
 

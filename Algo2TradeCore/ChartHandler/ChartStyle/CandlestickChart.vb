@@ -221,12 +221,12 @@ Namespace ChartHandler.ChartStyle
                         '    Throw ex
                         'End Try
                         'Try
-                        '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
+                        '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault.OnwardLevelConsumers.LastOrDefault
                         '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
                         '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
                         '                                                                        Return x.Key
                         '                                                                    End Function)
-                        '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.EMAConsumer.EMAPayload).EMA.Value.ToString())
+                        '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.SupertrendConsumer.SupertrendPayload).Supertrend.Value.ToString())
                         '        Next
                         '    End If
                         'Catch ex As Exception
@@ -413,6 +413,18 @@ Namespace ChartHandler.ChartStyle
                 '                                                                        Return x.Key
                 '                                                                    End Function)
                 '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.EMAConsumer.EMAPayload).EMA.Value.ToString())
+                '        Next
+                '    End If
+                'Catch ex As Exception
+                '    Throw ex
+                'End Try
+                'Try
+                '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault.OnwardLevelConsumers.LastOrDefault
+                '    If freshCandle AndAlso outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                '                                                                        Return x.Key
+                '                                                                    End Function)
+                '            Debug.WriteLine(payload.Key.ToString + "   " + CType(payload.Value, Indicators.SupertrendConsumer.SupertrendPayload).Supertrend.Value.ToString())
                 '        Next
                 '    End If
                 'Catch ex As Exception
