@@ -56,11 +56,11 @@ Public Class OHLStrategyInstrument
                 If Me.GetOverallPL() <= Math.Abs(OHLUserSettings.InstrumentsData(instrumentName).MaxLossPerStock) * -1 OrElse
                     Me.GetOverallPL() >= Math.Abs(OHLUserSettings.InstrumentsData(instrumentName).MaxProfitPerStock) Then
                     Debug.WriteLine("Force Cancel for stock pl")
-                    Await ForceExitAllTradesAsync().ConfigureAwait(False)
+                    Await ForceExitAllTradesAsync("Force Cancel for stock pl").ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim placeOrderDetails As Object = Nothing
-                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take AndAlso
                     Interlocked.Read(_OHLStrategyProtect) = 0 Then
                     Interlocked.Increment(_OHLStrategyProtect)
@@ -86,9 +86,9 @@ Public Class OHLStrategyInstrument
             Throw ex
         End Try
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
+    Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Nothing
+        Dim ret As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Nothing
         Dim currentTime As Date = Now
         Dim OHLUserSettings As OHLUserInputs = Me.ParentStrategy.UserSettings
         Dim capitalAtDayStart As Decimal = Me.ParentStrategy.ParentController.GetUserMargin(Me.TradableInstrument.ExchangeDetails.ExchangeType)
@@ -164,25 +164,25 @@ Public Class OHLStrategyInstrument
                 If currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso
                     currentSignalActivities.FirstOrDefault.EntryActivity.LastException IsNot Nothing AndAlso
                     currentSignalActivities.FirstOrDefault.EntryActivity.LastException.Message.ToUpper.Contains("TIME") Then
-                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.WaitAndTake, parameters)
+                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameters, "")
                 ElseIf currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded Then
-                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
+                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, "")
                     'ElseIf currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
                     '    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
                 Else
-                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.DonotTake, Nothing)
+                    ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, Nothing, "")
                 End If
             Else
-                ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.Take, parameters)
+                ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, "")
             End If
         Else
-            ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters)(ExecuteCommandAction.DonotTake, Nothing)
+            ret = New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, Nothing, "")
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Nothing
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
         'If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
         '    Dim currentTime As Date = Now
         '    For Each parentOrderId In OrderDetails.Keys
@@ -228,17 +228,17 @@ Public Class OHLStrategyInstrument
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
-        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException
         Return ret
     End Function
-    Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder) As Task
+    Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
         If order IsNot Nothing AndAlso Not order.Status = "COMPLETE" Then
-            Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder)) From
+            Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
             {
-                New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, order)
+                New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
             }
             Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, cancellableOrder).ConfigureAwait(False)
         End If

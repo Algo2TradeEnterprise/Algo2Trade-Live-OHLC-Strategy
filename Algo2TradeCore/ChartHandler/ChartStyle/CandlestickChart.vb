@@ -22,10 +22,10 @@ Namespace ChartHandler.ChartStyle
             'Exit Function
             'logger.Debug("{0}->GetChartFromHistoricalAsync, parameters:{1}", Me.ToString, Utilities.Strings.JsonSerialize(historicalCandlesJSONDict))
             Try
-                While Interlocked.Read(_historicalLock) > 0
+                While 1 = Interlocked.Exchange(_historicalLock, 1)
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
-                Interlocked.Increment(_historicalLock)
+                'Interlocked.Increment(_historicalLock)
                 'Debug.WriteLine(String.Format("Process Historical before. Time:{0}, Lock:{1}", Now, _lock))
                 If historicalCandlesJSONDict.ContainsKey("data") Then
                     Dim historicalCandlesDict As Dictionary(Of String, Object) = historicalCandlesJSONDict("data")
@@ -106,12 +106,13 @@ Namespace ChartHandler.ChartStyle
                             End If
                             Dim candleNeedsUpdate As Boolean = False
                             If existingOrAddedPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Tick Then
-                                candleNeedsUpdate = Not existingOrAddedPayload.Equals(historicalCandle(1),
-                                                                                    historicalCandle(2),
-                                                                                    historicalCandle(3),
-                                                                                    historicalCandle(4),
-                                                                                    historicalCandle(5),
-                                                                                    runningSnapshotTime)
+                                candleNeedsUpdate = True
+                                'candleNeedsUpdate = Not existingOrAddedPayload.Equals(historicalCandle(1),
+                                '                                                    historicalCandle(2),
+                                '                                                    historicalCandle(3),
+                                '                                                    historicalCandle(4),
+                                '                                                    historicalCandle(5),
+                                '                                                    runningSnapshotTime)
 
                                 UpdateHistoricalCandleStick(runningSnapshotTime,
                                                             historicalCandle(1),
@@ -194,7 +195,7 @@ Namespace ChartHandler.ChartStyle
                         '    Debug.WriteLine(payload.Value.ToString())
                         'Next
                         'Try
-                        '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                        '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
                         '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
                         '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
                         '                                                                        Return x.Key
@@ -237,7 +238,7 @@ Namespace ChartHandler.ChartStyle
                 logger.Error("GetChartFromHistoricalAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
             Finally
-                Interlocked.Decrement(_historicalLock)
+                Interlocked.Exchange(_historicalLock, 0)
                 'Debug.WriteLine(String.Format("Process Historical after. Time:{0}, Lock:{1}", Now, _lock))
             End Try
         End Function
@@ -250,10 +251,10 @@ Namespace ChartHandler.ChartStyle
             'Debug.WriteLine(Utilities.Strings.JsonSerialize(tickData))
 
             Try
-                While Interlocked.Read(_tickLock) > 0
+                While 1 = Interlocked.Exchange(_tickLock, 1)
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
-                Interlocked.Increment(_tickLock)
+                'Interlocked.Increment(_tickLock)
 
                 Dim lastExistingPayload As OHLCPayload = Nothing
                 If _parentInstrument.RawPayloads IsNot Nothing AndAlso _parentInstrument.RawPayloads.Count > 0 Then
@@ -391,7 +392,7 @@ Namespace ChartHandler.ChartStyle
 
                 ''TODO: Below loop is for checking purpose
                 'Try
-                '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault
+                '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
                 '    If freshCandle AndAlso outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
                 '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
                 '                                                                        Return x.Key
@@ -406,7 +407,7 @@ Namespace ChartHandler.ChartStyle
                 'End Try
                 ''TODO: Below loop is for checking purpose
                 'Try
-                '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
+                '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
                 '    If freshCandle AndAlso outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
                 '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
                 '                                                                        Return x.Key
@@ -421,8 +422,8 @@ Namespace ChartHandler.ChartStyle
                 logger.Error("GetChartFromTickAsync:{0}, error:{1}", Me.ToString, ex.ToString)
                 Me.ParentController.OrphanException = ex
             Finally
-                Interlocked.Decrement(_tickLock)
-                If _tickLock <> 0 Then Throw New ApplicationException("Check why lock is not released")
+                Interlocked.Exchange(_tickLock, 0)
+                'If _tickLock <> 0 Then Throw New ApplicationException("Check why lock is not released")
                 'Debug.WriteLine(String.Format("Process Historical after. Time:{0}, Lock:{1}", Now, _lock))
             End Try
         End Function
@@ -483,6 +484,12 @@ Namespace ChartHandler.ChartStyle
                                                                                  Return x.Key
                                                                              End Function).FirstOrDefault.Value
                     End If
+
+                    'If lastExistingPayload.PreviousPayload IsNot Nothing AndAlso previousPayload IsNot Nothing Then
+                    '    If previousPayload.SnapshotDateTime < lastExistingPayload.PreviousPayload.SnapshotDateTime Then
+                    '        previousPayload = lastExistingPayload.PreviousPayload
+                    '    End If
+                    'End If
 
                     If currentPayload.SnapshotDateTime = blockDateInThisTimeframe AndAlso currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical Then
                         lastExistingPayload.OpenPrice.Value = currentPayload.OpenPrice.Value

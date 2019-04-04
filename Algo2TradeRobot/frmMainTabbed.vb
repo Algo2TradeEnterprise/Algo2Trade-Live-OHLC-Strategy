@@ -49,16 +49,16 @@ Public Class frmMainTabbed
             Dim MyDelegate As New BindingListAdd_Delegate(AddressOf BindingListAdd_ThreadSafe)
             Me.Invoke(MyDelegate, New Object() {[src], [value]})
         Else
-            '[src].Add([value])
-            While True
-                Try
-                    [src].Insert(0, [value])
-                    Exit While
-                Catch ex As Exception
-                    logger.Error(ex)
-                End Try
-                Await Task.Delay(500, _cts.Token).ConfigureAwait(False)
-            End While
+            'While True
+            Try
+                [src].Add([value])
+                '[src].Insert(0, [value])
+                'Exit While
+            Catch ex As Exception
+                logger.Error(ex)
+            End Try
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+            'End While
         End If
     End Sub
 
@@ -430,7 +430,7 @@ Public Class frmMainTabbed
             SetObjectEnableDisable_ThreadSafe(linklblMomentumReversalTradableInstrument, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
@@ -649,7 +649,7 @@ Public Class frmMainTabbed
             SetObjectEnableDisable_ThreadSafe(linklblOHLTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _OHLdashboadList = New BindingList(Of ActivityDashboard)(ohlStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            _OHLdashboadList = New BindingList(Of ActivityDashboard)(ohlStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, _OHLdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
@@ -853,7 +853,7 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _AmidashboadList = New BindingList(Of ActivityDashboard)(AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            _AmidashboadList = New BindingList(Of ActivityDashboard)(AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmidashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
 
@@ -929,6 +929,7 @@ Public Class frmMainTabbed
             Else
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
+            logger.Debug(Utilities.Strings.JsonSerialize(_EMA_SupertrendUserInputs))
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
@@ -1040,7 +1041,7 @@ Public Class frmMainTabbed
             SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(_EMASupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.ToList)
+            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(_EMASupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _EMA_SupertrendDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()

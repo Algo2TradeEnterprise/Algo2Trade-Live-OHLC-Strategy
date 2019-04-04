@@ -150,11 +150,12 @@ Namespace Strategies
             Return ret
         End Function
         Public Function IsCrossover(ByVal firstDummyConsumer As PayloadToIndicatorConsumer,
-                                           ByVal secondDummyConsumer As PayloadToIndicatorConsumer,
-                                           ByVal firstDummyConsumerField As TypeOfField,
-                                           ByVal secondDummyConsumerField As TypeOfField,
-                                           ByVal currentCandle As OHLCPayload,
-                                           ByVal crossSide As Enums.CrossDirection) As Boolean
+                                    ByVal secondDummyConsumer As PayloadToIndicatorConsumer,
+                                    ByVal firstDummyConsumerField As TypeOfField,
+                                    ByVal secondDummyConsumerField As TypeOfField,
+                                    ByVal currentCandle As OHLCPayload,
+                                    ByVal crossSide As Enums.CrossDirection,
+                                    ByVal printDetails As Boolean) As Boolean
             Dim ret As Boolean = False
             If currentCandle IsNot Nothing AndAlso currentCandle.PreviousPayload IsNot Nothing AndAlso currentCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
                 Dim firstConsumer As PayloadToIndicatorConsumer = GetConsumer(RawPayloadDependentConsumers, firstDummyConsumer)
@@ -194,6 +195,23 @@ Namespace Strategies
                                 ret = firstConsumerPreviousValueField.Value > secondConsumerPreviousValueField.Value AndAlso
                                     firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
                         End Select
+                        If printDetails Then
+                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CrossSide:{4}, 
+                                          CurrentCandle:{5}, FirstConsumerPreviousFieldValue:{6}, FirstConsumerCurrentFieldValue:{7}, 
+                                          SecondConsumerPreviousFieldValue:{8}, SecondConsumerCurrentFieldValue:{9}, IsCrossover:{10}, TradingSymbol:{11}",
+                                          firstDummyConsumer.ToString,
+                                          secondDummyConsumer.ToString,
+                                          firstDummyConsumerField.ToString,
+                                          secondDummyConsumerField.ToString,
+                                          crossSide.ToString,
+                                          currentCandle.ToString,
+                                          firstConsumerPreviousValueField.Value,
+                                          firstConsumerCurrentValueField.Value,
+                                          secondConsumerPreviousValueField.Value,
+                                          secondConsumerCurrentValueField.Value,
+                                          ret,
+                                          Me.TradableInstrument.TradingSymbol)
+                        End If
                     End If
                 End If
             End If
@@ -453,9 +471,9 @@ Namespace Strategies
 
             '-------Entry Activity-------'
             If orderData.ParentOrder.Status.ToUpper = "REJECTED" Then
-                Await Me.ParentStrategy.SignalManager.RejectEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, orderData.ParentOrder.StatusMessage).ConfigureAwait(False)
+                Await Me.ParentStrategy.SignalManager.RejectEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
             ElseIf orderData.ParentOrder.Status.ToUpper = "CANCELLED" Then
-                Await Me.ParentStrategy.SignalManager.CancelEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, orderData.ParentOrder.StatusMessage).ConfigureAwait(False)
+                Await Me.ParentStrategy.SignalManager.CancelEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
             ElseIf orderData.ParentOrder.Status.ToUpper = "COMPLETE" Then
                 Dim runningOrder As Boolean = False
                 If orderData.SLOrder IsNot Nothing AndAlso orderData.SLOrder.Count > 0 Then
@@ -474,9 +492,9 @@ Namespace Strategies
                     Next
                 End If
                 If runningOrder Then
-                    Await Me.ParentStrategy.SignalManager.RunningEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, orderData.ParentOrder.StatusMessage).ConfigureAwait(False)
+                    Await Me.ParentStrategy.SignalManager.RunningEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                 Else
-                    Await Me.ParentStrategy.SignalManager.CompleteEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, orderData.ParentOrder.StatusMessage).ConfigureAwait(False)
+                    Await Me.ParentStrategy.SignalManager.CompleteEntryActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                 End If
             End If
 
@@ -518,10 +536,10 @@ Namespace Strategies
                         End If
                     End If
                     If orderCancelled Then
-                        Await Me.ParentStrategy.SignalManager.CompleteCancelActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, statusMessage).ConfigureAwait(False)
+                        Await Me.ParentStrategy.SignalManager.CompleteCancelActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                     Else
                         If DateDiff(DateInterval.Second, currentCancelActivity.ReceivedTime, Now) > Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay Then
-                            Await Me.ParentStrategy.SignalManager.RejectCancelActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, "FORCE REJECTING ACTIVITY AS ALL ORDERS HAVE NOT CANCELLED").ConfigureAwait(False)
+                            Await Me.ParentStrategy.SignalManager.RejectCancelActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                         End If
                     End If
                 End If
@@ -552,10 +570,10 @@ Namespace Strategies
                         Next
                     End If
                     If orderModified Then
-                        Await Me.ParentStrategy.SignalManager.CompleteStoplossModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, statusMessage).ConfigureAwait(False)
+                        Await Me.ParentStrategy.SignalManager.CompleteStoplossModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                     Else
                         If DateDiff(DateInterval.Second, currentModifyActivity.ReceivedTime, Now) > Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay Then
-                            Await Me.ParentStrategy.SignalManager.RejectStoplossModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier, "FORCE REJECTING ACTIVITY AS ALL ORDERS HAVE NOT MODIFIED").ConfigureAwait(False)
+                            Await Me.ParentStrategy.SignalManager.RejectStoplossModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                         End If
                     End If
                 End If
@@ -613,26 +631,26 @@ Namespace Strategies
             End If
             Return ret
         End Function
-        Protected Overridable Function GetAllCancelableOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of Tuple(Of ExecuteCommandAction, IOrder))
-            Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
+        Protected Overridable Function GetAllCancelableOrders(ByVal signalDirection As APIAdapter.TransactionType) As List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+            Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(signalDirection)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
                 For Each activeOrder In allActiveOrders
                     If Not activeOrder.Status = "COMPLETE" Then
-                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder)(ExecuteCommandAction.Take, activeOrder))
+                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, activeOrder, ""))
                     End If
                 Next
             End If
             Return ret
         End Function
-        Public Overridable Async Function ForceExitAllTradesAsync() As Task
+        Public Overridable Async Function ForceExitAllTradesAsync(ByVal reason As String) As Task
             'logger.Debug("ForceExitAllTradesAsync, parameters:Nothing")
             Try
-                Dim allCancelableOrders As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = GetAllCancelableOrders(APIAdapter.TransactionType.None)
+                Dim allCancelableOrders As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = GetAllCancelableOrders(APIAdapter.TransactionType.None)
                 If allCancelableOrders IsNot Nothing AndAlso allCancelableOrders.Count > 0 Then
                     For Each cancelableOrder In allCancelableOrders
-                        Await ForceExitSpecificTradeAsync(cancelableOrder.Item2).ConfigureAwait(False)
+                        Await ForceExitSpecificTradeAsync(cancelableOrder.Item2, reason).ConfigureAwait(False)
                     Next
                 End If
             Catch cex As OperationCanceledException
@@ -647,10 +665,10 @@ Namespace Strategies
 
 #Region "Public MustOverride Functions"
         Public MustOverride Async Function MonitorAsync() As Task
-        Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters))
-        Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)))
-        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder)))
-        Protected MustOverride Async Function ForceExitSpecificTradeAsync(ByVal order As IOrder) As Task
+        Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+        Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+        Protected MustOverride Async Function ForceExitSpecificTradeAsync(ByVal order As IOrder, ByVal reason As String) As Task
 #End Region
 
 #Region "Excecute Command"
@@ -692,7 +710,7 @@ Namespace Strategies
                         _cts.Token.ThrowIfCancellationRequested()
                         Select Case command
                             Case ExecuteCommands.PlaceBOLimitMISOrder
-                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
 
@@ -700,7 +718,7 @@ Namespace Strategies
 
                                     If placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
 
-                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
+                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now, placeOrderTrigger.Item3).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -730,13 +748,13 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.ModifyStoplossOrder
-                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(True).ConfigureAwait(False)
+                                Dim modifyStoplossOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(True).ConfigureAwait(False)
                                 If modifyStoplossOrderTriggers IsNot Nothing AndAlso modifyStoplossOrderTriggers.Count > 0 Then
                                     Dim tasks = modifyStoplossOrderTriggers.Select(Async Function(x)
                                                                                        Try
                                                                                            _cts.Token.ThrowIfCancellationRequested()
                                                                                            If x.Item1 = ExecuteCommandAction.Take Then
-                                                                                               Await Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3).ConfigureAwait(False)
+                                                                                               Await Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
                                                                                                Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                                modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=x.Item2.OrderIdentifier,
                                                                                                                                                                         triggerPrice:=x.Item3).ConfigureAwait(False)
@@ -766,7 +784,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
-                                Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder)) = Nothing
+                                Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
                                 Select Case command
                                     Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
                                         cancelOrderTriggers = data
@@ -778,7 +796,7 @@ Namespace Strategies
                                                                                Try
                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                    If x.Item1 = ExecuteCommandAction.Take Then
-                                                                                       Await Me.ParentStrategy.SignalManager.HandleCancelActivity(x.Item2.Tag, Me, Nothing, Now).ConfigureAwait(False)
+                                                                                       Await Me.ParentStrategy.SignalManager.HandleCancelActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3).ConfigureAwait(False)
                                                                                        Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                        Select Case command
                                                                                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
@@ -814,7 +832,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceBOSLMISOrder
-                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
 
@@ -822,7 +840,7 @@ Namespace Strategies
 
                                     If placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
 
-                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
+                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now, placeOrderTrigger.Item3).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -853,7 +871,7 @@ Namespace Strategies
                                     Exit For
                                 End If
                             Case ExecuteCommands.PlaceCOMarketMISOrder
-                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
+                                Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
 
@@ -861,7 +879,7 @@ Namespace Strategies
 
                                     If placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
 
-                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now).ConfigureAwait(False)
+                                    Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now, placeOrderTrigger.Item3).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                     placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,

@@ -47,21 +47,23 @@ Namespace Strategies
                                                   ByVal associatedOrderID As String,
                                                   ByVal signalGeneratedTime As Date,
                                                   ByVal signalDirection As APIAdapter.TransactionType,
-                                                  ByVal requestTime As Date) As Task
+                                                  ByVal requestTime As Date,
+                                                  ByVal requestRemarks As String) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
-                                     associatedStrategyInstrument:=associatedStrategyInstrument,
-                                     associatedOrderID:=associatedOrderID,
-                                     signalGeneratedTime:=signalGeneratedTime,
-                                     signalDirection:=signalDirection,
-                                     requestTime:=requestTime,
-                                     receivedTime:=_defaultDateValue,
-                                     requestStatus:=ActivityDashboard.SignalStatusType.Handled,
-                                     lastException:=_defaultExceptionValue).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            signalGeneratedTime:=signalGeneratedTime,
+                                            signalDirection:=signalDirection,
+                                            requestTime:=requestTime,
+                                            receivedTime:=_defaultDateValue,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Handled,
+                                            lastException:=_defaultExceptionValue,
+                                            requestRemarks:=requestRemarks).ConfigureAwait(False)
         End Function
         Public Async Function ActivateEntryActivity(ByVal activityTag As String,
-                                         ByVal associatedStrategyInstrument As StrategyInstrument,
-                                         ByVal associatedOrderID As String,
-                                         ByVal receivedTime As Date) As Task
+                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                    ByVal associatedOrderID As String,
+                                                    ByVal receivedTime As Date) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
                                      associatedStrategyInstrument:=associatedStrategyInstrument,
                                      associatedOrderID:=associatedOrderID,
@@ -69,195 +71,181 @@ Namespace Strategies
                                      requestStatus:=ActivityDashboard.SignalStatusType.Activated).ConfigureAwait(False)
         End Function
         Public Async Function DiscardEntryActivity(ByVal activityTag As String,
-                                        ByVal associatedStrategyInstrument As StrategyInstrument,
-                                        ByVal associatedOrderID As String,
-                                        ByVal receivedTime As Date,
-                                        ByVal lastException As Exception) As Task
+                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                    ByVal associatedOrderID As String,
+                                                    ByVal receivedTime As Date,
+                                                    ByVal lastException As Exception) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
-                                     associatedStrategyInstrument:=associatedStrategyInstrument,
-                                     associatedOrderID:=associatedOrderID,
-                                     receivedTime:=receivedTime,
-                                     requestStatus:=ActivityDashboard.SignalStatusType.Discarded,
-                                     lastException:=lastException).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            receivedTime:=receivedTime,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Discarded,
+                                            lastException:=lastException).ConfigureAwait(False)
         End Function
         Public Async Function CancelEntryActivity(ByVal activityTag As String,
-                                       ByVal associatedStrategyInstrument As StrategyInstrument,
-                                       ByVal associatedOrderID As String,
-                                       ByVal requestRemarks As String) As Task
+                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                    ByVal associatedOrderID As String) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
-                                     associatedStrategyInstrument:=associatedStrategyInstrument,
-                                     associatedOrderID:=associatedOrderID,
-                                     requestStatus:=ActivityDashboard.SignalStatusType.Cancelled,
-                                     requestRemarks:=requestRemarks).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Cancelled).ConfigureAwait(False)
         End Function
         Public Async Function RejectEntryActivity(ByVal activityTag As String,
-                                       ByVal associatedStrategyInstrument As StrategyInstrument,
-                                       ByVal associatedOrderID As String,
-                                       ByVal requestRemarks As String) As Task
+                                                   ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                   ByVal associatedOrderID As String) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
-                                     associatedStrategyInstrument:=associatedStrategyInstrument,
-                                     associatedOrderID:=associatedOrderID,
-                                     requestStatus:=ActivityDashboard.SignalStatusType.Rejected,
-                                     requestRemarks:=requestRemarks).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Rejected).ConfigureAwait(False)
         End Function
         Public Async Function CompleteEntryActivity(ByVal activityTag As String,
-                                         ByVal associatedStrategyInstrument As StrategyInstrument,
-                                         ByVal associatedOrderID As String,
-                                         ByVal requestRemarks As String) As Task
+                                                     ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                     ByVal associatedOrderID As String) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
-                                     associatedStrategyInstrument:=associatedStrategyInstrument,
-                                     associatedOrderID:=associatedOrderID,
-                                     requestStatus:=ActivityDashboard.SignalStatusType.Completed,
-                                     requestRemarks:=requestRemarks).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Completed).ConfigureAwait(False)
         End Function
         Public Async Function RunningEntryActivity(ByVal activityTag As String,
-                                        ByVal associatedStrategyInstrument As StrategyInstrument,
-                                        ByVal associatedOrderID As String,
-                                        ByVal requestRemarks As String) As Task
+                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                    ByVal associatedOrderID As String) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
-                                     associatedStrategyInstrument:=associatedStrategyInstrument,
-                                     associatedOrderID:=associatedOrderID,
-                                     requestStatus:=ActivityDashboard.SignalStatusType.Running,
-                                     requestRemarks:=requestRemarks).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Running).ConfigureAwait(False)
         End Function
 #End Region
 
 #Region "Target Modify Activity"
         Public Async Function HandleTargetModifyActivity(ByVal activityTag As String,
-                                              ByVal associatedStrategyInstrument As StrategyInstrument,
-                                              ByVal associatedOrderID As String,
-                                              ByVal requestTime As Date,
-                                              ByVal price As Decimal) As Task
+                                                         ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                         ByVal associatedOrderID As String,
+                                                         ByVal requestTime As Date,
+                                                         ByVal price As Decimal,
+                                                         ByVal requestRemarks As String) As Task
             Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    requestTime:=requestTime,
+                                                    receivedTime:=_defaultDateValue,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Handled,
+                                                    lastException:=_defaultExceptionValue,
+                                                    price:=price,
+                                                    requestRemarks:=requestRemarks).ConfigureAwait(False)
+        End Function
+        Public Async Function ActivateTargetModifyActivity(ByVal activityTag As String,
+                                                            ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                            ByVal associatedOrderID As String,
+                                                            ByVal receivedTime As Date) As Task
+            Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    receivedTime:=receivedTime,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Activated).ConfigureAwait(False)
+        End Function
+        Public Async Function RejectTargetModifyActivity(ByVal activityTag As String,
+                                                          ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                          ByVal associatedOrderID As String) As Task
+            Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Rejected).ConfigureAwait(False)
+        End Function
+        Public Async Function CompleteTargetModifyActivity(ByVal activityTag As String,
+                                                            ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                            ByVal associatedOrderID As String) As Task
+            Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Completed).ConfigureAwait(False)
+        End Function
+#End Region
+
+#Region "Stoploss Modify Activity"
+        Public Async Function HandleStoplossModifyActivity(ByVal activityTag As String,
+                                                            ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                            ByVal associatedOrderID As String,
+                                                            ByVal requestTime As Date,
+                                                            ByVal triggerprice As Decimal,
+                                                            ByVal requestRemarks As String) As Task
+            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    requestTime:=requestTime,
+                                                    receivedTime:=_defaultDateValue,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Handled,
+                                                    lastException:=_defaultExceptionValue,
+                                                    triggerPrice:=triggerprice,
+                                                    requestRemarks:=requestRemarks).ConfigureAwait(False)
+        End Function
+        Public Async Function ActivateStoplossModifyActivity(ByVal activityTag As String,
+                                                                ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                                ByVal associatedOrderID As String,
+                                                                ByVal receivedTime As Date) As Task
+            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    receivedTime:=receivedTime,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Activated).ConfigureAwait(False)
+        End Function
+        Public Async Function RejectStoplossModifyActivity(ByVal activityTag As String,
+                                                            ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                            ByVal associatedOrderID As String) As Task
+            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Rejected).ConfigureAwait(False)
+        End Function
+        Public Async Function CompleteStoplossModifyActivity(ByVal activityTag As String,
+                                                              ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                              ByVal associatedOrderID As String) As Task
+            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
+                                                    associatedStrategyInstrument:=associatedStrategyInstrument,
+                                                    associatedOrderID:=associatedOrderID,
+                                                    requestStatus:=ActivityDashboard.SignalStatusType.Completed).ConfigureAwait(False)
+        End Function
+#End Region
+
+#Region "Cancel Activity"
+        Public Async Function HandleCancelActivity(ByVal activityTag As String,
+                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                    ByVal associatedOrderID As String,
+                                                    ByVal requestTime As Date,
+                                                    ByVal requestRemarks As String) As Task
+            Await AddOrUpdateCancelActivity(activityTag:=activityTag,
                                             associatedStrategyInstrument:=associatedStrategyInstrument,
                                             associatedOrderID:=associatedOrderID,
                                             requestTime:=requestTime,
                                             receivedTime:=_defaultDateValue,
                                             requestStatus:=ActivityDashboard.SignalStatusType.Handled,
                                             lastException:=_defaultExceptionValue,
-                                            price:=price).ConfigureAwait(False)
+                                            requestRemarks:=requestRemarks).ConfigureAwait(False)
         End Function
-        Public Async Function ActivateTargetModifyActivity(ByVal activityTag As String,
-                                                ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                ByVal associatedOrderID As String,
-                                                ByVal receivedTime As Date) As Task
-            Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
+        Public Async Function ActivateCancelActivity(ByVal activityTag As String,
+                                                      ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                      ByVal associatedOrderID As String,
+                                                      ByVal receivedTime As Date) As Task
+            Await AddOrUpdateCancelActivity(activityTag:=activityTag,
                                             associatedStrategyInstrument:=associatedStrategyInstrument,
                                             associatedOrderID:=associatedOrderID,
                                             receivedTime:=receivedTime,
                                             requestStatus:=ActivityDashboard.SignalStatusType.Activated).ConfigureAwait(False)
         End Function
-        Public Async Function RejectTargetModifyActivity(ByVal activityTag As String,
-                                              ByVal associatedStrategyInstrument As StrategyInstrument,
-                                              ByVal associatedOrderID As String,
-                                              ByVal requestRemarks As String) As Task
-            Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
-                                            associatedStrategyInstrument:=associatedStrategyInstrument,
-                                            associatedOrderID:=associatedOrderID,
-                                            requestStatus:=ActivityDashboard.SignalStatusType.Rejected,
-                                            requestRemarks:=requestRemarks).ConfigureAwait(False)
-        End Function
-        Public Async Function CompleteTargetModifyActivity(ByVal activityTag As String,
-                                                ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                ByVal associatedOrderID As String,
-                                                ByVal requestRemarks As String) As Task
-            Await AddOrUpdateTargetModifyActivity(activityTag:=activityTag,
-                                            associatedStrategyInstrument:=associatedStrategyInstrument,
-                                            associatedOrderID:=associatedOrderID,
-                                            requestStatus:=ActivityDashboard.SignalStatusType.Completed,
-                                            requestRemarks:=requestRemarks).ConfigureAwait(False)
-        End Function
-#End Region
-
-#Region "Stoploss Modify Activity"
-        Public Async Function HandleStoplossModifyActivity(ByVal activityTag As String,
-                                                ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                ByVal associatedOrderID As String,
-                                                ByVal requestTime As Date,
-                                                ByVal triggerprice As Decimal) As Task
-            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
-                                              associatedStrategyInstrument:=associatedStrategyInstrument,
-                                              associatedOrderID:=associatedOrderID,
-                                              requestTime:=requestTime,
-                                              receivedTime:=_defaultDateValue,
-                                              requestStatus:=ActivityDashboard.SignalStatusType.Handled,
-                                              lastException:=_defaultExceptionValue,
-                                              triggerPrice:=triggerprice).ConfigureAwait(False)
-        End Function
-        Public Async Function ActivateStoplossModifyActivity(ByVal activityTag As String,
-                                                  ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                  ByVal associatedOrderID As String,
-                                                  ByVal receivedTime As Date) As Task
-            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
-                                              associatedStrategyInstrument:=associatedStrategyInstrument,
-                                              associatedOrderID:=associatedOrderID,
-                                              receivedTime:=receivedTime,
-                                              requestStatus:=ActivityDashboard.SignalStatusType.Activated).ConfigureAwait(False)
-        End Function
-        Public Async Function RejectStoplossModifyActivity(ByVal activityTag As String,
-                                                ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                ByVal associatedOrderID As String,
-                                                ByVal requestRemarks As String) As Task
-            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
-                                              associatedStrategyInstrument:=associatedStrategyInstrument,
-                                              associatedOrderID:=associatedOrderID,
-                                              requestStatus:=ActivityDashboard.SignalStatusType.Rejected,
-                                              requestRemarks:=requestRemarks).ConfigureAwait(False)
-        End Function
-        Public Async Function CompleteStoplossModifyActivity(ByVal activityTag As String,
-                                                  ByVal associatedStrategyInstrument As StrategyInstrument,
-                                                  ByVal associatedOrderID As String,
-                                                  ByVal requestRemarks As String) As Task
-            Await AddOrUpdateStoplossModifyActivity(activityTag:=activityTag,
-                                              associatedStrategyInstrument:=associatedStrategyInstrument,
-                                              associatedOrderID:=associatedOrderID,
-                                              requestStatus:=ActivityDashboard.SignalStatusType.Completed,
-                                              requestRemarks:=requestRemarks).ConfigureAwait(False)
-        End Function
-#End Region
-
-#Region "Cancel Activity"
-        Public Async Function HandleCancelActivity(ByVal activityTag As String,
-                                        ByVal associatedStrategyInstrument As StrategyInstrument,
-                                        ByVal associatedOrderID As String,
-                                        ByVal requestTime As Date) As Task
-            Await AddOrUpdateCancelActivity(activityTag:=activityTag,
-                                      associatedStrategyInstrument:=associatedStrategyInstrument,
-                                      associatedOrderID:=associatedOrderID,
-                                      requestTime:=requestTime,
-                                      receivedTime:=_defaultDateValue,
-                                      requestStatus:=ActivityDashboard.SignalStatusType.Handled,
-                                      lastException:=_defaultExceptionValue).ConfigureAwait(False)
-        End Function
-        Public Async Function ActivateCancelActivity(ByVal activityTag As String,
-                                          ByVal associatedStrategyInstrument As StrategyInstrument,
-                                          ByVal associatedOrderID As String,
-                                          ByVal receivedTime As Date) As Task
-            Await AddOrUpdateCancelActivity(activityTag:=activityTag,
-                                      associatedStrategyInstrument:=associatedStrategyInstrument,
-                                      associatedOrderID:=associatedOrderID,
-                                      receivedTime:=receivedTime,
-                                      requestStatus:=ActivityDashboard.SignalStatusType.Activated).ConfigureAwait(False)
-        End Function
         Public Async Function RejectCancelActivity(ByVal activityTag As String,
-                                        ByVal associatedStrategyInstrument As StrategyInstrument,
-                                        ByVal associatedOrderID As String,
-                                        ByVal requestRemarks As String) As Task
+                                                    ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                    ByVal associatedOrderID As String) As Task
             Await AddOrUpdateCancelActivity(activityTag:=activityTag,
-                                      associatedStrategyInstrument:=associatedStrategyInstrument,
-                                      associatedOrderID:=associatedOrderID,
-                                      requestStatus:=ActivityDashboard.SignalStatusType.Rejected,
-                                      requestRemarks:=requestRemarks).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Rejected).ConfigureAwait(False)
         End Function
         Public Async Function CompleteCancelActivity(ByVal activityTag As String,
-                                          ByVal associatedStrategyInstrument As StrategyInstrument,
-                                          ByVal associatedOrderID As String,
-                                          ByVal requestRemarks As String) As Task
+                                                      ByVal associatedStrategyInstrument As StrategyInstrument,
+                                                      ByVal associatedOrderID As String) As Task
             Await AddOrUpdateCancelActivity(activityTag:=activityTag,
-                                      associatedStrategyInstrument:=associatedStrategyInstrument,
-                                      associatedOrderID:=associatedOrderID,
-                                      requestStatus:=ActivityDashboard.SignalStatusType.Completed,
-                                      requestRemarks:=requestRemarks).ConfigureAwait(False)
+                                            associatedStrategyInstrument:=associatedStrategyInstrument,
+                                            associatedOrderID:=associatedOrderID,
+                                            requestStatus:=ActivityDashboard.SignalStatusType.Completed).ConfigureAwait(False)
         End Function
 #End Region
 
@@ -439,6 +427,7 @@ Namespace Strategies
             Await UIRefresh(Me.ActivityDetails(activityTag).EntryActivity).ConfigureAwait(False)
             If ActivityDetails(activityTag).EntryActivity.ActivityChanged Then
                 ActivityDetails(activityTag).EntryActivity.ActivityChanged = False
+                'logger.Debug("Entry Activity: {0}", Utilities.Strings.JsonSerialize(ActivityDetails(activityTag).EntryActivity))
                 SerializeActivityCollection()
             End If
         End Function
@@ -468,6 +457,7 @@ Namespace Strategies
             Await UIRefresh(Me.ActivityDetails(activityTag).TargetModifyActivity).ConfigureAwait(False)
             If ActivityDetails(activityTag).TargetModifyActivity.ActivityChanged Then
                 ActivityDetails(activityTag).TargetModifyActivity.ActivityChanged = False
+                'logger.Debug("Target Modify Activity: {0}", Utilities.Strings.JsonSerialize(ActivityDetails(activityTag).TargetModifyActivity))
                 SerializeActivityCollection()
             End If
         End Function
@@ -498,6 +488,7 @@ Namespace Strategies
             Await UIRefresh(Me.ActivityDetails(activityTag).StoplossModifyActivity).ConfigureAwait(False)
             If ActivityDetails(activityTag).StoplossModifyActivity.ActivityChanged Then
                 ActivityDetails(activityTag).StoplossModifyActivity.ActivityChanged = False
+                'logger.Debug("Stoploss Modify Activity: {0}", Utilities.Strings.JsonSerialize(ActivityDetails(activityTag).StoplossModifyActivity))
                 SerializeActivityCollection()
             End If
         End Function
@@ -526,6 +517,7 @@ Namespace Strategies
             Await UIRefresh(Me.ActivityDetails(activityTag).CancelActivity).ConfigureAwait(False)
             If ActivityDetails(activityTag).CancelActivity.ActivityChanged Then
                 ActivityDetails(activityTag).CancelActivity.ActivityChanged = False
+                'logger.Debug("Cancel Activity: {0}", Utilities.Strings.JsonSerialize(ActivityDetails(activityTag).CancelActivity))
                 SerializeActivityCollection()
             End If
         End Function

@@ -154,17 +154,19 @@ Public Class OHLStrategy
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
-        Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(Enums.TypeOfExchage.NSE)
+    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
+        Dim ret As Tuple(Of Boolean, String) = Nothing
+        Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(Me.TradableInstrumentsAsPerStrategy.FirstOrDefault.ExchangeDetails.ExchangeType)
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
-            Return True
+            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
         ElseIf Me.GetTotalPL <= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxLossPercentagePerDay) * -1 / 100 Then
-            Return True
+            logger.Warn("MTM Reached")
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss % Per Day Reached Exit")
         ElseIf Me.GetTotalPL >= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxProfitPercentagePerDay) / 100 Then
-            Return True
-        Else
-            Return False
+            logger.Warn("MTM Reached")
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit % Per Day Reached Exit")
         End If
+        Return ret
     End Function
 End Class

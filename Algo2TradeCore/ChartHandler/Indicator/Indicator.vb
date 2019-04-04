@@ -71,10 +71,10 @@ Namespace ChartHandler.Indicator
 #Region "Public Functions"
         Public Async Function CalculateSMA(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SMAConsumer) As Task
             Try
-                While Interlocked.Read(_SMALock) > 0
+                While 1 = Interlocked.Exchange(_SMALock, 1)
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
-                Interlocked.Increment(_SMALock)
+                'Interlocked.Increment(_SMALock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
                     Dim requiredDataSet As IEnumerable(Of Date) =
@@ -110,21 +110,26 @@ Namespace ChartHandler.Indicator
                     Next
                 End If
             Finally
-                Interlocked.Decrement(_SMALock)
-                If Interlocked.Read(_SMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why SMA lock is not released. Value:{0}", Interlocked.Read(_SMALock)))
+                Interlocked.Exchange(_SMALock, 0)
+                'If Interlocked.Read(_SMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why SMA lock is not released. Value:{0}", Interlocked.Read(_SMALock)))
             End Try
         End Function
         Public Async Function CalculateEMA(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As EMAConsumer) As Task
             Try
-                While Interlocked.Read(_EMALock) > 0
-                    Debug.WriteLine(String.Format("EMAConsumer:{0}, Lock:{1}", outputConsumer.ToString, Interlocked.Read(_EMALock)))
+                While 1 = Interlocked.Exchange(_EMALock, 1)
+                    'logger.Warn(String.Format("EMAConsumer:{0}, Lock:{1}, TimeToCalculate:{2}", outputConsumer.ToString, Interlocked.Read(_EMALock), timeToCalculateFrom.ToString))
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
-                Interlocked.Increment(_EMALock)
+                'logger.Debug("Lock Value Before Increment:{0}, Consumer:{1}, TimeToCalculate:{2}", Interlocked.Read(_EMALock), outputConsumer.ToString, timeToCalculateFrom.ToString)
+                'If Interlocked.Read(_EMALock) <> 0 Then
+                '    Throw New ApplicationException("Check Why lock <> 0")
+                'End If
+                'Interlocked.Increment(_EMALock)
+                If Interlocked.Read(_EMALock) <> 1 Then
+                    Throw New ApplicationException("Check Why lock <> 1")
+                End If
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
-
-                    'Await CalculateSMA(timeToCalculateFrom, outputConsumer.SupportingSMAConsumer)
 
                     Dim requiredDataSet As IEnumerable(Of Date) =
                         outputConsumer.ParentConsumer.ConsumerPayloads.Keys.Where(Function(x)
@@ -166,16 +171,19 @@ Namespace ChartHandler.Indicator
                     Next
                 End If
             Finally
-                Interlocked.Decrement(_EMALock)
-                If Interlocked.Read(_EMALock) <> 0 Then Throw New ApplicationException(String.Format("Check why EMA lock is not released. Value:{0}, Consumer:{1}, Time:{2}", Interlocked.Read(_EMALock), outputConsumer.ToString, timeToCalculateFrom.ToString))
+                Interlocked.Exchange(_EMALock, 0)
+                'If Interlocked.Read(_EMALock) <> 0 Then
+                '    logger.Warn(String.Format("Check why EMA lock is not released. Value:{0}, Consumer:{1}, TimeToCalculate:{2}", Interlocked.Read(_EMALock), outputConsumer.ToString, timeToCalculateFrom.ToString))
+                '    Throw New ApplicationException(String.Format("Check why EMA lock is not released. Value:{0}, Consumer:{1}, TimeToCalculate:{2}", Interlocked.Read(_EMALock), outputConsumer.ToString, timeToCalculateFrom.ToString))
+                'End If
             End Try
         End Function
         Public Async Function CalculateATR(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As ATRConsumer) As Task
             Try
-                While Interlocked.Read(_ATRLock) > 0
+                While 1 = Interlocked.Exchange(_ATRLock, 1)
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
-                Interlocked.Increment(_ATRLock)
+                'Interlocked.Increment(_ATRLock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
                     Dim requiredDataSet As IEnumerable(Of Date) =
@@ -237,16 +245,16 @@ Namespace ChartHandler.Indicator
                     Next
                 End If
             Finally
-                Interlocked.Decrement(_ATRLock)
-                If Interlocked.Read(_ATRLock) <> 0 Then Throw New ApplicationException(String.Format("Check why ATR lock is not released. Value:{0}", Interlocked.Read(_ATRLock)))
+                Interlocked.Exchange(_ATRLock, 0)
+                'If Interlocked.Read(_ATRLock) <> 0 Then Throw New ApplicationException(String.Format("Check why ATR lock is not released. Value:{0}", Interlocked.Read(_ATRLock)))
             End Try
         End Function
         Public Async Function CalculateSupertrend(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SupertrendConsumer) As Task
             Try
-                While Interlocked.Read(_SupertrendLock) > 0
+                While 1 = Interlocked.Exchange(_SupertrendLock, 1)
                     Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                 End While
-                Interlocked.Increment(_SupertrendLock)
+                'Interlocked.Increment(_SupertrendLock)
                 If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
                 outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
 
@@ -307,8 +315,8 @@ Namespace ChartHandler.Indicator
                     Next
                 End If
             Finally
-                Interlocked.Decrement(_SupertrendLock)
-                If Interlocked.Read(_SupertrendLock) <> 0 Then Throw New ApplicationException(String.Format("Check why Supertrend lock is not released. Value:{0}", Interlocked.Read(_SupertrendLock)))
+                Interlocked.Exchange(_SupertrendLock, 0)
+                'If Interlocked.Read(_SupertrendLock) <> 0 Then Throw New ApplicationException(String.Format("Check why Supertrend lock is not released. Value:{0}", Interlocked.Read(_SupertrendLock)))
             End Try
         End Function
 #End Region

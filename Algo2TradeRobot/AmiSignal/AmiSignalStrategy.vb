@@ -197,13 +197,13 @@ Public Class AmiSignalStrategy
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
+    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
+        Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim currentTime As Date = Now
         If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
-            Return True
-        Else
-            Return False
+            ret = New Tuple(Of Boolean, String)(True, "EOD EXIT")
         End If
+        Return ret
     End Function
     Private Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
         logger.Debug("PopulateExternalSignalAsync, parameters:{0}", signal)

@@ -166,14 +166,18 @@ Namespace Controller
                        Not Me.APIConnection.Equals(apiConnectionBeingUsed))
                         apiConnectionBeingUsed = Me.APIConnection
                         _cts.Token.ThrowIfCancellationRequested()
-                        logger.Debug("Waiting for fresh token before running command:{0}", command.ToString)
+                        If command <> ExecutionCommands.GetOrders Then
+                            logger.Debug("Waiting for fresh token before running command:{0}", command.ToString)
+                        End If
                         Await Task.Delay(500, _cts.Token).ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                     End While
 
                     _APIAdapter.SetAPIAccessToken(APIConnection.AccessToken)
 
-                    logger.Debug("Firing command:{0}", command.ToString)
+                    If command <> ExecutionCommands.GetOrders Then
+                        logger.Debug("Firing command:{0}", command.ToString)
+                    End If
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
@@ -214,9 +218,9 @@ Namespace Controller
                                 Dim allOrderResponse As IEnumerable(Of IOrder) = Nothing
                                 allOrderResponse = Await _APIAdapter.GetAllOrdersAsync().ConfigureAwait(False)
                                 If allOrderResponse IsNot Nothing Then
-                                    logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", allOrderResponse.Count)
+                                    'logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", allOrderResponse.Count)
                                 Else
-                                    logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", 0)
+                                    'logger.Debug("Getting all orders is complete, allOrdersResponse.count:{0}", 0)
                                 End If
                                 lastException = Nothing
                                 allOKWithoutException = True

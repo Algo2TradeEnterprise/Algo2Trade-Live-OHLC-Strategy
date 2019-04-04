@@ -45,7 +45,7 @@ Namespace Adapter
             Return ret
         End Function
         Public Overrides Sub SetAPIAccessToken(ByVal apiAccessToken As String)
-            logger.Debug("SetAPIAccessToken, apiAccessToken:{0}", apiAccessToken)
+            'logger.Debug("SetAPIAccessToken, apiAccessToken:{0}", apiAccessToken)
             _Kite.SetAccessToken(apiAccessToken)
         End Sub
         Public Overrides Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
@@ -265,16 +265,16 @@ Namespace Adapter
             If tempRet.GetType = GetType(List(Of Order)) Then
                 If tempRet.count > 0 Then
                     'OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
-                    logger.Debug(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
+                    'logger.Debug(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
                     Dim zerodhaReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
                     For Each runningOrder As Order In zerodhaReturedOrders
                         _cts.Token.ThrowIfCancellationRequested()
                         If ret Is Nothing Then ret = New List(Of ZerodhaOrder)
                         ret.Add(New ZerodhaOrder With {.WrappedOrder = runningOrder})
                     Next
-                Else
+                    'Else
                     'OnHeartbeat(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
-                    logger.Debug(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
+                    'logger.Debug(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
                 End If
             Else
                 Throw New ApplicationException(String.Format("Zerodha command execution did not return any list of order, command:{0}", execCommand.ToString))
@@ -743,13 +743,16 @@ Namespace Adapter
 
 #Region "Zerodha Commands"
         Private Async Function ExecuteCommandAsync(ByVal command As ExecutionCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
-            logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
+            If command <> ExecutionCommands.GetOrders Then
+                logger.Debug("ExecuteCommandAsync, command:{0}, stockData:{1}", command.ToString, Utils.JsonSerialize(stockData))
+            End If
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As Dictionary(Of String, Object) = Nothing
 
             Dim lastException As Exception = Nothing
-            'OnHeartbeat(String.Format("Firing Zerodha command to complete desired action, command:{0}", command.ToString))
-            logger.Debug(String.Format("Firing Zerodha command to complete desired action, command:{0}", command.ToString))
+            If command <> ExecutionCommands.GetOrders Then
+                logger.Debug(String.Format("Firing Zerodha command to complete desired action, command:{0}", command.ToString))
+            End If
             Select Case command
                 Case ExecutionCommands.GetQuotes
                     Dim getQuotesResponse As Dictionary(Of String, Quote) = Nothing

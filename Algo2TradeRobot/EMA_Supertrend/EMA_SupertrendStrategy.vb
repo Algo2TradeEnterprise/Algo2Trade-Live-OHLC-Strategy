@@ -135,22 +135,22 @@ Public Class EMA_SupertrendStrategy
         End If
     End Function
 
-    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Boolean
+    Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
+        Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim capitalAtDayStart As Decimal = Me.ParentController.GetUserMargin(Me.TradableInstrumentsAsPerStrategy.FirstOrDefault.ExchangeDetails.ExchangeType)
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
-            Return True
+            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
         ElseIf ExitAllTrades Then
             logger.Warn("Exit All Button")
-            Return True
+            ret = New Tuple(Of Boolean, String)(True, "Button Exit")
         ElseIf Me.GetTotalPL <= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxLossPercentagePerDay) * -1 / 100 Then
             logger.Warn("MTM Reached")
-            Return True
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss % Per Day Reached Exit")
         ElseIf Me.GetTotalPL >= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxProfitPercentagePerDay) / 100 Then
             logger.Warn("MTM Reached")
-            Return True
-        Else
-            Return False
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit % Per Day Reached Exit")
         End If
+        Return ret
     End Function
 End Class

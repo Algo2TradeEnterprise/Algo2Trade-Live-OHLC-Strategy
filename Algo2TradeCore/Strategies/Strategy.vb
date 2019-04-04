@@ -168,11 +168,13 @@ Namespace Strategies
                         Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
-                    If IsTriggerReceivedForExitAllOrders() AndAlso TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                    Dim triggerResponse As Tuple(Of Boolean, String) = IsTriggerReceivedForExitAllOrders()
+                    If triggerResponse IsNot Nothing AndAlso triggerResponse.Item1 AndAlso
+                        TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                         If delayCtr = 5 Then
                             delayCtr = 0
                             For Each runningStrategyInstrument In TradableStrategyInstruments
-                                runningStrategyInstrument.ForceExitAllTradesAsync()
+                                runningStrategyInstrument.ForceExitAllTradesAsync(triggerResponse.Item2)
                             Next
                         End If
                         delayCtr += 1
@@ -210,7 +212,7 @@ Namespace Strategies
         Public MustOverride Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         Public MustOverride Overrides Function ToString() As String
         Public MustOverride Async Function MonitorAsync() As Task
-        Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Boolean
+        Protected MustOverride Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
 #End Region
 
     End Class

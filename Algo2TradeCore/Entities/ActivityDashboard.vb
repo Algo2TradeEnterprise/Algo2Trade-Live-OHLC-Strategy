@@ -158,8 +158,15 @@ Namespace Entities
             End Get
         End Property
 
+        <Display(Name:="Exit Request Remarks", Order:=15)>
+        Public ReadOnly Property CancelRequestRemarks As String
+            Get
+                Return CancelActivity.RequestRemarks
+            End Get
+        End Property
+
         Private _LastPrice As Decimal
-        <Display(Name:="Last Price", Order:=15)>
+        <Display(Name:="Last Price", Order:=16)>
         Public ReadOnly Property LastPrice As Decimal
             Get
                 If ParentStrategyInstrument.TradableInstrument.LastTick IsNot Nothing Then
@@ -173,7 +180,7 @@ Namespace Entities
         End Function
 
         Private _Timestamp As Date?
-        <Display(Name:="Timestamp", Order:=16)>
+        <Display(Name:="Timestamp", Order:=17)>
         Public ReadOnly Property Timestamp As Date?
             Get
                 If ParentStrategyInstrument.TradableInstrument.LastTick IsNot Nothing Then
@@ -187,7 +194,7 @@ Namespace Entities
         End Function
 
         Private _LastCandleTime As Date
-        <Display(Name:="Last Candle Time", Order:=17)>
+        <Display(Name:="Last Candle Time", Order:=18)>
         Public ReadOnly Property LastCandleTime As Date
             Get
                 If ParentStrategyInstrument.TradableInstrument.RawPayloads IsNot Nothing AndAlso
@@ -203,7 +210,7 @@ Namespace Entities
             Return _LastCandleTime
         End Function
 
-        <Display(Name:="Parent Order ID", Order:=18)>
+        <Display(Name:="Parent Order ID", Order:=19)>
         Public Property ParentOrderID As String
 
         <NonSerialized>
