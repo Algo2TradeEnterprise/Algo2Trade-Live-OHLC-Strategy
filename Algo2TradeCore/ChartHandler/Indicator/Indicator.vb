@@ -17,22 +17,38 @@ Namespace ChartHandler.Indicator
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent DocumentDownloadCompleteEx(source)
         End Sub
         Protected Overridable Sub OnDocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, source)
         End Sub
         Protected Overridable Sub OnHeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent HeartbeatEx(msg, source)
         End Sub
         Protected Overridable Sub OnWaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent WaitingForEx(elapsedSecs, totalSecs, msg, source)
         End Sub
         Protected Overridable Sub OnDocumentDownloadComplete()
@@ -220,13 +236,18 @@ Namespace ChartHandler.Indicator
                         Dim lowPClose As Double = 0
                         Dim TR As Decimal = 0
 
-                        If currentPayload.PreviousPayload Is Nothing Then
-                            TR = highLow
-                        Else
-                            highPClose = Math.Abs(currentPayload.HighPrice.Value - currentPayload.PreviousPayload.ClosePrice.Value)
-                            lowPClose = Math.Abs(currentPayload.LowPrice.Value - currentPayload.PreviousPayload.ClosePrice.Value)
-                            TR = Math.Max(highLow, Math.Max(highPClose, lowPClose))
-                        End If
+                        Try
+                            If currentPayload.PreviousPayload Is Nothing Then
+                                TR = highLow
+                            Else
+                                highPClose = Math.Abs(currentPayload.HighPrice.Value - currentPayload.PreviousPayload.ClosePrice.Value)
+                                lowPClose = Math.Abs(currentPayload.LowPrice.Value - currentPayload.PreviousPayload.ClosePrice.Value)
+                                TR = Math.Max(highLow, Math.Max(highPClose, lowPClose))
+                            End If
+                        Catch ex As Exception
+                            logger.Error(ex)
+                            Throw ex
+                        End Try
 
                         If previousATRValues Is Nothing OrElse
                             (previousATRValues IsNot Nothing AndAlso previousATRValues.Count < outputConsumer.ATRPeriod) Then

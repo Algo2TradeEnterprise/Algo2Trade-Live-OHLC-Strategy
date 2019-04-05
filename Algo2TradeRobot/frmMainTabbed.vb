@@ -1116,8 +1116,15 @@ Public Class frmMainTabbed
         Dim newForm As New frmEMA_SupertrendTradableInstrumentList(_EMA_SupertrendTradableInstruments)
         newForm.ShowDialog()
     End Sub
-    Private Sub btnEMA_SupertrendExitAll_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendExitAll.Click
-        If _EMASupertrendStrategyToExecute IsNot Nothing Then _EMASupertrendStrategyToExecute.ExitAllTrades = True
+    Private Async Sub btnEMA_SupertrendExitAll_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendExitAll.Click
+        SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, False)
+        If _EMASupertrendStrategyToExecute IsNot Nothing Then
+            _EMASupertrendStrategyToExecute.ExitAllTrades = True
+            While _EMASupertrendStrategyToExecute.ExitAllTrades
+                Await Task.Delay(100).ConfigureAwait(False)
+            End While
+        End If
+        SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, True)
     End Sub
 #End Region
 

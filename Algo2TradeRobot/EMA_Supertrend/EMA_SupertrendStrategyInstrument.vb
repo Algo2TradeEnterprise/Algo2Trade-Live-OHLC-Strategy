@@ -23,6 +23,7 @@ Public Class EMA_SupertrendStrategyInstrument
     Private ReadOnly _dummySlowEMAConsumer As EMAConsumer
     Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
     Private ReadOnly _useST As Boolean = True
+    Private _sendParentOrderDetailsOfOrderId As String = Nothing
     Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
@@ -65,24 +66,39 @@ Public Class EMA_SupertrendStrategyInstrument
                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
                     Dim placeOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
-                    If placeOrderResponse IsNot Nothing Then
-                        GenerateTelegramMessageAsync(String.Format("{0} - Place Order Successful. Reason:{1}, Direction:{2}, Time:{3}", Me.TradableInstrument.TradingSymbol, placeOrderTrigger.Item3, placeOrderTrigger.Item2.EntryDirection.ToString, Now))
+                    If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
+                        placeOrderResponse("data").ContainsKey("order_id") Then
+                        _sendParentOrderDetailsOfOrderId = placeOrderResponse("data")("order_id")
+                        GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Placed, Direction: {2}, Quantity: {3}, Proposed SL Price: {4}", Now, Me.TradableInstrument.TradingSymbol, placeOrderTrigger.Item2.EntryDirection.ToString, placeOrderTrigger.Item2.Quantity, placeOrderTrigger.Item2.TriggerPrice))
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
-                If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                Dim modifyStoplossOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
+                If modifyStoplossOrdersTrigger IsNot Nothing AndAlso modifyStoplossOrdersTrigger.Count > 0 Then
                     Dim modifyOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                     If modifyOrderResponse IsNot Nothing Then
-                        GenerateTelegramMessageAsync(String.Format("{0} - Modify Order Successful. Reason:{1}, Trigger Price:{2}, Time:{3}", Me.TradableInstrument.TradingSymbol, modifyStoplossOrderTrigger.LastOrDefault.Item4, modifyStoplossOrderTrigger.LastOrDefault.Item3, Now))
+                        _sendParentOrderDetailsOfOrderId = Nothing
+                        'For Each modifyStoplossOrderTrigger In modifyStoplossOrdersTrigger
+                        Dim modifyStoplossOrderTrigger As Tuple(Of ExecuteCommandAction, IOrder, Decimal, String) = modifyStoplossOrdersTrigger.LastOrDefault
+                        Dim parentBusinessOrder As IBusinessOrder = GetParentFromChildOrder(modifyStoplossOrderTrigger.Item2)
+                        If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
+                            If modifyStoplossOrderTrigger.Item4 = "Normal SL movement according to SL%" Then
+                                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Executed, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, modifyStoplossOrderTrigger.Item3))
+                            Else
+                                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Modified, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}, Remarks:{6}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, modifyStoplossOrderTrigger.Item3, modifyStoplossOrderTrigger.Item4))
+                            End If
+                        End If
+                        'Next
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
-                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                Dim exitOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                If exitOrdersTrigger IsNot Nothing AndAlso exitOrdersTrigger.Count > 0 Then
                     Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
                     If exitOrderResponse IsNot Nothing Then
-                        GenerateTelegramMessageAsync(String.Format("{0} - Exit Order Successful. Reason:{1}, Time:{2}", Me.TradableInstrument.TradingSymbol, exitOrderTrigger.LastOrDefault.Item3, Now))
+                        'For Each exitOrderTrigger In exitOrdersTrigger
+                        GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Exit Placed, Remarks:{2}", Now, Me.TradableInstrument.TradingSymbol, exitOrdersTrigger.LastOrDefault.Item3))
+                        'Next
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
@@ -241,7 +257,7 @@ Public Class EMA_SupertrendStrategyInstrument
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim emaStUserSettings As EMA_SupertrendStrategyUserInputs = Me.ParentStrategy.UserSettings
 
-        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
             For Each parentOrderId In OrderDetails.Keys
                 Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
                 If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso
@@ -318,6 +334,11 @@ Public Class EMA_SupertrendStrategyInstrument
 
                     For Each slOrder In parentBusinessOrder.SLOrder
                         If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" AndAlso Not slOrder.Status = "REJECTED" Then
+                            If _sendParentOrderDetailsOfOrderId IsNot Nothing AndAlso _sendParentOrderDetailsOfOrderId = parentOrderId AndAlso
+                                slOrder.TriggerPrice = triggerPrice Then
+                                _sendParentOrderDetailsOfOrderId = Nothing
+                                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Executed, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, slOrder.TriggerPrice))
+                            End If
                             If intermediateTargetReached Then
                                 logger.Debug("IT reached")
                                 triggerPrice = runningCandlePayload.OpenPrice.Value
@@ -418,7 +439,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                 End If
 
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, slOrder, triggerPrice, If(intermediateTargetReached, "SL movement for Intermediate Target reached", "Normal SL movement according to SL%")))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, slOrder, triggerPrice, If(intermediateTargetReached, "SL movement due to Intermediate Target reached", "Normal SL movement according to SL%")))
                             End If
                         End If
                     Next
@@ -432,7 +453,7 @@ Public Class EMA_SupertrendStrategyInstrument
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Dim emaStUserSettings As EMA_SupertrendStrategyUserInputs = Me.ParentStrategy.UserSettings
         Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
-        If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+        If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
             Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
                                                                               Return x.ParentOrderIdentifier Is Nothing
                                                                           End Function)
@@ -500,7 +521,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                             Catch ex As Exception
                                                 logger.Error(ex)
                                             End Try
-                                            Await ForceExitSpecificTradeAsync(slOrder, If(lt, "Low Volatility Target% Reached", "Target% Reached")).ConfigureAwait(False)
+                                            Await ForceExitSpecificTradeAsync(slOrder, If(lt, "Low volatility target% reached", "Target% reached")).ConfigureAwait(False)
                                         End If
                                         'Exit for Opposite direction EMA crossover
                                         If IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, False) Then
@@ -543,7 +564,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                                              If(lt, "LT", "T"),
                                                              target,
                                                              Me.TradableInstrument.TradingSymbol)
-                                            Await ForceExitSpecificTradeAsync(slOrder, If(lt, "Low Volatility Target% Reached", "Target% Reached")).ConfigureAwait(False)
+                                            Await ForceExitSpecificTradeAsync(slOrder, If(lt, "Low volatility target% reached", "Target% reached")).ConfigureAwait(False)
                                         End If
                                         'Exit for Opposite direction EMA crossover
                                         If IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, False) Then
@@ -577,7 +598,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                 If emaCrossOver Then
                                     exitReason = "Opposite direction EMA cross over"
                                 ElseIf beyondST Then
-                                    exitReason = "Candle close beyond Supertrend"
+                                    exitReason = "Candle closed beyond Supertrend"
                                 End If
 
                                 Try
@@ -618,7 +639,7 @@ Public Class EMA_SupertrendStrategyInstrument
             }
             Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, cancellableOrder).ConfigureAwait(False)
             If exitOrderResponse IsNot Nothing Then
-                GenerateTelegramMessageAsync(String.Format("{0} - Exit Order Successful. Reason:{1}, Time:{2}", Me.TradableInstrument.TradingSymbol, reason, Now))
+                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Exit Placed, Remarks:{2}", Now, Me.TradableInstrument.TradingSymbol, reason))
             End If
         End If
     End Function

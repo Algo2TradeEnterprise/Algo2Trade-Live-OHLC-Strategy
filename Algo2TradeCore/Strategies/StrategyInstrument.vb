@@ -20,17 +20,29 @@ Namespace Strategies
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent DocumentDownloadCompleteEx(source)
         End Sub
         Protected Overridable Sub OnDocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, source)
         End Sub
         Protected Overridable Sub OnHeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             If TradableInstrument IsNot Nothing Then
                 RaiseEvent HeartbeatEx(String.Format("{0}:{1}", TradableInstrument.InstrumentIdentifier, msg), source)
             Else
@@ -39,7 +51,11 @@ Namespace Strategies
         End Sub
         Protected Overridable Sub OnWaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
             If source IsNot Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             If TradableInstrument IsNot Nothing Then
                 RaiseEvent WaitingForEx(elapsedSecs, totalSecs, String.Format("{0}-{1}", TradableInstrument.InstrumentIdentifier, msg), source)
             Else
@@ -312,6 +328,14 @@ Namespace Strategies
                         End If
                     End If
                 End If
+            End If
+            Return ret
+        End Function
+        Public Function GetParentFromChildOrder(ByVal childOrder As IOrder) As IBusinessOrder
+            Dim ret As IBusinessOrder = Nothing
+            If childOrder IsNot Nothing AndAlso childOrder.ParentOrderIdentifier IsNot Nothing AndAlso
+                OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+                ret = OrderDetails(childOrder.ParentOrderIdentifier)
             End If
             Return ret
         End Function
@@ -643,7 +667,7 @@ Namespace Strategies
             End If
             Return ret
         End Function
-        Public Overridable Async Function ForceExitAllTradesAsync(ByVal reason As String) As Task
+        Public Overridable Async Function ForceExitAllTradesAsync(ByVal reason As String) As Task(Of Boolean)
             'logger.Debug("ForceExitAllTradesAsync, parameters:Nothing")
             Try
                 Dim allCancelableOrders As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = GetAllCancelableOrders(APIAdapter.TransactionType.None)
@@ -651,6 +675,9 @@ Namespace Strategies
                     For Each cancelableOrder In allCancelableOrders
                         Await ForceExitSpecificTradeAsync(cancelableOrder.Item2, reason).ConfigureAwait(False)
                     Next
+                    Return True
+                Else
+                    Return False
                 End If
             Catch cex As OperationCanceledException
                 logger.Error(cex)

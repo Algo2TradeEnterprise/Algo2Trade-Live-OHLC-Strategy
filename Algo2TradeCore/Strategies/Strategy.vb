@@ -18,22 +18,38 @@ Namespace Strategies
         'The below functions are needed to allow the derived classes to raise the above two events
         Protected Overridable Sub OnDocumentDownloadCompleteEx(ByVal source As List(Of Object))
             If source Is Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent DocumentDownloadCompleteEx(source)
         End Sub
         Protected Overridable Sub OnDocumentRetryStatusEx(ByVal currentTry As Integer, ByVal totalTries As Integer, ByVal source As List(Of Object))
             If source Is Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent DocumentRetryStatusEx(currentTry, totalTries, source)
         End Sub
         Protected Overridable Sub OnHeartbeatEx(ByVal msg As String, ByVal source As List(Of Object))
             If source Is Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent HeartbeatEx(msg, source)
         End Sub
         Protected Overridable Sub OnWaitingForEx(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String, ByVal source As List(Of Object))
             If source Is Nothing Then source = New List(Of Object)
-            source.Add(Me)
+            If source.Find(Function(x)
+                               Return x.ToString.Equals(Me.ToString)
+                           End Function) Is Nothing Then
+                source.Add(Me)
+            End If
             RaiseEvent WaitingForEx(elapsedSecs, totalSecs, msg, source)
         End Sub
         Protected Overridable Sub OnDocumentDownloadComplete()
@@ -64,6 +80,7 @@ Namespace Strategies
         Public Property UserSettings As StrategyUserInputs = Nothing
         Public Property ParentController As APIStrategyController
         Public Property SignalManager As SignalStateManager
+        Public Property ExitAllTrades As Boolean
         Public ReadOnly Property MaxNumberOfDaysForHistoricalFetch As Integer
         Public ReadOnly Property IsStrategyCandleStickBased As Boolean
 
@@ -173,9 +190,16 @@ Namespace Strategies
                         TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                         If delayCtr = 5 Then
                             delayCtr = 0
+                            Dim exitAllResponse As Boolean = False
                             For Each runningStrategyInstrument In TradableStrategyInstruments
-                                runningStrategyInstrument.ForceExitAllTradesAsync(triggerResponse.Item2)
+                                exitAllResponse = exitAllResponse Or Await runningStrategyInstrument.ForceExitAllTradesAsync(triggerResponse.Item2).ConfigureAwait(False)
                             Next
+                            If Me.ExitAllTrades AndAlso exitAllResponse Then
+                                OnHeartbeatEx("All active trades exited", New List(Of Object) From {Me})
+                            ElseIf Me.ExitAllTrades Then
+                                OnHeartbeatEx(String.Format("No active trades to exit"), New List(Of Object) From {Me})
+                            End If
+                            Me.ExitAllTrades = False
                         End If
                         delayCtr += 1
                     Else

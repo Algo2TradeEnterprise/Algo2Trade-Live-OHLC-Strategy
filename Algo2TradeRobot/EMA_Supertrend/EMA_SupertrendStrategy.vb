@@ -11,7 +11,6 @@ Public Class EMA_SupertrendStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Property ExitAllTrades As Boolean
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As EMA_SupertrendStrategyUserInputs,
@@ -146,10 +145,10 @@ Public Class EMA_SupertrendStrategy
             ret = New Tuple(Of Boolean, String)(True, "Button Exit")
         ElseIf Me.GetTotalPL <= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxLossPercentagePerDay) * -1 / 100 Then
             logger.Warn("MTM Reached")
-            ret = New Tuple(Of Boolean, String)(True, "Max Loss % Per Day Reached Exit")
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss % Per Day Reached")
         ElseIf Me.GetTotalPL >= capitalAtDayStart * Math.Abs(Me.UserSettings.MaxProfitPercentagePerDay) / 100 Then
             logger.Warn("MTM Reached")
-            ret = New Tuple(Of Boolean, String)(True, "Max Profit % Per Day Reached Exit")
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit % Per Day Reached")
         End If
         Return ret
     End Function
