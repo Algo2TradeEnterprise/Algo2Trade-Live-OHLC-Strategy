@@ -57,8 +57,22 @@ Namespace Entities
             Return _OverallPL
         End Function
 
+        Private _SignalPL As Decimal
+        <Display(Name:="Signal PL", Order:=3)>
+        Public ReadOnly Property SignalPL As Decimal
+            Get
+                If ParentOrderID IsNot Nothing Then
+                    _SignalPL = ParentStrategyInstrument.GetTotalPLOfAnOrder(ParentOrderID)
+                End If
+                Return _SignalPL
+            End Get
+        End Property
+        Public Function GetDirtySignalPL() As Decimal
+            Return _SignalPL
+        End Function
+
         Private _ActiveSignal As Boolean
-        <Display(Name:="Active Signal", Order:=3)>
+        <Display(Name:="Active Signal", Order:=4)>
         Public ReadOnly Property ActiveSignal As Boolean
             Get
                 If ParentStrategyInstrument.IsActiveInstrument() Then
@@ -78,40 +92,26 @@ Namespace Entities
             Return _ActiveSignal
         End Function
 
-        <Display(Name:="Signal Generated Time", Order:=4)>
+        <Display(Name:="Signal Generated Time", Order:=5)>
         Public Property SignalGeneratedTime As Date
 
-        <Display(Name:="Signal Direction", Order:=5)>
+        <Display(Name:="Signal Direction", Order:=6)>
         Public Property SignalDirection As APIAdapter.TransactionType
 
         <System.ComponentModel.Browsable(False)>
         Public Property EntryActivity As Activity
-        <Display(Name:="Entry Request Time", Order:=6)>
+        <Display(Name:="Entry Request Time", Order:=7)>
         Public ReadOnly Property EntryRequestTime As Date
             Get
                 Return EntryActivity.RequestTime
             End Get
         End Property
-        <Display(Name:="Entry Request Status", Order:=7)>
+        <Display(Name:="Entry Request Status", Order:=8)>
         Public ReadOnly Property EntryRequestStatus As SignalStatusType
             Get
                 Return EntryActivity.RequestStatus
             End Get
         End Property
-
-        Private _SignalPL As Decimal
-        <Display(Name:="Signal PL", Order:=8)>
-        Public ReadOnly Property SignalPL As Decimal
-            Get
-                If ParentOrderID IsNot Nothing Then
-                    _SignalPL = ParentStrategyInstrument.GetTotalPLOfAnOrder(ParentOrderID)
-                End If
-                Return _SignalPL
-            End Get
-        End Property
-        Public Function GetDirtySignalPL() As Decimal
-            Return _SignalPL
-        End Function
 
         <System.ComponentModel.Browsable(False)>
         Public Property TargetModifyActivity As Activity

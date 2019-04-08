@@ -248,7 +248,9 @@ Namespace ChartHandler.ChartStyle
             If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
                 Exit Function
             End If
-            'Debug.WriteLine(Utilities.Strings.JsonSerialize(tickData))
+            If tickData.Timestamp.Value < Me._parentInstrument.ExchangeDetails.ExchangeStartTime Then
+                Exit Function
+            End If
 
             Try
                 While 1 = Interlocked.Exchange(_tickLock, 1)
@@ -495,6 +497,8 @@ Namespace ChartHandler.ChartStyle
                         previousPayload = previousPayloads.OrderByDescending(Function(x)
                                                                                  Return x.Key
                                                                              End Function).FirstOrDefault.Value
+                    Else
+                        logger.Error("Previous Payload Nothing for {0}", lastExistingPayload.ToString)
                     End If
 
                     'If lastExistingPayload.PreviousPayload IsNot Nothing AndAlso previousPayload IsNot Nothing Then

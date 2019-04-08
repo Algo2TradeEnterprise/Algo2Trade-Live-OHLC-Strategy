@@ -237,15 +237,83 @@ Namespace ChartHandler.Indicator
                         Dim TR As Decimal = 0
 
                         Try
-                            If currentPayload.PreviousPayload Is Nothing Then
-                                TR = highLow
-                            Else
+                            If currentPayload.PreviousPayload IsNot Nothing Then
                                 highPClose = Math.Abs(currentPayload.HighPrice.Value - currentPayload.PreviousPayload.ClosePrice.Value)
                                 lowPClose = Math.Abs(currentPayload.LowPrice.Value - currentPayload.PreviousPayload.ClosePrice.Value)
                                 TR = Math.Max(highLow, Math.Max(highPClose, lowPClose))
+                            Else
+                                TR = highLow
                             End If
                         Catch ex As Exception
                             logger.Error(ex)
+                            If currentPayload IsNot Nothing Then
+                                If currentPayload.OpenPrice IsNot Nothing Then
+                                    logger.Warn("Current Open: {0}", currentPayload.OpenPrice.Value)
+                                Else
+                                    logger.Warn("Current Open: Error")
+                                End If
+                                If currentPayload.HighPrice IsNot Nothing Then
+                                    logger.Warn("Current High: {0}", currentPayload.HighPrice.Value)
+                                Else
+                                    logger.Warn("Current High: Error")
+                                End If
+                                If currentPayload.LowPrice IsNot Nothing Then
+                                    logger.Warn("Current Low: {0}", currentPayload.LowPrice.Value)
+                                Else
+                                    logger.Warn("Current Low: Error")
+                                End If
+                                If currentPayload.ClosePrice IsNot Nothing Then
+                                    logger.Warn("Current Close: {0}", currentPayload.ClosePrice.Value)
+                                Else
+                                    logger.Warn("Current Close: Error")
+                                End If
+                                If currentPayload.SnapshotDateTime <> Date.MinValue Then
+                                    logger.Warn("Current Time: {0}", currentPayload.SnapshotDateTime)
+                                Else
+                                    logger.Warn("Current Time: Error")
+                                End If
+                                If currentPayload.PayloadGeneratedBy <> OHLCPayload.PayloadSource.None Then
+                                    logger.Warn("Current Source: {0}", currentPayload.PayloadGeneratedBy.ToString)
+                                Else
+                                    logger.Warn("Current Source: Error")
+                                End If
+                            Else
+                                logger.Warn("Current Candle: Error")
+                            End If
+                            If currentPayload.PreviousPayload IsNot Nothing Then
+                                If currentPayload.PreviousPayload.OpenPrice IsNot Nothing Then
+                                    logger.Warn("Previous Open: {0}", currentPayload.PreviousPayload.OpenPrice.Value)
+                                Else
+                                    logger.Warn("Previous Open: Error")
+                                End If
+                                If currentPayload.PreviousPayload.HighPrice IsNot Nothing Then
+                                    logger.Warn("Previous High: {0}", currentPayload.PreviousPayload.HighPrice.Value)
+                                Else
+                                    logger.Warn("Previous High: Error")
+                                End If
+                                If currentPayload.PreviousPayload.LowPrice IsNot Nothing Then
+                                    logger.Warn("Previous Low: {0}", currentPayload.PreviousPayload.LowPrice.Value)
+                                Else
+                                    logger.Warn("Previous Low: Error")
+                                End If
+                                If currentPayload.PreviousPayload.ClosePrice IsNot Nothing Then
+                                    logger.Warn("Previous Close: {0}", currentPayload.PreviousPayload.ClosePrice.Value)
+                                Else
+                                    logger.Warn("Previous Close: Error")
+                                End If
+                                If currentPayload.PreviousPayload.SnapshotDateTime <> Date.MinValue Then
+                                    logger.Warn("Previous Time: {0}", currentPayload.PreviousPayload.SnapshotDateTime)
+                                Else
+                                    logger.Warn("Previous Time: Error")
+                                End If
+                                If currentPayload.PreviousPayload.PayloadGeneratedBy <> OHLCPayload.PayloadSource.None Then
+                                    logger.Warn("Previous Source: {0}", currentPayload.PreviousPayload.PayloadGeneratedBy.ToString)
+                                Else
+                                    logger.Warn("Previous Source: Error")
+                                End If
+                            Else
+                                logger.Warn("Previous Candle: Error")
+                            End If
                             Throw ex
                         End Try
 
