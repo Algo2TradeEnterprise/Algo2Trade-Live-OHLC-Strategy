@@ -49,6 +49,7 @@ Namespace ChartHandler.ChartStyle
                         End If
                         'Dim s As Stopwatch = New Stopwatch
                         's.Start()
+                        Dim onwardCandleUpdate As Boolean = False
                         For Each historicalCandle In historicalCandles
                             Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
 
@@ -140,13 +141,14 @@ Namespace ChartHandler.ChartStyle
                                 'End With
                                 ''''If Not candleNeedsUpdate Then previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
                                 '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
-                            ElseIf Not existingOrAddedPayload.Equals(historicalCandle(1),
-                                                                                    historicalCandle(2),
-                                                                                    historicalCandle(3),
-                                                                                    historicalCandle(4),
-                                                                                    historicalCandle(5),
-                                                                                    runningSnapshotTime) Then
+                            ElseIf onwardCandleUpdate OrElse Not existingOrAddedPayload.Equals(historicalCandle(1),
+                                                                                                historicalCandle(2),
+                                                                                                historicalCandle(3),
+                                                                                                historicalCandle(4),
+                                                                                                historicalCandle(5),
+                                                                                                runningSnapshotTime) Then
                                 candleNeedsUpdate = True
+                                onwardCandleUpdate = True
                             End If
                             If candleNeedsUpdate OrElse freshCandleAdded Then
                                 ''existingOrAddedPayload = runningPayload
@@ -188,26 +190,26 @@ Namespace ChartHandler.ChartStyle
                         's.Stop()
                         'Debug.WriteLine(String.Format("{0}, Time:{1}", _parentInstrument.TradingSymbol, s.ElapsedMilliseconds))
                         _parentInstrument.IsHistoricalCompleted = True
-                        'TODO: Below loop is for checking purpose
+                        ''TODO: Below loop is for checking purpose
                         'For Each payload In _parentInstrument.RawPayloads.OrderBy(Function(x)
                         '                                                              Return x.Key
                         '                                                          End Function)
                         '    Debug.WriteLine(payload.Value.ToString())
                         'Next
-                        'Try
-                        '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
-                        '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
-                        '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
-                        '                                                                        Return x.Key
-                        '                                                                    End Function)
-                        '            If CType(payload.Value, OHLCPayload).PreviousPayload IsNot Nothing Then
-                        '                Debug.WriteLine(payload.Value.ToString())
-                        '            End If
-                        '        Next
-                        '    End If
-                        'Catch ex As Exception
-                        '    Throw ex
-                        'End Try
+                        Try
+                            Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
+                            If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                                For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                                                                                                Return x.Key
+                                                                                            End Function)
+                                    If CType(payload.Value, OHLCPayload).PreviousPayload IsNot Nothing Then
+                                        Debug.WriteLine(payload.Value.ToString())
+                                    End If
+                                Next
+                            End If
+                        Catch ex As Exception
+                            Throw ex
+                        End Try
                         'Try
                         '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
                         '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
@@ -542,7 +544,7 @@ Namespace ChartHandler.ChartStyle
                         .ClosePrice.Value = timeframeCandles.LastOrDefault.Value.ClosePrice.Value
                         .PreviousPayload = previousPayload
                         .Volume.Value = timeframeCandles.Sum(Function(x) x.Value.Volume.Value)
-                        .DailyVolume = currentPayload.DailyVolume
+                        .DailyVolume = timeframeCandles.LastOrDefault.Value.DailyVolume
                         .PayloadGeneratedBy = payloadSource
                     End With
 
@@ -613,7 +615,7 @@ Namespace ChartHandler.ChartStyle
                         .ClosePrice.Value = timeframeCandles.LastOrDefault.Value.ClosePrice.Value
                         .PreviousPayload = previousPayload
                         .Volume.Value = timeframeCandles.Sum(Function(x) x.Value.Volume.Value)
-                        .DailyVolume = currentPayload.DailyVolume
+                        .DailyVolume = timeframeCandles.LastOrDefault.Value.DailyVolume
                         .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
                         .TradingSymbol = currentPayload.TradingSymbol
                     End With
