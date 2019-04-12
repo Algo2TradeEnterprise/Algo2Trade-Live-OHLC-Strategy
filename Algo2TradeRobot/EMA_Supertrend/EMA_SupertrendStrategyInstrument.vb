@@ -65,42 +65,42 @@ Public Class EMA_SupertrendStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
-                    Dim placeOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
-                    If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
-                        placeOrderResponse("data").ContainsKey("order_id") Then
-                        _sendParentOrderDetailsOfOrderId = placeOrderResponse("data")("order_id")
-                        GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Placed, Direction: {2}, Quantity: {3}, Proposed SL Price: {4}", Now, Me.TradableInstrument.TradingSymbol, placeOrderTrigger.Item2.EntryDirection.ToString, placeOrderTrigger.Item2.Quantity, placeOrderTrigger.Item2.TriggerPrice))
-                    End If
+                    'Dim placeOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
+                    'If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
+                    '    placeOrderResponse("data").ContainsKey("order_id") Then
+                    '    _sendParentOrderDetailsOfOrderId = placeOrderResponse("data")("order_id")
+                    '    GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Placed, Direction: {2}, Quantity: {3}, Proposed SL Price: {4}", Now, Me.TradableInstrument.TradingSymbol, placeOrderTrigger.Item2.EntryDirection.ToString, placeOrderTrigger.Item2.Quantity, placeOrderTrigger.Item2.TriggerPrice))
+                    'End If
                 End If
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim modifyStoplossOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
-                If modifyStoplossOrdersTrigger IsNot Nothing AndAlso modifyStoplossOrdersTrigger.Count > 0 Then
-                    Dim modifyOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                    If modifyOrderResponse IsNot Nothing Then
-                        _sendParentOrderDetailsOfOrderId = Nothing
-                        'For Each modifyStoplossOrderTrigger In modifyStoplossOrdersTrigger
-                        Dim modifyStoplossOrderTrigger As Tuple(Of ExecuteCommandAction, IOrder, Decimal, String) = modifyStoplossOrdersTrigger.LastOrDefault
-                        Dim parentBusinessOrder As IBusinessOrder = GetParentFromChildOrder(modifyStoplossOrderTrigger.Item2)
-                        If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
-                            If modifyStoplossOrderTrigger.Item4 = "Normal SL movement according to SL%" Then
-                                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Executed, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, modifyStoplossOrderTrigger.Item3))
-                            Else
-                                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Modified, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}, Remarks:{6}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, modifyStoplossOrderTrigger.Item3, modifyStoplossOrderTrigger.Item4))
-                            End If
-                        End If
-                        'Next
-                    End If
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim exitOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
-                If exitOrdersTrigger IsNot Nothing AndAlso exitOrdersTrigger.Count > 0 Then
-                    Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
-                    If exitOrderResponse IsNot Nothing Then
-                        'For Each exitOrderTrigger In exitOrdersTrigger
-                        GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Exit Placed, Remarks:{2}", Now, Me.TradableInstrument.TradingSymbol, exitOrdersTrigger.LastOrDefault.Item3))
-                        'Next
-                    End If
-                End If
+                '_cts.Token.ThrowIfCancellationRequested()
+                'Dim modifyStoplossOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
+                'If modifyStoplossOrdersTrigger IsNot Nothing AndAlso modifyStoplossOrdersTrigger.Count > 0 Then
+                '    Dim modifyOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                '    If modifyOrderResponse IsNot Nothing Then
+                '        _sendParentOrderDetailsOfOrderId = Nothing
+                '        'For Each modifyStoplossOrderTrigger In modifyStoplossOrdersTrigger
+                '        Dim modifyStoplossOrderTrigger As Tuple(Of ExecuteCommandAction, IOrder, Decimal, String) = modifyStoplossOrdersTrigger.LastOrDefault
+                '        Dim parentBusinessOrder As IBusinessOrder = GetParentFromChildOrder(modifyStoplossOrderTrigger.Item2)
+                '        If parentBusinessOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder IsNot Nothing Then
+                '            If modifyStoplossOrderTrigger.Item4 = "Normal SL movement according to SL%" Then
+                '                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Executed, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, modifyStoplossOrderTrigger.Item3))
+                '            Else
+                '                GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Modified, Direction: {2}, Quantity: {3}, Actual Entry Price:{4}, Actual SL Price: {5}, Remarks:{6}", Now, Me.TradableInstrument.TradingSymbol, parentBusinessOrder.ParentOrder.TransactionType, parentBusinessOrder.ParentOrder.Quantity, parentBusinessOrder.ParentOrder.AveragePrice, modifyStoplossOrderTrigger.Item3, modifyStoplossOrderTrigger.Item4))
+                '            End If
+                '        End If
+                '        'Next
+                '    End If
+                'End If
+                '_cts.Token.ThrowIfCancellationRequested()
+                'Dim exitOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                'If exitOrdersTrigger IsNot Nothing AndAlso exitOrdersTrigger.Count > 0 Then
+                '    Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
+                '    If exitOrderResponse IsNot Nothing Then
+                '        'For Each exitOrderTrigger In exitOrdersTrigger
+                '        GenerateTelegramMessageAsync(String.Format("{0}, {1} - Order Exit Placed, Remarks:{2}", Now, Me.TradableInstrument.TradingSymbol, exitOrdersTrigger.LastOrDefault.Item3))
+                '        'Next
+                '    End If
+                'End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While

@@ -245,6 +245,7 @@ Namespace ChartHandler.ChartStyle
 
         Public Overrides Async Function GetChartFromTickAsync(ByVal tickData As ITick) As Task
             'logger.Debug("{0}->GetChartFromTickAsync, parameters:{1}", Me.ToString, Utilities.Strings.JsonSerialize(tickData))
+            'Exit Function
             If tickData Is Nothing OrElse tickData.Timestamp Is Nothing OrElse tickData.Timestamp.Value = Date.MinValue OrElse tickData.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
                 Exit Function
             End If
@@ -365,6 +366,7 @@ Namespace ChartHandler.ChartStyle
                     '        Debug.WriteLine(payload.Value.ToString())
                     '    End If
                     'Next
+                    'Debug.WriteLine(currentPayload.ToString)
                 End If
                 If tickWasProcessed Then 'If not processed would mean that the tick was for a historical candle that was already processed and not for a live candle
                     If runningPayloads IsNot Nothing AndAlso runningPayloads.Count > 0 Then
@@ -392,7 +394,7 @@ Namespace ChartHandler.ChartStyle
                 '    Next
                 'End If
 
-                ''TODO: Below loop is for checking purpose
+                'TODO: Below loop is for checking purpose
                 'Try
                 '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
                 '    If freshCandle AndAlso outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
@@ -444,6 +446,7 @@ Namespace ChartHandler.ChartStyle
 
         Public Overrides Async Function ConvertTimeframeAsync(ByVal timeframe As Integer, ByVal currentPayload As OHLCPayload, ByVal outputConsumer As PayloadToChartConsumer) As Task(Of Date)
             'logger.Debug("{0}->ConvertTimeframeAsync, parameters:{1},{2},{3}", Me.ToString, timeframe, currentPayload.ToString, outputConsumer.ToString)
+            Dim ret As Date = Date.MinValue
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
             Dim blockDateInThisTimeframe As New Date(currentPayload.SnapshotDateTime.Year,
                                                     currentPayload.SnapshotDateTime.Month,
@@ -473,6 +476,7 @@ Namespace ChartHandler.ChartStyle
                     .Volume.Value = currentPayload.Volume.Value
                 End With
                 outputConsumer.ConsumerPayloads.GetOrAdd(blockDateInThisTimeframe, runninPayload)
+                ret = blockDateInThisTimeframe
             Else
                 Dim lastExistingPayload As OHLCPayload = Nothing
                 If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
@@ -487,82 +491,152 @@ Namespace ChartHandler.ChartStyle
                     Dim previousPayload As OHLCPayload = Nothing
                     Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
                         outputConsumer.ConsumerPayloads.Where(Function(y)
-                                                                  Return y.Key < blockDateInThisTimeframe AndAlso
-                                                                (CType(y.Value, OHLCPayload).PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick OrElse
-                                                                Interlocked.Read(_historicalLock) = 0 OrElse
-                                                                (Interlocked.Read(_historicalLock) = 1 AndAlso
-                                                                currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
+                                                                  Return y.Key < blockDateInThisTimeframe 'AndAlso
+                                                                  '(CType(y.Value, OHLCPayload).PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick OrElse
+                                                                  'Interlocked.Read(_historicalLock) = 0 OrElse
+                                                                  '(Interlocked.Read(_historicalLock) = 1 AndAlso
+                                                                  'currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
                                                               End Function)
+
                     If previousPayloads IsNot Nothing AndAlso previousPayloads.Count > 0 Then
-                        previousPayload = previousPayloads.OrderByDescending(Function(x)
-                                                                                 Return x.Key
-                                                                             End Function).FirstOrDefault.Value
-                    Else
-                        logger.Error("Previous Payload Nothing for {0}", lastExistingPayload.ToString)
+                        Dim potentialPreviousPayload As OHLCPayload = previousPayloads.OrderByDescending(Function(x)
+                                                                                                             Return x.Key
+                                                                                                         End Function).FirstOrDefault.Value
+
+                        Select Case currentPayload.PayloadGeneratedBy
+                            Case OHLCPayload.PayloadSource.Historical
+                                previousPayload = potentialPreviousPayload
+                            Case OHLCPayload.PayloadSource.Tick
+                                If _parentInstrument.IsHistoricalCompleted Then
+                                    previousPayload = potentialPreviousPayload
+                                Else
+                                    If Utilities.Time.IsDateTimeEqualTillMinutes(potentialPreviousPayload.SnapshotDateTime, lastExistingPayload.SnapshotDateTime.AddMinutes(-timeframe)) Then
+                                        previousPayload = potentialPreviousPayload
+                                    Else
+                                        Debug.WriteLine(String.Format("******************************************* candle not processed. {0}", currentPayload.PayloadGeneratedBy.ToString))
+                                    End If
+                                End If
+                        End Select
                     End If
 
-                    'If lastExistingPayload.PreviousPayload IsNot Nothing AndAlso previousPayload IsNot Nothing Then
-                    '    If previousPayload.SnapshotDateTime < lastExistingPayload.PreviousPayload.SnapshotDateTime Then
-                    '        previousPayload = lastExistingPayload.PreviousPayload
-                    '    End If
-                    'End If
-
-                    If currentPayload.SnapshotDateTime = blockDateInThisTimeframe AndAlso currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical Then
-                        lastExistingPayload.OpenPrice.Value = currentPayload.OpenPrice.Value
+                    If previousPayload IsNot Nothing Then
+                        ret = blockDateInThisTimeframe
                     End If
+
+                    'Dim timeframeCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = From candle In _parentInstrument.RawPayloads
+                    '                                                                             Where candle.Key >= blockDateInThisTimeframe AndAlso candle.Key < blockDateInThisTimeframe.AddMinutes(timeframe)
+                    '                                                                             Order By candle.Key
+                    '                                                                             Select candle
+
+                    Dim timeframeCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = _parentInstrument.RawPayloads.Where(Function(x)
+                                                                                                                                         Return x.Key >= blockDateInThisTimeframe AndAlso
+                                                                                                                                         x.Key < blockDateInThisTimeframe.AddMinutes(timeframe)
+                                                                                                                                     End Function).OrderBy(Function(y)
+                                                                                                                                                               Return y.Key
+                                                                                                                                                           End Function)
+
                     With lastExistingPayload
-                        .HighPrice.Value = Math.Max(.HighPrice.Value, currentPayload.HighPrice.Value)
-                        .LowPrice.Value = Math.Min(.LowPrice.Value, currentPayload.LowPrice.Value)
-                        .ClosePrice.Value = currentPayload.ClosePrice.Value
+                        .OpenPrice.Value = timeframeCandles.FirstOrDefault.Value.OpenPrice.Value
+                        .HighPrice.Value = timeframeCandles.Max(Function(x) x.Value.HighPrice.Value)
+                        .LowPrice.Value = timeframeCandles.Min(Function(x) x.Value.LowPrice.Value)
+                        .ClosePrice.Value = timeframeCandles.LastOrDefault.Value.ClosePrice.Value
                         .PreviousPayload = previousPayload
-                        If .PreviousPayload IsNot Nothing AndAlso .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
-                            .Volume.Value = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
-                        Else
-                            .Volume.Value = currentPayload.DailyVolume
-                        End If
+                        .Volume.Value = timeframeCandles.Sum(Function(x) x.Value.Volume.Value)
                         .DailyVolume = currentPayload.DailyVolume
                         .PayloadGeneratedBy = payloadSource
                     End With
 
-                    'If currentPayload.PayloadGeneratedBy = IPayload.PayloadSource.Tick Then
-                    '    If lastExistingPayload.PreviousPayload IsNot Nothing Then Debug.WriteLine(lastExistingPayload)
+                    'If currentPayload.SnapshotDateTime = blockDateInThisTimeframe AndAlso currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical Then
+                    '    lastExistingPayload.OpenPrice.Value = currentPayload.OpenPrice.Value
                     'End If
-                    'Debug.WriteLine(lastExistingPayload)
+                    'With lastExistingPayload
+                    '    .HighPrice.Value = Math.Max(.HighPrice.Value, currentPayload.HighPrice.Value)
+                    '    .LowPrice.Value = Math.Min(.LowPrice.Value, currentPayload.LowPrice.Value)
+                    '    .ClosePrice.Value = currentPayload.ClosePrice.Value
+                    '    .PreviousPayload = previousPayload
+                    '    If .PreviousPayload IsNot Nothing AndAlso .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
+                    '        .Volume.Value = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
+                    '    Else
+                    '        .Volume.Value = currentPayload.DailyVolume
+                    '    End If
+                    '    .DailyVolume = currentPayload.DailyVolume
+                    '    .PayloadGeneratedBy = payloadSource
+                    'End With
                 Else
                     Dim previousPayload As OHLCPayload = Nothing
                     Dim previousPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
                         outputConsumer.ConsumerPayloads.Where(Function(y)
-                                                                  Return y.Key < blockDateInThisTimeframe AndAlso
-                                                                (CType(y.Value, OHLCPayload).PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick OrElse
-                                                                Interlocked.Read(_historicalLock) = 0 OrElse
-                                                                (Interlocked.Read(_historicalLock) = 1 AndAlso
-                                                                currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
+                                                                  Return y.Key < blockDateInThisTimeframe 'AndAlso
+                                                                  '(CType(y.Value, OHLCPayload).PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick OrElse
+                                                                  'Interlocked.Read(_historicalLock) = 0 OrElse
+                                                                  '(Interlocked.Read(_historicalLock) = 1 AndAlso
+                                                                  'currentPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical))
                                                               End Function)
                     If previousPayloads IsNot Nothing AndAlso previousPayloads.Count > 0 Then
-                        previousPayload = previousPayloads.OrderByDescending(Function(x)
-                                                                                 Return x.Key
-                                                                             End Function).FirstOrDefault.Value
+                        Dim potentialPreviousPayload As OHLCPayload = previousPayloads.OrderByDescending(Function(x)
+                                                                                                             Return x.Key
+                                                                                                         End Function).FirstOrDefault.Value
+
+                        Select Case currentPayload.PayloadGeneratedBy
+                            Case OHLCPayload.PayloadSource.Historical
+                                previousPayload = potentialPreviousPayload
+                            Case OHLCPayload.PayloadSource.Tick
+                                If _parentInstrument.IsHistoricalCompleted Then
+                                    previousPayload = potentialPreviousPayload
+                                Else
+                                    If Utilities.Time.IsDateTimeEqualTillMinutes(potentialPreviousPayload.SnapshotDateTime, blockDateInThisTimeframe.AddMinutes(-timeframe)) Then
+                                        previousPayload = potentialPreviousPayload
+                                    Else
+                                        Debug.WriteLine(String.Format("******************************************* candle not processed. {0}", currentPayload.PayloadGeneratedBy.ToString))
+                                    End If
+                                End If
+                        End Select
                     End If
 
-                    Dim runninPayload As New OHLCPayload(payloadSource)
-                    With runninPayload
-                        .OpenPrice.Value = currentPayload.OpenPrice.Value
-                        .HighPrice.Value = currentPayload.HighPrice.Value
-                        .LowPrice.Value = currentPayload.LowPrice.Value
-                        .ClosePrice.Value = currentPayload.ClosePrice.Value
+                    If previousPayload IsNot Nothing Then
+                        ret = blockDateInThisTimeframe
+                    End If
+
+                    Dim timeframeCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = _parentInstrument.RawPayloads.Where(Function(x)
+                                                                                                                                         Return x.Key >= blockDateInThisTimeframe AndAlso
+                                                                                                                                         x.Key < blockDateInThisTimeframe.AddMinutes(timeframe)
+                                                                                                                                     End Function).OrderBy(Function(y)
+                                                                                                                                                               Return y.Key
+                                                                                                                                                           End Function)
+
+                    Dim runningPayload As New OHLCPayload(payloadSource)
+                    With runningPayload
+                        .SnapshotDateTime = blockDateInThisTimeframe
+                        .OpenPrice.Value = timeframeCandles.FirstOrDefault.Value.OpenPrice.Value
+                        .HighPrice.Value = timeframeCandles.Max(Function(x) x.Value.HighPrice.Value)
+                        .LowPrice.Value = timeframeCandles.Min(Function(x) x.Value.LowPrice.Value)
+                        .ClosePrice.Value = timeframeCandles.LastOrDefault.Value.ClosePrice.Value
+                        .PreviousPayload = previousPayload
+                        .Volume.Value = timeframeCandles.Sum(Function(x) x.Value.Volume.Value)
                         .DailyVolume = currentPayload.DailyVolume
                         .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
-                        .PreviousPayload = previousPayload
-                        .SnapshotDateTime = blockDateInThisTimeframe
                         .TradingSymbol = currentPayload.TradingSymbol
-                        If .PreviousPayload IsNot Nothing AndAlso
-                            .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
-                            .Volume.Value = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
-                        Else
-                            .Volume.Value = currentPayload.DailyVolume
-                        End If
                     End With
-                    outputConsumer.ConsumerPayloads.GetOrAdd(runninPayload.SnapshotDateTime, runninPayload)
+
+                    'Dim runningPayload As New OHLCPayload(payloadSource)
+                    'With runningPayload
+                    '    .OpenPrice.Value = currentPayload.OpenPrice.Value
+                    '    .HighPrice.Value = currentPayload.HighPrice.Value
+                    '    .LowPrice.Value = currentPayload.LowPrice.Value
+                    '    .ClosePrice.Value = currentPayload.ClosePrice.Value
+                    '    .DailyVolume = currentPayload.DailyVolume
+                    '    .NumberOfTicks = 0 ' Cannot caluclated as histrical will not have the value
+                    '    .PreviousPayload = previousPayload
+                    '    .SnapshotDateTime = blockDateInThisTimeframe
+                    '    .TradingSymbol = currentPayload.TradingSymbol
+                    '    If .PreviousPayload IsNot Nothing AndAlso
+                    '        .SnapshotDateTime.Date = .PreviousPayload.SnapshotDateTime.Date Then
+                    '        .Volume.Value = currentPayload.DailyVolume - .PreviousPayload.DailyVolume
+                    '    Else
+                    '        .Volume.Value = currentPayload.DailyVolume
+                    '    End If
+                    'End With
+                    outputConsumer.ConsumerPayloads.GetOrAdd(runningPayload.SnapshotDateTime, runningPayload)
 
                     ''TODO: Below loop is for checking purpose
                     'For Each payload In outputConsumer.ChartPayloads.OrderBy(Function(x)
@@ -578,7 +652,7 @@ Namespace ChartHandler.ChartStyle
                     'Debug.WriteLine(runninPayload.PreviousPayload.ToString)
                 End If
             End If
-            Return blockDateInThisTimeframe
+            Return ret
         End Function
         Public Function UpdateHistoricalCandleStick(ByVal runningCandleTime As Date,
                                                     ByVal open As Decimal,
