@@ -933,6 +933,7 @@ Public Class frmMainTabbed
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
+            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
@@ -1081,6 +1082,15 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnEMA_SupertrendStart_Click(sender As Object, e As EventArgs) Handles btnEMA_SupertrendStart.Click
+        Dim authenticationUserId As String = "YH8805"
+        If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
+            Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
+            (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "DK4056" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
+            MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+            Exit Sub
+        End If
+
         PreviousDayCleanup()
         Await Task.Run(AddressOf EMA_SupertrendWorkerAsync).ConfigureAwait(False)
 
@@ -1231,6 +1241,7 @@ Public Class frmMainTabbed
             Select Case mode
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendSettings, False)
                     SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStop, True)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
@@ -1260,6 +1271,7 @@ Public Class frmMainTabbed
                     End If
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendSettings, True)
                     SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, Nothing)
             End Select
@@ -1284,11 +1296,11 @@ Public Class frmMainTabbed
 
         tmrTickerStatusCommon.Enabled = False
 
-        'Dim trialEndDate As Date = New Date(2019, 3, 16, 0, 0, 0)
-        'If Now() >= trialEndDate Then
-        '    MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-        '    End
-        'End If
+        Dim trialEndDate As Date = New Date(2019, 4, 17, 0, 0, 0)
+        If Now() >= trialEndDate Then
+            MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+            End
+        End If
 
         If tmrTickerStatusCommon.Interval = 700 Then
             tmrTickerStatusCommon.Interval = 2000
@@ -1440,9 +1452,9 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(EMA_SupertrendStrategy))
-        'tabMain.TabPages.Remove(tabOHL)
-        'tabMain.TabPages.Remove(tabMomentumReversal)
-        'tabMain.TabPages.Remove(tabAmiSignal)
+        tabMain.TabPages.Remove(tabOHL)
+        tabMain.TabPages.Remove(tabMomentumReversal)
+        tabMain.TabPages.Remove(tabAmiSignal)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)

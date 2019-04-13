@@ -196,20 +196,20 @@ Namespace ChartHandler.ChartStyle
                         '                                                          End Function)
                         '    Debug.WriteLine(payload.Value.ToString())
                         'Next
-                        Try
-                            Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
-                            If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
-                                For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
-                                                                                                Return x.Key
-                                                                                            End Function)
-                                    If CType(payload.Value, OHLCPayload).PreviousPayload IsNot Nothing Then
-                                        Debug.WriteLine(payload.Value.ToString())
-                                    End If
-                                Next
-                            End If
-                        Catch ex As Exception
-                            Throw ex
-                        End Try
+                        'Try
+                        '    Dim outputConsumer As PayloadToChartConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadDependentConsumers.FirstOrDefault
+                        '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                        '        For Each payload In outputConsumer.ConsumerPayloads.OrderBy(Function(x)
+                        '                                                                        Return x.Key
+                        '                                                                    End Function)
+                        '            If CType(payload.Value, OHLCPayload).PreviousPayload IsNot Nothing Then
+                        '                Debug.WriteLine(payload.Value.ToString())
+                        '            End If
+                        '        Next
+                        '    End If
+                        'Catch ex As Exception
+                        '    Throw ex
+                        'End Try
                         'Try
                         '    Dim outputConsumer As PayloadToIndicatorConsumer = _subscribedStrategyInstruments.FirstOrDefault.RawPayloadConsumers.FirstOrDefault.OnwardLevelConsumers.FirstOrDefault
                         '    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
