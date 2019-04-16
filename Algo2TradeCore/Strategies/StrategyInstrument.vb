@@ -212,7 +212,7 @@ Namespace Strategies
                                     firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
                         End Select
                         If printDetails Then
-                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CrossSide:{4}, CurrentCandle:{5}, Condition:{6}, [{7},{8}][{9},{10}], IsCrossover:{11}, TradingSymbol:{12}",
+                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CurrentCandle:{5}, Condition:{6}, [{7},{8}][{9},{10}], CrossSide:{4}, IsCrossover:{11}, TradingSymbol:{12}",
                                           firstDummyConsumer.ToString,
                                           secondDummyConsumer.ToString,
                                           firstDummyConsumerField.ToString,
@@ -224,6 +224,59 @@ Namespace Strategies
                                           secondConsumerPreviousValueField.Value,
                                           firstConsumerCurrentValueField.Value,
                                           secondConsumerCurrentValueField.Value,
+                                          ret,
+                                          Me.TradableInstrument.TradingSymbol)
+                        End If
+                    End If
+                End If
+            End If
+            Return ret
+        End Function
+        Public Function IsAboveOrBelow(ByVal firstDummyConsumer As PayloadToIndicatorConsumer,
+                                        ByVal secondDummyConsumer As PayloadToIndicatorConsumer,
+                                        ByVal firstDummyConsumerField As TypeOfField,
+                                        ByVal secondDummyConsumerField As TypeOfField,
+                                        ByVal currentCandle As OHLCPayload,
+                                        ByVal position As Enums.Position,
+                                        ByVal printDetails As Boolean) As Boolean
+            Dim ret As Boolean = False
+            If currentCandle IsNot Nothing AndAlso currentCandle.PreviousPayload IsNot Nothing AndAlso currentCandle.PreviousPayload.PreviousPayload IsNot Nothing Then
+                Dim firstConsumer As PayloadToIndicatorConsumer = GetConsumer(RawPayloadDependentConsumers, firstDummyConsumer)
+                Dim secondConsumer As PayloadToIndicatorConsumer = GetConsumer(RawPayloadDependentConsumers, secondDummyConsumer)
+
+                If firstConsumer IsNot Nothing AndAlso secondConsumer IsNot Nothing AndAlso
+                    firstConsumer.ConsumerPayloads IsNot Nothing AndAlso firstConsumer.ConsumerPayloads.Count > 0 AndAlso
+                    secondConsumer.ConsumerPayloads IsNot Nothing AndAlso secondConsumer.ConsumerPayloads.Count > 0 Then
+                    Dim firstConsumerCurrentValue As IPayload = Nothing
+                    Dim secondConsumerCurrentValue As IPayload = Nothing
+
+                    If firstConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.SnapshotDateTime) Then
+                        firstConsumerCurrentValue = firstConsumer.ConsumerPayloads(currentCandle.PreviousPayload.SnapshotDateTime)
+                    End If
+                    If secondConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.SnapshotDateTime) Then
+                        secondConsumerCurrentValue = secondConsumer.ConsumerPayloads(currentCandle.PreviousPayload.SnapshotDateTime)
+                    End If
+
+                    If firstConsumerCurrentValue IsNot Nothing AndAlso secondConsumerCurrentValue IsNot Nothing Then
+                        Dim firstConsumerCurrentValueField As Field = GetFieldFromType(firstConsumerCurrentValue, firstDummyConsumerField)
+                        Dim secondConsumerCurrentValueField As Field = GetFieldFromType(secondConsumerCurrentValue, secondDummyConsumerField)
+                        Select Case position
+                            Case Position.Above
+                                ret = firstConsumerCurrentValueField.Value > secondConsumerCurrentValueField.Value
+                            Case Position.Below
+                                ret = firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
+                        End Select
+                        If printDetails Then
+                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CurrentCandle:{4}, Condition:{5}, [{6},{7}], Position:{8}, IsAboveOrBelow:{9}, TradingSymbol:{10}",
+                                          firstDummyConsumer.ToString,
+                                          secondDummyConsumer.ToString,
+                                          firstDummyConsumerField.ToString,
+                                          secondDummyConsumerField.ToString,
+                                          currentCandle.ToString,
+                                          If(position = Position.Above, "[x>y]", "[x<y]"),
+                                          firstConsumerCurrentValueField.Value,
+                                          secondConsumerCurrentValueField.Value,
+                                          position.ToString,
                                           ret,
                                           Me.TradableInstrument.TradingSymbol)
                         End If

@@ -91,6 +91,21 @@ Partial Class frmMainTabbed
         Me.tmrOHLTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrAmiSignalTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrEMA_SupertrendTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tabNearFarHedging = New System.Windows.Forms.TabPage()
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.TableLayoutPanel2 = New System.Windows.Forms.TableLayoutPanel()
+        Me.Button1 = New System.Windows.Forms.Button()
+        Me.Button2 = New System.Windows.Forms.Button()
+        Me.Button3 = New System.Windows.Forms.Button()
+        Me.Panel5 = New System.Windows.Forms.Panel()
+        Me.LedBulb1 = New Bulb.LedBulb()
+        Me.Label1 = New System.Windows.Forms.Label()
+        Me.Button4 = New System.Windows.Forms.Button()
+        Me.LinkLabel1 = New System.Windows.Forms.LinkLabel()
+        Me.TableLayoutPanel3 = New System.Windows.Forms.TableLayoutPanel()
+        Me.TableLayoutPanel4 = New System.Windows.Forms.TableLayoutPanel()
+        Me.ListBox1 = New System.Windows.Forms.ListBox()
+        Me.SfDataGrid1 = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabEMA_Supertrend.SuspendLayout()
@@ -123,6 +138,13 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvAmiSignalMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.tabNearFarHedging.SuspendLayout()
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.SuspendLayout()
+        Me.TableLayoutPanel2.SuspendLayout()
+        Me.Panel5.SuspendLayout()
+        Me.TableLayoutPanel3.SuspendLayout()
+        Me.TableLayoutPanel4.SuspendLayout()
+        CType(Me.SfDataGrid1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'msMainMenuStrip
@@ -165,6 +187,7 @@ Partial Class frmMainTabbed
         '
         'tabMain
         '
+        Me.tabMain.Controls.Add(Me.tabNearFarHedging)
         Me.tabMain.Controls.Add(Me.tabEMA_Supertrend)
         Me.tabMain.Controls.Add(Me.tabMomentumReversal)
         Me.tabMain.Controls.Add(Me.tabOHL)
@@ -999,6 +1022,217 @@ Partial Class frmMainTabbed
         '
         Me.tmrEMA_SupertrendTickerStatus.Enabled = True
         '
+        'tabNearFarHedging
+        '
+        Me.tabNearFarHedging.Controls.Add(Me.pnlNearFarHedgingMainPanelHorizontalSplitter)
+        Me.tabNearFarHedging.Location = New System.Drawing.Point(4, 25)
+        Me.tabNearFarHedging.Name = "tabNearFarHedging"
+        Me.tabNearFarHedging.Size = New System.Drawing.Size(1363, 693)
+        Me.tabNearFarHedging.TabIndex = 4
+        Me.tabNearFarHedging.Text = "Near Far Hedging"
+        Me.tabNearFarHedging.UseVisualStyleBackColor = True
+        '
+        'pnlNearFarHedgingMainPanelHorizontalSplitter
+        '
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Controls.Add(Me.TableLayoutPanel2, 0, 0)
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Controls.Add(Me.TableLayoutPanel3, 0, 1)
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Location = New System.Drawing.Point(0, 0)
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Name = "pnlNearFarHedgingMainPanelHorizontalSplitter"
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 693)
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.TabIndex = 2
+        '
+        'TableLayoutPanel2
+        '
+        Me.TableLayoutPanel2.ColumnCount = 15
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.TableLayoutPanel2.Controls.Add(Me.Button1, 0, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.Button2, 0, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.Button3, 0, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.Panel5, 14, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.Button4, 9, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.LinkLabel1, 10, 0)
+        Me.TableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel2.Location = New System.Drawing.Point(4, 4)
+        Me.TableLayoutPanel2.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel2.Name = "TableLayoutPanel2"
+        Me.TableLayoutPanel2.RowCount = 1
+        Me.TableLayoutPanel2.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel2.Size = New System.Drawing.Size(1355, 40)
+        Me.TableLayoutPanel2.TabIndex = 0
+        '
+        'Button1
+        '
+        Me.Button1.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.Button1.Enabled = False
+        Me.Button1.Location = New System.Drawing.Point(184, 4)
+        Me.Button1.Margin = New System.Windows.Forms.Padding(4)
+        Me.Button1.Name = "Button1"
+        Me.Button1.Size = New System.Drawing.Size(82, 32)
+        Me.Button1.TabIndex = 13
+        Me.Button1.Text = "Exit All"
+        Me.Button1.UseVisualStyleBackColor = True
+        '
+        'Button2
+        '
+        Me.Button2.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.Button2.Location = New System.Drawing.Point(94, 4)
+        Me.Button2.Margin = New System.Windows.Forms.Padding(4)
+        Me.Button2.Name = "Button2"
+        Me.Button2.Size = New System.Drawing.Size(82, 32)
+        Me.Button2.TabIndex = 10
+        Me.Button2.Text = "Stop"
+        Me.Button2.UseVisualStyleBackColor = True
+        '
+        'Button3
+        '
+        Me.Button3.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.Button3.Location = New System.Drawing.Point(4, 4)
+        Me.Button3.Margin = New System.Windows.Forms.Padding(4)
+        Me.Button3.Name = "Button3"
+        Me.Button3.Size = New System.Drawing.Size(82, 32)
+        Me.Button3.TabIndex = 2
+        Me.Button3.Text = "Start"
+        Me.Button3.UseVisualStyleBackColor = True
+        '
+        'Panel5
+        '
+        Me.Panel5.Controls.Add(Me.LedBulb1)
+        Me.Panel5.Controls.Add(Me.Label1)
+        Me.Panel5.Location = New System.Drawing.Point(1201, 4)
+        Me.Panel5.Margin = New System.Windows.Forms.Padding(4)
+        Me.Panel5.Name = "Panel5"
+        Me.Panel5.Size = New System.Drawing.Size(146, 31)
+        Me.Panel5.TabIndex = 9
+        '
+        'LedBulb1
+        '
+        Me.LedBulb1.Color = System.Drawing.Color.Pink
+        Me.LedBulb1.Dock = System.Windows.Forms.DockStyle.Right
+        Me.LedBulb1.Location = New System.Drawing.Point(99, 0)
+        Me.LedBulb1.Margin = New System.Windows.Forms.Padding(4)
+        Me.LedBulb1.Name = "LedBulb1"
+        Me.LedBulb1.On = True
+        Me.LedBulb1.Size = New System.Drawing.Size(47, 31)
+        Me.LedBulb1.TabIndex = 7
+        Me.LedBulb1.Text = "LedBulb1"
+        '
+        'Label1
+        '
+        Me.Label1.AutoSize = True
+        Me.Label1.Location = New System.Drawing.Point(9, 9)
+        Me.Label1.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.Label1.Name = "Label1"
+        Me.Label1.Size = New System.Drawing.Size(91, 17)
+        Me.Label1.TabIndex = 9
+        Me.Label1.Text = "Ticker Status"
+        '
+        'Button4
+        '
+        Me.Button4.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.Button4.Location = New System.Drawing.Point(814, 4)
+        Me.Button4.Margin = New System.Windows.Forms.Padding(4)
+        Me.Button4.Name = "Button4"
+        Me.Button4.Size = New System.Drawing.Size(82, 32)
+        Me.Button4.TabIndex = 11
+        Me.Button4.Text = "Settings"
+        Me.Button4.UseVisualStyleBackColor = True
+        '
+        'LinkLabel1
+        '
+        Me.LinkLabel1.AutoSize = True
+        Me.LinkLabel1.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.LinkLabel1.Enabled = False
+        Me.LinkLabel1.Location = New System.Drawing.Point(903, 0)
+        Me.LinkLabel1.Name = "LinkLabel1"
+        Me.LinkLabel1.Size = New System.Drawing.Size(220, 40)
+        Me.LinkLabel1.TabIndex = 12
+        Me.LinkLabel1.TabStop = True
+        Me.LinkLabel1.Text = "Tradable Instruments: 0"
+        Me.LinkLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
+        'TableLayoutPanel3
+        '
+        Me.TableLayoutPanel3.ColumnCount = 2
+        Me.TableLayoutPanel3.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.TableLayoutPanel3.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.TableLayoutPanel3.Controls.Add(Me.TableLayoutPanel4, 0, 0)
+        Me.TableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel3.Location = New System.Drawing.Point(4, 52)
+        Me.TableLayoutPanel3.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel3.Name = "TableLayoutPanel3"
+        Me.TableLayoutPanel3.RowCount = 1
+        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 637.0!))
+        Me.TableLayoutPanel3.Size = New System.Drawing.Size(1355, 637)
+        Me.TableLayoutPanel3.TabIndex = 1
+        '
+        'TableLayoutPanel4
+        '
+        Me.TableLayoutPanel4.ColumnCount = 1
+        Me.TableLayoutPanel4.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel4.Controls.Add(Me.ListBox1, 0, 1)
+        Me.TableLayoutPanel4.Controls.Add(Me.SfDataGrid1, 0, 0)
+        Me.TableLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel4.Location = New System.Drawing.Point(4, 4)
+        Me.TableLayoutPanel4.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel4.Name = "TableLayoutPanel4"
+        Me.TableLayoutPanel4.RowCount = 2
+        Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.TableLayoutPanel4.Size = New System.Drawing.Size(940, 629)
+        Me.TableLayoutPanel4.TabIndex = 0
+        '
+        'ListBox1
+        '
+        Me.ListBox1.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.ListBox1.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
+        Me.ListBox1.FormattingEnabled = True
+        Me.ListBox1.ItemHeight = 16
+        Me.ListBox1.Location = New System.Drawing.Point(4, 444)
+        Me.ListBox1.Margin = New System.Windows.Forms.Padding(4)
+        Me.ListBox1.Name = "ListBox1"
+        Me.ListBox1.Size = New System.Drawing.Size(932, 181)
+        Me.ListBox1.TabIndex = 9
+        '
+        'SfDataGrid1
+        '
+        Me.SfDataGrid1.AccessibleName = "Table"
+        Me.SfDataGrid1.AllowDraggingColumns = True
+        Me.SfDataGrid1.AllowEditing = False
+        Me.SfDataGrid1.AllowFiltering = True
+        Me.SfDataGrid1.AllowResizingColumns = True
+        Me.SfDataGrid1.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
+        Me.SfDataGrid1.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
+        Me.SfDataGrid1.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.SfDataGrid1.Location = New System.Drawing.Point(4, 4)
+        Me.SfDataGrid1.Margin = New System.Windows.Forms.Padding(4)
+        Me.SfDataGrid1.Name = "SfDataGrid1"
+        Me.SfDataGrid1.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
+        Me.SfDataGrid1.Size = New System.Drawing.Size(932, 432)
+        Me.SfDataGrid1.TabIndex = 6
+        Me.SfDataGrid1.Text = "SfDataGrid1"
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -1052,6 +1286,15 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvAmiSignalMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tabNearFarHedging.ResumeLayout(False)
+        Me.pnlNearFarHedgingMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.TableLayoutPanel2.ResumeLayout(False)
+        Me.TableLayoutPanel2.PerformLayout()
+        Me.Panel5.ResumeLayout(False)
+        Me.Panel5.PerformLayout()
+        Me.TableLayoutPanel3.ResumeLayout(False)
+        Me.TableLayoutPanel4.ResumeLayout(False)
+        CType(Me.SfDataGrid1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -1124,4 +1367,19 @@ Partial Class frmMainTabbed
     Friend WithEvents sfdgvEMA_SupertrendMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrEMA_SupertrendTickerStatus As Timer
     Friend WithEvents btnEMA_SupertrendExitAll As Button
+    Friend WithEvents tabNearFarHedging As TabPage
+    Friend WithEvents pnlNearFarHedgingMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents TableLayoutPanel2 As TableLayoutPanel
+    Friend WithEvents Button1 As Button
+    Friend WithEvents Button2 As Button
+    Friend WithEvents Button3 As Button
+    Friend WithEvents Panel5 As Panel
+    Friend WithEvents LedBulb1 As Bulb.LedBulb
+    Friend WithEvents Label1 As Label
+    Friend WithEvents Button4 As Button
+    Friend WithEvents LinkLabel1 As LinkLabel
+    Friend WithEvents TableLayoutPanel3 As TableLayoutPanel
+    Friend WithEvents TableLayoutPanel4 As TableLayoutPanel
+    Friend WithEvents ListBox1 As ListBox
+    Friend WithEvents SfDataGrid1 As Syncfusion.WinForms.DataGrid.SfDataGrid
 End Class

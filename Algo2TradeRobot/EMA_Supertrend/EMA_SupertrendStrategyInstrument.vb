@@ -121,7 +121,7 @@ Public Class EMA_SupertrendStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = lastPrevPayloadPlaceOrder Then
                     lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2}, PayloadGeneratedBy:{3}, IsActiveInstrument:{4}, IsHistoricalCompleted:{5}, MTM Loss: {6}, MTM Profit: {7}, TotalStrategyPL:{8}, IsCrossover(above):{9}, IsCrossover(below):{10}, SupertrendColor:{11}, Supertrend:{12}, Quantity:{13}, Stoploss%:{14}, IT%:{15}, T%:{16}, LVT%:{17}, LVStartTime:{18}, LVEndYime:{19}, TradingSymbol:{20}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2}, PayloadGeneratedBy:{3}, IsActiveInstrument:{4}, IsHistoricalCompleted:{5}, Capital at Day Start:{21}, MTM Loss: {6}, MTM Profit: {7}, TotalStrategyPL:{8}, IsAboveOrBelow(above):{9}, IsAboveOrBelow(below):{10}, SupertrendColor:{11}, Supertrend:{12}, Quantity:{13}, Stoploss%:{14}, IT%:{15}, T%:{16}, LVT%:{17}, LVStartTime:{18}, LVEndYime:{19}, TradingSymbol:{20}",
                     emaStUserSettings.TradeStartTime,
                     emaStUserSettings.LastTradeEntryTime,
                     runningCandlePayload.SnapshotDateTime.ToString,
@@ -131,8 +131,8 @@ Public Class EMA_SupertrendStrategyInstrument
                     capitalAtDayStart * Math.Abs(emaStUserSettings.MaxLossPercentagePerDay) * -1 / 100,
                     capitalAtDayStart * Math.Abs(emaStUserSettings.MaxProfitPercentagePerDay) / 100,
                     Me.ParentStrategy.GetTotalPL,
-                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
-                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
+                    IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Above, True),
+                    IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Below, True),
                     CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString,
                     CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value,
                     Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity,
@@ -142,7 +142,8 @@ Public Class EMA_SupertrendStrategyInstrument
                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityTargetPercentage,
                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityStartTime.ToString,
                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).LowVolatilityExitTime.ToString,
-                    Me.TradableInstrument.TradingSymbol)
+                    Me.TradableInstrument.TradingSymbol,
+                    capitalAtDayStart)
                 End If
             End If
         Catch ex As Exception
@@ -161,7 +162,7 @@ Public Class EMA_SupertrendStrategyInstrument
             Dim triggerPrice As Decimal = Nothing
             Dim quantity As Integer = Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity
 
-            If IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, False) AndAlso
+            If IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Above, False) AndAlso
                 supertrendConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
                 (Not _useST Or CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Green) Then
 
@@ -172,7 +173,7 @@ Public Class EMA_SupertrendStrategyInstrument
                                    .Quantity = quantity,
                                    .TriggerPrice = triggerPrice,
                                    .SignalCandle = runningCandlePayload}
-            ElseIf IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, False) AndAlso
+            ElseIf IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Below, False) AndAlso
                 supertrendConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
                 (Not _useST Or CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Red) Then
 
@@ -195,7 +196,7 @@ Public Class EMA_SupertrendStrategyInstrument
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
                     logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, LastTradeEntryTime:{1}, RunningCandlePayloadSnapshotDateTime:{2},
                                 PayloadGeneratedBy:{3}, IsActiveInstrument:{4}, IsHistoricalCompleted:{5}, MTM Loss: {6}, MTM Profit: {7}, 
-                                TotalStrategyPL:{8}, IsCrossover(above):{9}, IsCrossover(below):{10}, SupertrendColor:{11}, Quantity:{12},
+                                TotalStrategyPL:{8}, IsAboveOrBelow(above):{9}, IsAboveOrBelow(below):{10}, SupertrendColor:{11}, Quantity:{12},
                                 Stoploss%(SL):{13}, IT%:{14}, T%:{15}, LVT%:{16}, LVStartTime:{17}, LVEndYime:{18}, 
                                 MarketPrice(MP):{19}, TriggerPrice[MP{20}MP*SL/100]:{21}, TradingSymbol:{22}",
                                     emaStUserSettings.TradeStartTime,
@@ -207,8 +208,8 @@ Public Class EMA_SupertrendStrategyInstrument
                                     capitalAtDayStart * Math.Abs(emaStUserSettings.MaxLossPercentagePerDay) * -1 / 100,
                                     capitalAtDayStart * Math.Abs(emaStUserSettings.MaxProfitPercentagePerDay) / 100,
                                     Me.ParentStrategy.GetTotalPL,
-                                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, True),
-                                    IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, True),
+                                    IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Above, True),
+                                    IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Below, True),
                                     CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.ToString,
                                     Me.TradableInstrument.LotSize * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).Quantity,
                                     emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage,

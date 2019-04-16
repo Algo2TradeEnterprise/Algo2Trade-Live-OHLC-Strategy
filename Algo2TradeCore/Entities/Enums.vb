@@ -1,6 +1,6 @@
 ﻿Namespace Entities
     Public Module Enums
-        Public Enum APISource
+        Enum APISource
             Zerodha = 1
             Upstox
             None
@@ -11,10 +11,6 @@
             CDS
             None
         End Enum
-        'Enum Indicator
-        '    SMA = 1
-        '    None
-        'End Enum
         Enum TypeOfField
             Open
             Low
@@ -26,7 +22,11 @@
             ATR
             Supertrend
         End Enum
-        Public Enum CrossDirection
+        Enum CrossDirection
+            Above = 1
+            Below
+        End Enum
+        Public Enum Position
             Above = 1
             Below
         End Enum

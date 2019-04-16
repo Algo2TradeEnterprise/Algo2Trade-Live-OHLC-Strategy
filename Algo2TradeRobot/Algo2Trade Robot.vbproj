@@ -166,6 +166,21 @@
     <Compile Include="MomentumReversal\MomentumReversalStrategy.vb" />
     <Compile Include="MomentumReversal\MomentumReversalStrategyInstrument.vb" />
     <Compile Include="MomentumReversal\MomentumReversalUserInputs.vb" />
+    <Compile Include="NearFarHedging\frmNearFarHedgingSettings.Designer.vb">
+      <DependentUpon>frmNearFarHedgingSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="NearFarHedging\frmNearFarHedgingSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmNearFarHedgingTradableInstrumentList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NearFarHedging\NearFarHedgingStrategy.vb" />
+    <Compile Include="NearFarHedging\NearFarHedgingStrategyInstrument.vb" />
+    <Compile Include="NearFarHedging\NearFarHedgingUserInputs.vb" />
     <Compile Include="OHL\frmOHLSettings.Designer.vb">
       <DependentUpon>frmOHLSettings.vb</DependentUpon>
     </Compile>
@@ -227,6 +242,9 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.resx">
+      <DependentUpon>frmNearFarHedgingTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="OHL\frmOHLSettings.resx">
       <DependentUpon>frmOHLSettings.vb</DependentUpon>

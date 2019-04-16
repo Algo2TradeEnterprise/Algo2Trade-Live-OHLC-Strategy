@@ -327,6 +327,7 @@ Namespace Adapter
                 'OnHeartbeat(String.Format("Creating Zerodha order collection from API orders, count:{0}", tempRet.count))
                 logger.Debug(String.Format("Creating IBussinessUserMargin from API User Margin", Utils.JsonSerialize(tempRet)))
                 Dim zerodhaReturedUserMarginResponse As UserMarginsResponse = CType(tempRet, UserMarginsResponse)
+                logger.Debug(Utilities.Strings.JsonSerialize(zerodhaReturedUserMarginResponse))
                 Dim equityMargin As New ZerodhaUserMargin With
                     {.WrappedUserMargin = zerodhaReturedUserMarginResponse.Equity}
                 Dim commodityMargin As New ZerodhaUserMargin With
