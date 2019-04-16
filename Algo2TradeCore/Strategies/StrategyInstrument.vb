@@ -212,7 +212,7 @@ Namespace Strategies
                                     firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
                         End Select
                         If printDetails Then
-                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CurrentCandle:{5}, Condition:{6}, [{7},{8}][{9},{10}], CrossSide:{4}, IsCrossover:{11}, TradingSymbol:{12}",
+                            logger.Debug("IsCrossover-> FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CurrentCandle:{5}, Condition:{6}, [{7},{8}][{9},{10}], CrossSide:{4}, IsCrossover:{11}, TradingSymbol:{12}",
                                           firstDummyConsumer.ToString,
                                           secondDummyConsumer.ToString,
                                           firstDummyConsumerField.ToString,
@@ -267,7 +267,7 @@ Namespace Strategies
                                 ret = firstConsumerCurrentValueField.Value < secondConsumerCurrentValueField.Value
                         End Select
                         If printDetails Then
-                            logger.Debug("FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CurrentCandle:{4}, Condition:{5}, [{6},{7}], Position:{8}, IsAboveOrBelow:{9}, TradingSymbol:{10}",
+                            logger.Debug("IsAboveOrBelow-> FirstConsumer:{0}, SecondConsumer:{1}, FirstConsumerField:{2}, SecondConsumerField:{3}, CurrentCandle:{4}, Condition:{5}, [{6},{7}], Position:{8}, IsAboveOrBelow:{9}, TradingSymbol:{10}",
                                           firstDummyConsumer.ToString,
                                           secondDummyConsumer.ToString,
                                           firstDummyConsumerField.ToString,
