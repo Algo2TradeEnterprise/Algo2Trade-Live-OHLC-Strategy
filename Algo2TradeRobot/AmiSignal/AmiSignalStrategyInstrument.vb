@@ -20,8 +20,11 @@ Public Class AmiSignalStrategyInstrument
     Public EntrySignals As Concurrent.ConcurrentDictionary(Of String, AmiSignal)
     Public ExitSignals As Concurrent.ConcurrentDictionary(Of String, AmiSignal)
 
-    Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
+    Public Sub New(ByVal associatedInstrument As IInstrument,
+                   ByVal associatedParentStrategy As Strategy,
+                   ByVal isPairInstrumnet As Boolean,
+                   ByVal canceller As CancellationTokenSource)
+        MyBase.New(associatedInstrument, associatedParentStrategy, isPairInstrumnet, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
             Case APISource.Zerodha
                 _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)

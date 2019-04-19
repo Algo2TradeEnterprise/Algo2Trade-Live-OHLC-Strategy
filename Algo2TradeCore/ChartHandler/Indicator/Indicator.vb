@@ -76,6 +76,8 @@ Namespace ChartHandler.Indicator
         Protected _EMALock As Integer
         Protected _ATRLock As Integer
         Protected _SupertrendLock As Integer
+        Protected _BollingerLock As Integer
+        Protected _SpreadLock As Integer
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                       ByVal assoicatedParentChart As CandleStickChart,
                       ByVal canceller As CancellationTokenSource)
@@ -118,7 +120,13 @@ Namespace ChartHandler.Indicator
                         If requiredData IsNot Nothing AndAlso requiredData.Count > 0 Then
                             Select Case outputConsumer.SMAField
                                 Case TypeOfField.Close
-                                    smaValue.SMA.Value = requiredData.Sum(Function(s) CType(s.Value, OHLCPayload).ClosePrice.Value) / requiredData.Count
+                                    smaValue.SMA.Value = requiredData.Sum(Function(s)
+                                                                              Return CType(CType(s.Value, OHLCPayload).ClosePrice.Value, Decimal)
+                                                                          End Function) / requiredData.Count
+                                Case TypeOfField.Spread
+                                    smaValue.SMA.Value = requiredData.Sum(Function(s)
+                                                                              Return CType(CType(s.Value, SpreadConsumer.SpreadPayload).Spread.Value, Decimal)
+                                                                          End Function) / requiredData.Count
                             End Select
                         End If
                         outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, smaValue, Function(key, value) smaValue)
@@ -232,7 +240,7 @@ Namespace ChartHandler.Indicator
                             (previousATRValues IsNot Nothing AndAlso previousATRValues.Count < outputConsumer.ATRPeriod) Then
                             If previousATRValues IsNot Nothing AndAlso previousATRValues.Count > 0 Then
                                 atrValue.ATR.Value = (previousATRValues.Sum(Function(x)
-                                                                                Return CType(x.Value, ATRConsumer.ATRPayload).ATR.Value
+                                                                                Return CType(CType(x.Value, ATRConsumer.ATRPayload).ATR.Value, Decimal)
                                                                             End Function) + TR) / (previousATRValues.Count + 1)
                             Else
                                 atrValue.ATR.Value = TR
@@ -316,6 +324,132 @@ Namespace ChartHandler.Indicator
                 Interlocked.Exchange(_SupertrendLock, 0)
             End Try
         End Function
+        Public Async Function CalculateBollinger(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As BollingerConsumer) As Task
+            Try
+                While 1 = Interlocked.Exchange(_BollingerLock, 1)
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                End While
+                If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
+                outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
+
+                    Dim requiredDataSet As List(Of Date) =
+                        outputConsumer.ParentConsumer.ConsumerPayloads.Keys.Where(Function(x)
+                                                                                      Return x >= timeToCalculateFrom
+                                                                                  End Function).OrderBy(Function(x)
+                                                                                                            Return x
+                                                                                                        End Function).ToList
+
+                    Await CalculateSMA(timeToCalculateFrom, outputConsumer.SupportingSMAConsumer).ConfigureAwait(False)
+
+                    For Each runningInputDate In requiredDataSet
+                        If outputConsumer.ConsumerPayloads Is Nothing Then outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
+                        Dim previousNInputFieldPayloadDate As Date = GetSubPayloadStartDate(outputConsumer.ParentConsumer.ConsumerPayloads,
+                                                                                            runningInputDate,
+                                                                                            outputConsumer.BollingerPeriod,
+                                                                                            True).Item1
+
+                        Dim bollingerValue As BollingerConsumer.BollingerPayload = Nothing
+                        If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, bollingerValue) Then
+                            bollingerValue = New BollingerConsumer.BollingerPayload
+                        End If
+                        Dim requiredData As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                            outputConsumer.ParentConsumer.ConsumerPayloads.Where(Function(x)
+                                                                                     Return x.Key >= previousNInputFieldPayloadDate AndAlso
+                                                                                            x.Key <= runningInputDate
+                                                                                 End Function)
+
+
+                        If requiredData IsNot Nothing AndAlso requiredData.Count > 0 Then
+                            Dim highBand As Decimal = Nothing
+                            Dim middleBand As Decimal = Nothing
+                            Dim lowBand As Decimal = Nothing
+                            Dim sd As Decimal = Nothing
+                            Dim previousNInputData As Dictionary(Of Date, Decimal) = Nothing
+                            Select Case outputConsumer.BollingerField
+                                Case TypeOfField.Close
+                                    previousNInputData = requiredData.ToDictionary(Of Date, Decimal)(Function(x)
+                                                                                                         Return x.Key
+                                                                                                     End Function, Function(y)
+                                                                                                                       Return CType(y.Value, OHLCPayload).ClosePrice.Value
+                                                                                                                   End Function)
+                                Case TypeOfField.Spread
+                                    previousNInputData = requiredData.ToDictionary(Of Date, Decimal)(Function(x)
+                                                                                                         Return x.Key
+                                                                                                     End Function, Function(y)
+                                                                                                                       Return CType(y.Value, SpreadConsumer.SpreadPayload).Spread.Value
+                                                                                                                   End Function)
+                            End Select
+                            If previousNInputData.Count > 2 Then
+                                sd = CalculateStandardDeviationPA(previousNInputData)
+                            Else
+                                sd = 0
+                            End If
+                            middleBand = CType(outputConsumer.SupportingSMAConsumer.ConsumerPayloads(runningInputDate), SMAConsumer.SMAPayload).SMA.Value
+                            highBand = middleBand + sd * outputConsumer.BollingerMultiplier
+                            lowBand = middleBand - sd * outputConsumer.BollingerMultiplier
+
+                            bollingerValue.HighBollinger.Value = highBand
+                            bollingerValue.SMABollinger.Value = middleBand
+                            bollingerValue.LowBollinger.Value = lowBand
+                        End If
+                        outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, bollingerValue, Function(key, value) bollingerValue)
+                    Next
+                End If
+            Finally
+                Interlocked.Exchange(_BollingerLock, 0)
+            End Try
+        End Function
+        Public Async Function CalculateSpread(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As SpreadConsumer) As Task
+            Try
+                While 1 = Interlocked.Exchange(_SpreadLock, 1)
+                    Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                End While
+                If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
+                outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
+
+                    Dim requiredDataSet As List(Of Date) =
+                        outputConsumer.ParentConsumer.ConsumerPayloads.Keys.Where(Function(x)
+                                                                                      Return x >= timeToCalculateFrom
+                                                                                  End Function).OrderBy(Function(x)
+                                                                                                            Return x
+                                                                                                        End Function).ToList
+
+                    For Each runningInputDate In requiredDataSet
+                        If outputConsumer.ConsumerPayloads Is Nothing Then outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
+                        Dim spreadValue As SpreadConsumer.SpreadPayload = Nothing
+                        If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, spreadValue) Then
+                            spreadValue = New SpreadConsumer.SpreadPayload
+                        End If
+                        Dim farContractData As Decimal = Decimal.MinValue
+                        If outputConsumer.ParentConsumer.ConsumerPayloads.ContainsKey(runningInputDate) Then
+                            Select Case outputConsumer.FarSpreadField
+                                Case TypeOfField.Close
+                                    farContractData = CType(outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate), OHLCPayload).ClosePrice.Value
+                            End Select
+                        End If
+                        Dim nearContractData As Decimal = Decimal.MinValue
+                        If outputConsumer.AnotherParentConsumer.ConsumerPayloads IsNot Nothing AndAlso
+                            outputConsumer.AnotherParentConsumer.ConsumerPayloads.Count > 0 AndAlso
+                            outputConsumer.AnotherParentConsumer.ConsumerPayloads.ContainsKey(runningInputDate) Then
+                            Select Case outputConsumer.NearSpreadField
+                                Case TypeOfField.Close
+                                    nearContractData = CType(outputConsumer.AnotherParentConsumer.ConsumerPayloads(runningInputDate), OHLCPayload).ClosePrice.Value
+                            End Select
+                        End If
+                        If farContractData <> Decimal.MinValue AndAlso nearContractData <> Decimal.MinValue Then
+                            spreadValue.Spread.Value = farContractData - nearContractData
+                        Else
+                            spreadValue.Spread.Value = 0
+                        End If
+                        outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, spreadValue, Function(key, value) spreadValue)
+                    Next
+                End If
+            Catch ex As Exception
+                Throw ex
+            Finally
+                Interlocked.Exchange(_SpreadLock, 0)
+            End Try
+        End Function
 #End Region
 
 #Region "Private Function"
@@ -340,6 +474,24 @@ Namespace ChartHandler.Indicator
                                                                                          Return x.Key
                                                                                      End Function).Take(numberOfItemsToRetrive).LastOrDefault.Key, requiredData.Count)
                 End If
+            End If
+            Return ret
+        End Function
+        Private Function CalculateStandardDeviationPA(ByVal inputPayload As Dictionary(Of Date, Decimal)) As Double
+            Dim ret As Double = Nothing
+            If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
+                Dim sum As Decimal = 0
+                For Each runningPayload In inputPayload.Keys
+                    sum = sum + inputPayload(runningPayload)
+                Next
+                Dim mean As Double = sum / inputPayload.Count
+                Dim sumVariance As Double = 0
+                For Each runningPayload In inputPayload.Keys
+                    sumVariance = sumVariance + Math.Pow((inputPayload(runningPayload) - mean), 2)
+                Next
+                Dim sampleVariance As Double = sumVariance / (inputPayload.Count)
+                Dim standardDeviation As Double = Math.Sqrt(sampleVariance)
+                ret = standardDeviation
             End If
             Return ret
         End Function

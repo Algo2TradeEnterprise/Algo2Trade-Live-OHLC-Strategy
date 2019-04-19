@@ -17,6 +17,7 @@
         Property IsHistoricalCompleted As Boolean
         ReadOnly Property InstrumentType As TypeOfInstrument
         Property ExchangeDetails As Exchange
+        Property IsCurrentContract As Boolean
 
         <Serializable>
         Enum TypeOfInstrument

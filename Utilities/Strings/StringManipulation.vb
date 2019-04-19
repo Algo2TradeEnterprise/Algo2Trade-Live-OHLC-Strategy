@@ -239,7 +239,9 @@ Namespace Strings
             If inputString IsNot Nothing AndAlso inputString.Trim.Length > 0 Then
                 inputString = inputString.Trim
                 Dim matches As MatchCollection = Regex.Matches(inputString, "\w+")
-                ret = matches.Cast(Of Match)().[Select](Function(m) m.Value).ToArray()
+                ret = matches.Cast(Of Match)().[Select](Function(m)
+                                                            Return m.Value
+                                                        End Function).ToArray()
             End If
             Return ret
         End Function

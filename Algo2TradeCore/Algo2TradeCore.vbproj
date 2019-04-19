@@ -88,8 +88,10 @@
     <Compile Include="Entities\Exchange.vb" />
     <Compile Include="Entities\Field.vb" />
     <Compile Include="Entities\Indicators\ATRConsumer.vb" />
+    <Compile Include="Entities\Indicators\BollingerConsumer.vb" />
     <Compile Include="Entities\Indicators\EMAConsumer.vb" />
     <Compile Include="Entities\Indicators\SMAConsumer.vb" />
+    <Compile Include="Entities\Indicators\SpreadConsumer.vb" />
     <Compile Include="Entities\Indicators\SupertrendConsumer.vb" />
     <Compile Include="Entities\IUserMargin.vb" />
     <Compile Include="Entities\PlaceOrderParameters.vb" />

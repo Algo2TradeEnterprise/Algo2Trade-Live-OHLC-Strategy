@@ -111,7 +111,7 @@ Public Class MomentumReversalStrategy
             For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of MomentumReversalStrategyInstrument)
-                Dim runningTradableStrategyInstrument As New MomentumReversalStrategyInstrument(runningTradableInstrument, Me, _cts)
+                Dim runningTradableStrategyInstrument As New MomentumReversalStrategyInstrument(runningTradableInstrument, Me, False, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
                 AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx

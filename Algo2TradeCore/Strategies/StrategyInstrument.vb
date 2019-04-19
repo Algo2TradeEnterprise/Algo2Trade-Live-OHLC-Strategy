@@ -117,11 +117,17 @@ Namespace Strategies
         Public Property TradableInstrument As IInstrument
         Public Property OrderDetails As Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
         Public Property RawPayloadDependentConsumers As List(Of IPayloadConsumer)
-        Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
+        Public Property IsPairInstrument As Boolean
+        Public Property DependendStratrgyInstruments As IEnumerable(Of StrategyInstrument) 'Only used if it is a pair instrument
+        Public Sub New(ByVal associatedInstrument As IInstrument,
+                       ByVal associatedParentStrategy As Strategy,
+                       ByVal isPairInstrument As Boolean,
+                       ByVal canceller As CancellationTokenSource)
             TradableInstrument = associatedInstrument
             Me.ParentStrategy = associatedParentStrategy
             _cts = canceller
             OrderDetails = New Concurrent.ConcurrentDictionary(Of String, IBusinessOrder)
+            Me.IsPairInstrument = isPairInstrument
         End Sub
 
 #Region "Required Functions"
@@ -514,14 +520,22 @@ Namespace Strategies
                         If candleCreator.IndicatorCreator Is Nothing Then candleCreator.IndicatorCreator = New ChartHandler.Indicator.IndicatorManeger(Me.ParentStrategy.ParentController, candleCreator, _cts)
                         If currentXMinute <> Date.MinValue Then
                             Dim c As Integer = 1
-                            For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
-                                If c < 3 Then
-                                    Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer).ConfigureAwait(False)
-                                Else
-                                    Await candleCreator.IndicatorCreator.CalculateSupertrend(currentXMinute, consumer).ConfigureAwait(False)
-                                End If
-                                c += 1
-                            Next
+                            If runningRawPayloadConsumer.OnwardLevelConsumers IsNot Nothing AndAlso runningRawPayloadConsumer.OnwardLevelConsumers.Count > 0 Then
+                                For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
+                                    'If c < 3 Then
+                                    '    Await candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer).ConfigureAwait(False)
+                                    'Else
+                                    '    Await candleCreator.IndicatorCreator.CalculateSupertrend(currentXMinute, consumer).ConfigureAwait(False)
+                                    'End If
+                                    Await candleCreator.IndicatorCreator.CalculateSpread(currentXMinute, consumer).ConfigureAwait(False)
+                                    If consumer.OnwardLevelConsumers IsNot Nothing AndAlso consumer.OnwardLevelConsumers.Count > 0 Then
+                                        For Each dependendConsumer In consumer.OnwardLevelConsumers
+                                            Await candleCreator.IndicatorCreator.CalculateBollinger(currentXMinute, dependendConsumer).ConfigureAwait(False)
+                                        Next
+                                    End If
+                                    c += 1
+                                Next
+                            End If
                         End If
                     End If
                 Next

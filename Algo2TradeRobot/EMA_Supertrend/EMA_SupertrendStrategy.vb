@@ -87,7 +87,7 @@ Public Class EMA_SupertrendStrategy
             For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of EMA_SupertrendStrategyInstrument)
-                Dim runningTradableStrategyInstrument As New EMA_SupertrendStrategyInstrument(runningTradableInstrument, Me, _cts)
+                Dim runningTradableStrategyInstrument As New EMA_SupertrendStrategyInstrument(runningTradableInstrument, Me, False, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
                 AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx

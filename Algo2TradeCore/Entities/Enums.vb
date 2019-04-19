@@ -21,6 +21,8 @@
             EMA
             ATR
             Supertrend
+            Bollinger
+            Spread
         End Enum
         Enum CrossDirection
             Above = 1

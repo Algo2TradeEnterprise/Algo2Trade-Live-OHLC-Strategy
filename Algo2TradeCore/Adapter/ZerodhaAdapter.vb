@@ -959,9 +959,15 @@ Namespace Adapter
                     Dim count As Integer = If(instruments Is Nothing, 0, instruments.Count)
                     logger.Debug(String.Format("Fetched {0} instruments from Zerodha", count))
                     If instruments IsNot Nothing AndAlso instruments.Count > 0 Then
-                        instruments.RemoveAll(Function(x) x.Exchange = "BFO" Or x.Exchange = "BSE")
-                        instruments.RemoveAll(Function(x) x.Segment.EndsWith("OPT"))
-                        instruments.RemoveAll(Function(x) x.TradingSymbol.Length > 3 AndAlso x.TradingSymbol.Substring(x.TradingSymbol.Length - 3).StartsWith("-"))
+                        instruments.RemoveAll(Function(x)
+                                                  Return x.Exchange = "BFO" Or x.Exchange = "BSE"
+                                              End Function)
+                        instruments.RemoveAll(Function(x)
+                                                  Return x.Segment.EndsWith("OPT")
+                                              End Function)
+                        instruments.RemoveAll(Function(x)
+                                                  Return x.TradingSymbol.Length > 3 AndAlso x.TradingSymbol.Substring(x.TradingSymbol.Length - 3).StartsWith("-")
+                                              End Function)
                         count = If(instruments Is Nothing, 0, instruments.Count)
                         logger.Debug(String.Format("After cleanup, fetched {0} instruments from Zerodha", count))
                     End If

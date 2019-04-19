@@ -2,7 +2,6 @@
 Imports System.Threading
 Imports Algo2TradeCore.Entities.UserSettings
 Imports Utilities.DAL
-Imports Algo2TradeCore.Entities
 
 <Serializable>
 Public Class EMA_SupertrendStrategyUserInputs
@@ -172,7 +171,7 @@ Public Class EMA_SupertrendStrategyUserInputs
                         Throw New ApplicationException("No valid input in the file")
                     End If
                 Else
-                    Throw New ApplicationException("File Type not supported. Application only support .xlsx or .xls file.")
+                    Throw New ApplicationException("File Type not supported. Application only support .csv file.")
                 End If
             Else
                 Throw New ApplicationException("File does not exists. Please select valid file")

@@ -430,7 +430,9 @@ Public Class frmMainTabbed
             SetObjectEnableDisable_ThreadSafe(linklblMomentumReversalTradableInstrument, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
+            _MRdashboadList = New BindingList(Of ActivityDashboard)(momentumReversalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                                       Return x.SignalGeneratedTime
+                                                                                                                                                   End Function).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
@@ -649,7 +651,9 @@ Public Class frmMainTabbed
             SetObjectEnableDisable_ThreadSafe(linklblOHLTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _OHLdashboadList = New BindingList(Of ActivityDashboard)(ohlStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
+            _OHLdashboadList = New BindingList(Of ActivityDashboard)(ohlStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                           Return x.SignalGeneratedTime
+                                                                                                                                       End Function).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, _OHLdashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
@@ -853,7 +857,9 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _AmidashboadList = New BindingList(Of ActivityDashboard)(AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
+            _AmidashboadList = New BindingList(Of ActivityDashboard)(AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                                 Return x.SignalGeneratedTime
+                                                                                                                                             End Function).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmidashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
 
@@ -1042,7 +1048,9 @@ Public Class frmMainTabbed
             SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, True)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(_EMASupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x) x.SignalGeneratedTime).ToList)
+            _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(_EMASupertrendStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                                                 Return x.SignalGeneratedTime
+                                                                                                                                                             End Function).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _EMA_SupertrendDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
@@ -1135,6 +1143,241 @@ Public Class frmMainTabbed
             End While
         End If
         SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendExitAll, True)
+    End Sub
+#End Region
+
+#Region "Near Far Hedging Strategy"
+    Private _NearFarHedgingUserInputs As NearFarHedgingStrategyUserInputs = Nothing
+    Private _NearFarHedgingDashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _NearFarHedgingTradableInstruments As IEnumerable(Of NearFarHedgingStrategyInstrument) = Nothing
+    Private _NearFarHedgingStrategyToExecute As NearFarHedgingStrategy = Nothing
+    Private Sub sfdgvNearFarHedgingMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvNearFarHedgingMainDashboard.FilterPopupShowing
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(NearFarHedgingStrategy))
+    End Sub
+    Private Sub sfdgvNearFarHedgingMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvNearFarHedgingMainDashboard.AutoGeneratingColumn
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(NearFarHedgingStrategy))
+    End Sub
+    Private Async Function NearFarHedgingWorkerAsync() As Task
+        If GetObjectText_ThreadSafe(btnNearFarHedgingStart) = Common.LOGIN_PENDING Then
+            MsgBox("Cannot start as another strategy is loggin in")
+            Exit Function
+        End If
+
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
+        _cts.Token.ThrowIfCancellationRequested()
+        _lastException = Nothing
+
+        Try
+            EnableDisableUIEx(UIMode.Active, GetType(NearFarHedgingStrategy))
+            EnableDisableUIEx(UIMode.BlockOther, GetType(NearFarHedgingStrategy))
+
+            OnHeartbeat("Validating Strategy user settings")
+            If File.Exists("NearFarHedgingSettings.Strategy.a2t") Then
+                Dim fs As Stream = New FileStream("NearFarHedgingSettings.Strategy.a2t", FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _NearFarHedgingUserInputs = CType(bf.Deserialize(fs), NearFarHedgingStrategyUserInputs)
+                fs.Close()
+                _NearFarHedgingUserInputs.InstrumentsData = Nothing
+                _NearFarHedgingUserInputs.FillInstrumentDetails(_NearFarHedgingUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
+            End If
+            logger.Debug(Utilities.Strings.JsonSerialize(_NearFarHedgingUserInputs))
+
+            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
+            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
+
+            If _commonController IsNot Nothing Then
+                _commonController.RefreshCancellationToken(_cts)
+            Else
+                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
+
+                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
+                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
+                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+
+                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
+                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                AddHandler _commonController.TickerError, AddressOf OnTickerError
+                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+
+#Region "Login"
+                Dim loginMessage As String = Nothing
+                While True
+                    _cts.Token.ThrowIfCancellationRequested()
+                    _connection = Nothing
+                    loginMessage = Nothing
+                    Try
+                        OnHeartbeat("Attempting to get connection to Zerodha API")
+                        _cts.Token.ThrowIfCancellationRequested()
+                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
+                    Catch cx As OperationCanceledException
+                        loginMessage = cx.Message
+                        logger.Error(cx)
+                        Exit While
+                    Catch ex As Exception
+                        loginMessage = ex.Message
+                        logger.Error(ex)
+                    End Try
+                    If _connection Is Nothing Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
+                            'No need to retry as its a password failure
+                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                            Exit While
+                        Else
+                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                        End If
+                    Else
+                        Exit While
+                    End If
+                End While
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing Then
+                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                    Else
+                        Throw New ApplicationException("No connection to Zerodha API could be established")
+                    End If
+                End If
+#End Region
+
+                OnHeartbeat("Completing all pre-automation requirements")
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+
+                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+            End If 'Common controller
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(NearFarHedgingStrategy))
+
+            _NearFarHedgingStrategyToExecute = New NearFarHedgingStrategy(_commonController, 5, _NearFarHedgingUserInputs, 5, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", _NearFarHedgingStrategyToExecute.ToString), New List(Of Object) From {_NearFarHedgingStrategyToExecute})
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.SubscribeStrategyAsync(_NearFarHedgingStrategyToExecute).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _NearFarHedgingTradableInstruments = _NearFarHedgingStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblNearFarHedgingTradableInstrument, String.Format("Tradable Instruments: {0}", _NearFarHedgingTradableInstruments.Count))
+            SetObjectEnableDisable_ThreadSafe(linklblNearFarHedgingTradableInstrument, True)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _NearFarHedgingDashboadList = New BindingList(Of ActivityDashboard)(_NearFarHedgingStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                                                  Return x.SignalGeneratedTime
+                                                                                                                                                              End Function).ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvNearFarHedgingMainDashboard, _NearFarHedgingDashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNearFarHedgingMainDashboard)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Await _NearFarHedgingStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            _lastException = fex
+        Catch cx As OperationCanceledException
+            logger.Error(cx)
+            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
+        Catch ex As Exception
+            logger.Error(ex)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        Finally
+            ProgressStatus("No pending actions")
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(NearFarHedgingStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(NearFarHedgingStrategy))
+        End Try
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
+    End Function
+    Private Async Sub btnNearFarHedgingStart_Click(sender As Object, e As EventArgs) Handles btnNearFarHedgingStart.Click
+        'Dim authenticationUserId As String = "YH8805"
+        'If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
+        '    Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
+        '    (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+        '    "DK4056" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
+        '    MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+        '    Exit Sub
+        'End If
+
+        PreviousDayCleanup()
+        Await Task.Run(AddressOf NearFarHedgingWorkerAsync).ConfigureAwait(False)
+
+        If _lastException IsNot Nothing Then
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnNearFarHedgingStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                Debug.WriteLine("Restart for daily refresh")
+                logger.Debug("Restarting the application again for daily refresh")
+                btnNearFarHedgingStart_Click(sender, e)
+            End If
+        End If
+    End Sub
+    Private Sub tmrNearFarHedgingTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrNearFarHedgingTickerStatus.Tick
+        FlashTickerBulbEx(GetType(NearFarHedgingStrategy))
+    End Sub
+    Private Async Sub btnNearFarHedgingStop_Click(sender As Object, e As EventArgs) Handles btnNearFarHedgingStop.Click
+        SetObjectEnableDisable_ThreadSafe(linklblNearFarHedgingTradableInstrument, False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _cts.Cancel()
+    End Sub
+    Private Sub btnNearFarHedgingSettings_Click(sender As Object, e As EventArgs) Handles btnNearFarHedgingSettings.Click
+        Dim newForm As New frmNearFarHedgingSettings(_NearFarHedgingUserInputs)
+        newForm.ShowDialog()
+    End Sub
+    Private Sub linklblNearFarHedgingTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNearFarHedgingTradableInstrument.LinkClicked
+        Dim newForm As New frmNearFarHedgingTradableInstrumentList(_NearFarHedgingTradableInstruments)
+        newForm.ShowDialog()
     End Sub
 #End Region
 
@@ -1275,6 +1518,52 @@ Public Class frmMainTabbed
                     SetObjectEnableDisable_ThreadSafe(btnEMA_SupertrendStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, Nothing)
             End Select
+        ElseIf source Is GetType(NearFarHedgingStrategy) Then
+            Select Case mode
+                Case UIMode.Active
+                    SetObjectEnableDisable_ThreadSafe(btnNearFarHedgingStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnNearFarHedgingSettings, False)
+                    SetObjectEnableDisable_ThreadSafe(btnNearFarHedgingStop, True)
+                Case UIMode.BlockOther
+                    If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnOHLStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnOHLStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnMomentumReversalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnMomentumReversalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnMomentumReversalStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnEMA_SupertrendStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnEMA_SupertrendStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnEMA_SupertrendStop, Common.LOGIN_PENDING)
+                    End If
+                Case UIMode.ReleaseOther
+                    If GetObjectText_ThreadSafe(btnOHLStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnOHLStart, "Start")
+                        SetObjectText_ThreadSafe(btnOHLStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnMomentumReversalStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnMomentumReversalStart, "Start")
+                        SetObjectText_ThreadSafe(btnMomentumReversalStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnAmiSignalStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnAmiSignalStart, "Start")
+                        SetObjectText_ThreadSafe(btnAmiSignalStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnEMA_SupertrendStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnEMA_SupertrendStart, "Start")
+                        SetObjectText_ThreadSafe(btnEMA_SupertrendStop, "Stop")
+                    End If
+                Case UIMode.Idle
+                    SetObjectEnableDisable_ThreadSafe(btnNearFarHedgingStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnNearFarHedgingSettings, True)
+                    SetObjectEnableDisable_ThreadSafe(btnNearFarHedgingStop, False)
+                    SetSFGridDataBind_ThreadSafe(sfdgvNearFarHedgingMainDashboard, Nothing)
+            End Select
         End If
     End Sub
     Private Sub FlashTickerBulbEx(ByVal source As Object)
@@ -1292,15 +1581,18 @@ Public Class frmMainTabbed
         ElseIf source Is GetType(EMA_SupertrendStrategy) Then
             blbTickerStatusCommon = blbEMA_SupertrendTickerStatus
             tmrTickerStatusCommon = tmrEMA_SupertrendTickerStatus
+        ElseIf source Is GetType(NearFarHedgingStrategy) Then
+            blbTickerStatusCommon = blbNearFarHedgingTickerStatus
+            tmrTickerStatusCommon = tmrNearFarHedgingTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
 
-        Dim trialEndDate As Date = New Date(2019, 4, 17, 0, 0, 0)
-        If Now() >= trialEndDate Then
-            MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-            End
-        End If
+        'Dim trialEndDate As Date = New Date(2019, 4, 17, 0, 0, 0)
+        'If Now() >= trialEndDate Then
+        '    MsgBox("You Trial Period is over. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+        '    End
+        'End If
 
         If tmrTickerStatusCommon.Interval = 700 Then
             tmrTickerStatusCommon.Interval = 2000
@@ -1321,6 +1613,8 @@ Public Class frmMainTabbed
             blbTickerStatusCommon = blbAmiSignalTickerStatus
         ElseIf source Is GetType(EMA_SupertrendStrategy) Then
             blbTickerStatusCommon = blbEMA_SupertrendTickerStatus
+        ElseIf source Is GetType(NearFarHedgingStrategy) Then
+            blbTickerStatusCommon = blbNearFarHedgingTickerStatus
         End If
         blbTickerStatusCommon.Color = color
     End Sub
@@ -1340,6 +1634,8 @@ Public Class frmMainTabbed
             sfdgvCommon = sfdgvAmiSignalMainDashboard
         ElseIf source Is GetType(EMA_SupertrendStrategy) Then
             sfdgvCommon = sfdgvEMA_SupertrendMainDashboard
+        ElseIf source Is GetType(NearFarHedgingStrategy) Then
+            sfdgvCommon = sfdgvNearFarHedgingMainDashboard
         End If
 
         Dim eFilterPopupShowingEventArgsCommon As FilterPopupShowingEventArgs = Nothing
@@ -1406,6 +1702,11 @@ Public Class frmMainTabbed
                 Case LogMode.One
                     SetListAddItem_ThreadSafe(lstEMA_SupertrendLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
+        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(NearFarHedgingStrategy) Then
+            Select Case mode
+                Case LogMode.One
+                    SetListAddItem_ThreadSafe(lstNearFarHedgingLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+            End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
@@ -1413,6 +1714,7 @@ Public Class frmMainTabbed
                     SetListAddItem_ThreadSafe(lstMomentumReversalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstAmiSignalLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstEMA_SupertrendLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstNearFarHedgingLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -1452,15 +1754,19 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(MomentumReversalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(EMA_SupertrendStrategy))
-        tabMain.TabPages.Remove(tabOHL)
-        tabMain.TabPages.Remove(tabMomentumReversal)
-        tabMain.TabPages.Remove(tabAmiSignal)
+        EnableDisableUIEx(UIMode.Idle, GetType(NearFarHedgingStrategy))
+        'tabMain.TabPages.Remove(tabOHL)
+        'tabMain.TabPages.Remove(tabMomentumReversal)
+        'tabMain.TabPages.Remove(tabAmiSignal)
+        'tabMain.TabPages.Remove(tabEMA_Supertrend)
+        'tabMain.TabPages.Remove(tabNearFarHedging)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Pink)
+        ColorTickerBulbEx(GetType(NearFarHedgingStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
@@ -1468,6 +1774,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Lime)
+        ColorTickerBulbEx(GetType(NearFarHedgingStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
@@ -1476,6 +1783,7 @@ Public Class frmMainTabbed
             ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Pink)
+            ColorTickerBulbEx(GetType(NearFarHedgingStrategy), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -1489,6 +1797,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(MomentumReversalStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(AmiSignalStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(EMA_SupertrendStrategy), Color.Yellow)
+        ColorTickerBulbEx(GetType(NearFarHedgingStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
@@ -1543,35 +1852,48 @@ Public Class frmMainTabbed
                     BindingListAdd_ThreadSafe(_AmidashboadList, item)
                 Case GetType(EMA_SupertrendStrategy)
                     BindingListAdd_ThreadSafe(_EMA_SupertrendDashboadList, item)
+                Case GetType(NearFarHedgingStrategy)
+                    BindingListAdd_ThreadSafe(_NearFarHedgingDashboadList, item)
                 Case Else
                     Throw New NotImplementedException
             End Select
         End If
     End Sub
     Protected Sub OnSessionExpiry(ByVal runningStrategy As Strategy)
-        SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
         Select Case runningStrategy.GetType
             Case GetType(MomentumReversalStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, Nothing)
                 _MRdashboadList = Nothing
                 _MRdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
                 SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _MRdashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
             Case GetType(OHLStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, Nothing)
                 _OHLdashboadList = Nothing
                 _OHLdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _OHLdashboadList)
+                SetSFGridDataBind_ThreadSafe(sfdgvOHLMainDashboard, _OHLdashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
             Case GetType(AmiSignalStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, Nothing)
                 _AmidashboadList = Nothing
                 _AmidashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvMomentumReversalMainDashboard, _AmidashboadList)
+                SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmidashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
             Case GetType(EMA_SupertrendStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, Nothing)
                 _EMA_SupertrendDashboadList = Nothing
                 _EMA_SupertrendDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _AmidashboadList)
+                SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, _EMA_SupertrendDashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
+            Case GetType(NearFarHedgingStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvNearFarHedgingMainDashboard, Nothing)
+                _NearFarHedgingDashboadList = Nothing
+                _NearFarHedgingDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvNearFarHedgingMainDashboard, _NearFarHedgingDashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNearFarHedgingMainDashboard)
             Case Else
                 Throw New NotImplementedException
         End Select
-        SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMomentumReversalMainDashboard)
-        SetSFGridFreezFirstColumn_ThreadSafe(sfdgvEMA_SupertrendMainDashboard)
     End Sub
 #End Region
 

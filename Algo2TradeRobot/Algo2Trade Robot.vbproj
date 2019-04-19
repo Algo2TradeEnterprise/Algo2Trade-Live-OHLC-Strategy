@@ -180,7 +180,7 @@
     </Compile>
     <Compile Include="NearFarHedging\NearFarHedgingStrategy.vb" />
     <Compile Include="NearFarHedging\NearFarHedgingStrategyInstrument.vb" />
-    <Compile Include="NearFarHedging\NearFarHedgingUserInputs.vb" />
+    <Compile Include="NearFarHedging\NearFarHedgingStrategyUserInputs.vb" />
     <Compile Include="OHL\frmOHLSettings.Designer.vb">
       <DependentUpon>frmOHLSettings.vb</DependentUpon>
     </Compile>
@@ -242,6 +242,9 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NearFarHedging\frmNearFarHedgingSettings.resx">
+      <DependentUpon>frmNearFarHedgingSettings.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.resx">
       <DependentUpon>frmNearFarHedgingTradableInstrumentList.vb</DependentUpon>

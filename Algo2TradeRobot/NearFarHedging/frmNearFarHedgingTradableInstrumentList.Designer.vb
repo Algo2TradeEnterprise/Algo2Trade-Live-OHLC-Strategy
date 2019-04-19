@@ -81,6 +81,7 @@ Partial Class frmNearFarHedgingTradableInstrumentList
         Me.Controls.Add(Me.dgvTradableInstruments)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "frmNearFarHedgingTradableInstrumentList"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Near Far Hedging Strategy Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)

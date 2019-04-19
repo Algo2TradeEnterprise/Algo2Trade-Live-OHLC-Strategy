@@ -114,5 +114,7 @@ Namespace Entities
 
         Public Property ExchangeDetails As Exchange Implements IInstrument.ExchangeDetails
 
+        Public Property IsCurrentContract As Boolean Implements IInstrument.IsCurrentContract
+
     End Class
 End Namespace

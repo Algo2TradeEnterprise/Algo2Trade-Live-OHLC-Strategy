@@ -24,8 +24,11 @@ Public Class EMA_SupertrendStrategyInstrument
     Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
     Private ReadOnly _useST As Boolean = True
     Private _sendParentOrderDetailsOfOrderId As String = Nothing
-    Public Sub New(ByVal associatedInstrument As IInstrument, ByVal associatedParentStrategy As Strategy, ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedInstrument, associatedParentStrategy, canceller)
+    Public Sub New(ByVal associatedInstrument As IInstrument,
+                   ByVal associatedParentStrategy As Strategy,
+                   ByVal isPairInstrumnet As Boolean,
+                   ByVal canceller As CancellationTokenSource)
+        MyBase.New(associatedInstrument, associatedParentStrategy, isPairInstrumnet, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
             Case APISource.Zerodha
                 _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
@@ -686,12 +689,6 @@ Public Class EMA_SupertrendStrategyInstrument
                 End Try
             End If
         End If
-        'ret = (CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Green AndAlso
-        '       CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Red) OrElse
-        '       (CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Red AndAlso
-        '        CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Green) OrElse
-        '        IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Above, False) OrElse
-        '        IsCrossover(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, CrossDirection.Below, False)
         Return ret
     End Function
 #Region "IDisposable Support"
