@@ -93,14 +93,16 @@ Namespace Strategies
             PlaceBOLimitMISOrder = 1
             PlaceBOSLMISOrder
             PlaceCOMarketMISOrder
-            PlaceNRMLMarketMISOrder
-            PlaceNRMLLimitMISOrder
-            PlaceNRMLSLMMISOrder
+            PlaceRegularMarketMISOrder
+            PlaceRegularLimitMISOrder
+            PlaceRegularSLMMISOrder
             ModifyStoplossOrder
             CancelBOOrder
             CancelCOOrder
+            CancelRegularOrder
             ForceCancelBOOrder
             ForceCancelCOOrder
+            ForceCancelRegularOrder
         End Enum
         Protected Enum ExecuteCommandAction
             Take = 1
@@ -879,12 +881,12 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
-                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
+                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder, ExecuteCommands.CancelRegularOrder, ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder, ExecuteCommands.ForceCancelRegularOrder
                                 Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
                                 Select Case command
-                                    Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder
+                                    Case ExecuteCommands.ForceCancelBOOrder, ExecuteCommands.ForceCancelCOOrder, ExecuteCommands.ForceCancelRegularOrder
                                         cancelOrderTriggers = data
-                                    Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder
+                                    Case ExecuteCommands.CancelBOOrder, ExecuteCommands.CancelCOOrder, ExecuteCommands.CancelRegularOrder
                                         cancelOrderTriggers = Await IsTriggerReceivedForExitOrderAsync(True).ConfigureAwait(False)
                                 End Select
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
@@ -896,11 +898,11 @@ Namespace Strategies
                                                                                        Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                        Select Case command
                                                                                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
-                                                                                               cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=x.Item2.OrderIdentifier,
-                                                                                                               parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
+                                                                                               cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
                                                                                            Case ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelCOOrder
-                                                                                               cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=x.Item2.OrderIdentifier,
-                                                                                                               parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
+                                                                                               cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
+                                                                                           Case ExecuteCommands.CancelRegularOrder, ExecuteCommands.ForceCancelRegularOrder
+                                                                                               cancelOrderResponse = Await _APIAdapter.CancelRegularOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
                                                                                        End Select
                                                                                        If cancelOrderResponse IsNot Nothing Then
                                                                                            logger.Debug("Cancel order is completed, cancelOrderResponse:{0}", Strings.JsonSerialize(cancelOrderResponse))
@@ -1002,7 +1004,7 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
-                            Case ExecuteCommands.PlaceNRMLMarketMISOrder
+                            Case ExecuteCommands.PlaceRegularMarketMISOrder
                                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
@@ -1014,7 +1016,7 @@ Namespace Strategies
                                     Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now, placeOrderTrigger.Item3).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceNRMLMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+                                    placeOrderResponse = Await _APIAdapter.PlaceRegularMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                         tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                         transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                         quantity:=placeOrderTrigger.Item2.Quantity,
@@ -1037,7 +1039,7 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
-                            Case ExecuteCommands.PlaceNRMLLimitMISOrder
+                            Case ExecuteCommands.PlaceRegularLimitMISOrder
                                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
@@ -1049,7 +1051,7 @@ Namespace Strategies
                                     Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now, placeOrderTrigger.Item3).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceNRMLLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+                                    placeOrderResponse = Await _APIAdapter.PlaceRegularLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                         tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                         transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                         quantity:=placeOrderTrigger.Item2.Quantity,
@@ -1073,7 +1075,7 @@ Namespace Strategies
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Exit For
                                 End If
-                            Case ExecuteCommands.PlaceNRMLSLMMISOrder
+                            Case ExecuteCommands.PlaceRegularSLMMISOrder
                                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(True).ConfigureAwait(False)
                                 If placeOrderTrigger IsNot Nothing AndAlso (placeOrderTrigger.Item1 = ExecuteCommandAction.Take OrElse
                                     placeOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake) Then
@@ -1085,7 +1087,7 @@ Namespace Strategies
                                     Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime, placeOrderTrigger.Item2.EntryDirection, Now, placeOrderTrigger.Item3).ConfigureAwait(False)
 
                                     Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                    placeOrderResponse = Await _APIAdapter.PlaceNRMLSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+                                    placeOrderResponse = Await _APIAdapter.PlaceRegularSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                     transaction:=placeOrderTrigger.Item2.EntryDirection,
                                                                                                     quantity:=placeOrderTrigger.Item2.Quantity,

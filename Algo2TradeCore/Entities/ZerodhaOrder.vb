@@ -102,7 +102,7 @@ Namespace Entities
             End Get
         End Property
 
-        Public ReadOnly Property OrderTyoe As String Implements IOrder.OrderTyoe
+        Public ReadOnly Property OrderType As String Implements IOrder.OrderType
             Get
                 Return WrappedOrder.OrderType
             End Get

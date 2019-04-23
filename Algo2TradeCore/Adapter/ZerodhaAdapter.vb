@@ -524,6 +524,61 @@ Namespace Adapter
             End If
             Return ret
         End Function
+        Public Overrides Async Function CancelRegularOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"OrderId", orderId},
+                {"ParentOrderId", parentOrderID},
+                {"Variety", Constants.VARIETY_REGULAR}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("Cancel Order successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
 #End Region
 
 #Region "Place BO"
@@ -768,8 +823,8 @@ Namespace Adapter
         End Function
 #End Region
 
-#Region "Place NRML"
-        Public Overrides Async Function PlaceNRMLMarketMISOrderAsync(ByVal tradeExchange As String,
+#Region "Place Regular"
+        Public Overrides Async Function PlaceRegularMarketMISOrderAsync(ByVal tradeExchange As String,
                                                                      ByVal tradingSymbol As String,
                                                                      ByVal transaction As TransactionType,
                                                                      ByVal quantity As Integer,
@@ -845,7 +900,7 @@ Namespace Adapter
             End If
             Return ret
         End Function
-        Public Overrides Async Function PlaceNRMLLimitMISOrderAsync(ByVal tradeExchange As String,
+        Public Overrides Async Function PlaceRegularLimitMISOrderAsync(ByVal tradeExchange As String,
                                                                     ByVal tradingSymbol As String,
                                                                     ByVal transaction As TransactionType,
                                                                     ByVal quantity As Integer,
@@ -922,7 +977,7 @@ Namespace Adapter
             End If
             Return ret
         End Function
-        Public Overrides Async Function PlaceNRMLSLMMISOrderAsync(ByVal tradeExchange As String,
+        Public Overrides Async Function PlaceRegularSLMMISOrderAsync(ByVal tradeExchange As String,
                                                                   ByVal tradingSymbol As String,
                                                                   ByVal transaction As TransactionType,
                                                                   ByVal quantity As Integer,

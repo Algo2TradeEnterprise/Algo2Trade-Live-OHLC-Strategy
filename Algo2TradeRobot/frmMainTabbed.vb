@@ -54,6 +54,8 @@ Public Class frmMainTabbed
                 [src].Add([value])
                 '[src].Insert(0, [value])
                 'Exit While
+            Catch aex As ArgumentOutOfRangeException
+                'Nothing to do
             Catch ex As Exception
                 logger.Error(ex)
             End Try

@@ -55,30 +55,35 @@ Public Class AmiSignalStrategyInstrument
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim orderDetails As Object = Nothing
                 Dim placeOrderTrigger As Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTrigger IsNot Nothing AndAlso placeOrderTrigger.Item1 = ExecuteCommandAction.Take Then
+                    Dim placeOrderResponse As Object = Nothing
                     If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 AndAlso
                        EntrySignals.FirstOrDefault.Value.SignalCandle.SnapshotDateTime = placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime AndAlso
                        placeOrderTrigger.Item2.Price = Decimal.MinValue AndAlso placeOrderTrigger.Item2.TriggerPrice = Decimal.MinValue Then
-                        orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceNRMLMarketMISOrder, Nothing).ConfigureAwait(False)
+                        placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
                         EntrySignals.FirstOrDefault.Value.OrderTimestamp = Now()
-                        EntrySignals.FirstOrDefault.Value.OrderID = orderDetails("data")("order_id")
+                        EntrySignals.FirstOrDefault.Value.OrderID = placeOrderResponse("data")("order_id")
                     End If
                     If TargetSignals IsNot Nothing AndAlso TargetSignals.Count > 0 AndAlso
                        TargetSignals.FirstOrDefault.Value.SignalCandle.SnapshotDateTime = placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime AndAlso
                        placeOrderTrigger.Item2.Price <> Decimal.MinValue AndAlso placeOrderTrigger.Item2.TriggerPrice = Decimal.MinValue Then
-                        orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceNRMLLimitMISOrder, Nothing).ConfigureAwait(False)
+                        placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitMISOrder, Nothing).ConfigureAwait(False)
                         TargetSignals.FirstOrDefault.Value.OrderTimestamp = Now()
-                        TargetSignals.FirstOrDefault.Value.OrderID = orderDetails("data")("order_id")
+                        TargetSignals.FirstOrDefault.Value.OrderID = placeOrderResponse("data")("order_id")
                     End If
                     If StoplossSignals IsNot Nothing AndAlso StoplossSignals.Count > 0 AndAlso
                        StoplossSignals.FirstOrDefault.Value.SignalCandle.SnapshotDateTime = placeOrderTrigger.Item2.SignalCandle.SnapshotDateTime AndAlso
                        placeOrderTrigger.Item2.Price = Decimal.MinValue AndAlso placeOrderTrigger.Item2.TriggerPrice <> Decimal.MinValue Then
-                        orderDetails = Await ExecuteCommandAsync(ExecuteCommands.PlaceNRMLSLMMISOrder, Nothing).ConfigureAwait(False)
+                        placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
                         StoplossSignals.FirstOrDefault.Value.OrderTimestamp = Now()
-                        StoplossSignals.FirstOrDefault.Value.OrderID = orderDetails("data")("order_id")
+                        StoplossSignals.FirstOrDefault.Value.OrderID = placeOrderResponse("data")("order_id")
                     End If
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim exitOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                If exitOrdersTrigger IsNot Nothing AndAlso exitOrdersTrigger.Count > 0 Then
+                    Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
@@ -161,7 +166,37 @@ Public Class AmiSignalStrategyInstrument
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Throw New NotImplementedException
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 AndAlso (OrderDetails.Count Mod 3) = 0 Then
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count = 1 Then
+                Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                                  Return x.ParentOrderIdentifier Is Nothing
+                                                                              End Function)
+                If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
+                    For Each parentOrder In parentOrders
+                        'Below portion have to be done in every cancel order trigger
+                        Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(parentOrder.Tag)
+                        If currentSignalActivities IsNot Nothing Then
+                            If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                            currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                            currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                Continue For
+                            End If
+                        End If
+
+                        Dim exitReason As String = "Opposite order executed"
+                        If parentOrder.OrderType = "LIMIT" Then
+                            exitReason = "Stoploss Reached"
+                        ElseIf parentOrder.OrderType = "SL-M" Then
+                            exitReason = "Target Reached"
+                        End If
+
+                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, parentOrder, exitReason))
+                    Next
+                End If
+            End If
+        End If
         Return ret
     End Function
     Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
@@ -170,7 +205,7 @@ Public Class AmiSignalStrategyInstrument
             {
                 New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
             }
-            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, cancellableOrder).ConfigureAwait(False)
+            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelRegularOrder, cancellableOrder).ConfigureAwait(False)
         End If
     End Function
 
