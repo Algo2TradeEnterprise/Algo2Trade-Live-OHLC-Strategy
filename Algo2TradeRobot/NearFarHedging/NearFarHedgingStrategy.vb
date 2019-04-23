@@ -121,6 +121,8 @@ Public Class NearFarHedgingStrategy
                 'runningTradableInstrument.FirstLevelConsumers.Add(runningTradableStrategyInstrument)
             Next
             TradableStrategyInstruments = retTradableStrategyInstruments
+
+            'Adding dependend pair instrumnents to a strategy instrument
             If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In TradableStrategyInstruments
                     If runningStrategyInstrument.IsPairInstrument Then
@@ -157,7 +159,6 @@ Public Class NearFarHedgingStrategy
                     tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
                 End If
             Next
-            'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception

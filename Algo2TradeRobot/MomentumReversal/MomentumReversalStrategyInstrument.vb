@@ -166,14 +166,13 @@ Public Class MomentumReversalStrategyInstrument
                     stoploss = GetModifiedStoplossAsync(triggerPrice, stoplossPrice, quantity)
 
                     If Me.TradableInstrument.LastTick.LastPrice < triggerPrice Then
-                        parameters = New PlaceOrderParameters With
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                        {.EntryDirection = APIAdapter.TransactionType.Buy,
                                        .Quantity = quantity,
                                        .Price = price,
                                        .TriggerPrice = triggerPrice,
                                        .SquareOffValue = target,
-                                       .StoplossValue = stoploss,
-                                       .SignalCandle = runningCandlePayload.PreviousPayload}
+                                       .StoplossValue = stoploss}
                     End If
                 ElseIf (differenceInBothWicks < 0 OrElse
                     (differenceInBothWicks = 0 AndAlso runningCandlePayload.PreviousPayload.CandleColor = Color.Red)) AndAlso
@@ -190,14 +189,13 @@ Public Class MomentumReversalStrategyInstrument
                     stoploss = GetModifiedStoplossAsync(stoplossPrice, triggerPrice, quantity)
 
                     If Me.TradableInstrument.LastTick.LastPrice > triggerPrice Then
-                        parameters = New PlaceOrderParameters With
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                        {.EntryDirection = APIAdapter.TransactionType.Sell,
                                        .Quantity = quantity,
                                        .Price = price,
                                        .TriggerPrice = triggerPrice,
                                        .SquareOffValue = target,
-                                       .StoplossValue = stoploss,
-                                       .SignalCandle = runningCandlePayload.PreviousPayload}
+                                       .StoplossValue = stoploss}
                     End If
                 End If
             End If

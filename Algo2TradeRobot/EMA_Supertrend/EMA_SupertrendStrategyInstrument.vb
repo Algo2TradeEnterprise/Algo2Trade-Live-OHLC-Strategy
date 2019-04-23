@@ -173,22 +173,20 @@ Public Class EMA_SupertrendStrategyInstrument
 
                 triggerPrice = marketPrice - ConvertFloorCeling((marketPrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor)
 
-                parameters = New PlaceOrderParameters With
+                parameters = New PlaceOrderParameters(runningCandlePayload) With
                                    {.EntryDirection = APIAdapter.TransactionType.Buy,
                                    .Quantity = quantity,
-                                   .TriggerPrice = triggerPrice,
-                                   .SignalCandle = runningCandlePayload}
+                                   .TriggerPrice = triggerPrice}
             ElseIf IsAboveOrBelow(_dummyFastEMAConsumer, _dummySlowEMAConsumer, TypeOfField.EMA, TypeOfField.EMA, runningCandlePayload, Position.Below, False) AndAlso
                 supertrendConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
                 (Not _useST Or CType(supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor = Color.Red) Then
 
                 triggerPrice = marketPrice + ConvertFloorCeling((marketPrice * emaStUserSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).StoplossPercentage / 100), Me.TradableInstrument.TickSize, RoundOfType.Floor)
 
-                parameters = New PlaceOrderParameters With
+                parameters = New PlaceOrderParameters(runningCandlePayload) With
                                    {.EntryDirection = APIAdapter.TransactionType.Sell,
                                    .Quantity = quantity,
-                                   .TriggerPrice = triggerPrice,
-                                   .SignalCandle = runningCandlePayload}
+                                   .TriggerPrice = triggerPrice}
             End If
         End If
 

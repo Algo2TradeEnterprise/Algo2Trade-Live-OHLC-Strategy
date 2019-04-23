@@ -24,6 +24,8 @@ Namespace Adapter
             _Kite.SetSessionExpiryHook(AddressOf associatedParentController.OnSessionExpireAsync)
             Calculator = New ZerodhaBrokerageCalculator(Me.ParentController, canceller)
         End Sub
+
+#Region "Brokerage Calculator"
         Public Overrides Function CalculatePLWithBrokerage(ByVal intrument As IInstrument,
                                                             ByVal buy As Double,
                                                             ByVal sell As Double,
@@ -44,10 +46,16 @@ Namespace Adapter
             ret = brokerageAttributes.NetProfitLoss
             Return ret
         End Function
+#End Region
+
+#Region "Access Token"
         Public Overrides Sub SetAPIAccessToken(ByVal apiAccessToken As String)
             'logger.Debug("SetAPIAccessToken, apiAccessToken:{0}", apiAccessToken)
             _Kite.SetAccessToken(apiAccessToken)
         End Sub
+#End Region
+
+#Region "All Instruments"
         Public Overrides Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
             logger.Debug("GetAllInstrumentsAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaInstrument) = Nothing
@@ -104,6 +112,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Quotes"
         Public Overrides Async Function GetAllQuotesAsync(ByVal instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
             'logger.Debug("GetAllQuotes, parameters:{0}", Utils.JsonSerialize(instruments))
             Dim ret As List(Of ZerodhaQuote) = Nothing
@@ -160,6 +171,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Trades & Orders"
         Public Overrides Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
             'logger.Debug("GetAllTradesAsync, parameters:Nothing")
             Dim ret As List(Of ZerodhaTrade) = Nothing
@@ -281,6 +295,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Margin"
         Public Overrides Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of Enums.TypeOfExchage, IUserMargin))
             'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
             Dim ret As Dictionary(Of Enums.TypeOfExchage, IUserMargin) = Nothing
@@ -340,6 +357,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Modify Order"
         Public Overrides Async Function ModifyStoplossOrderAsync(ByVal orderId As String, ByVal triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
             'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, triggerPrice)
             Dim ret As Dictionary(Of String, Object) = Nothing
@@ -391,6 +411,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Cancel Order"
         Public Overrides Async Function CancelBOOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
             'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
             Dim ret As Dictionary(Of String, Object) = Nothing
@@ -501,6 +524,9 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Place BO"
         Public Overrides Async Function PlaceBOLimitMISOrderAsync(ByVal tradeExchange As String,
                                                                    ByVal tradingSymbol As String,
                                                                    ByVal transaction As TransactionType,
@@ -509,7 +535,6 @@ Namespace Adapter
                                                                    ByVal squareOffValue As Decimal,
                                                                    ByVal stopLossValue As Decimal,
                                                                    ByVal tag As String) As Task(Of Dictionary(Of String, Object))
-            'logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7}", tradeExchange, tradingSymbol, transaction, quantity, price, squareOffValue, stopLossValue, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -590,7 +615,6 @@ Namespace Adapter
                                                                 ByVal squareOffValue As Decimal,
                                                                 ByVal stopLossValue As Decimal,
                                                                 ByVal tag As String) As Task(Of Dictionary(Of String, Object))
-            'logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5},{6},{7},{8}", tradeExchange, tradingSymbol, transaction, quantity, price, triggerPrice, squareOffValue, stopLossValue, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -662,13 +686,15 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
+
+#Region "Place CO"
         Public Overrides Async Function PlaceCOMarketMISOrderAsync(ByVal tradeExchange As String,
                                                                    ByVal tradingSymbol As String,
                                                                    ByVal transaction As TransactionType,
                                                                    ByVal quantity As Integer,
                                                                    ByVal triggerPrice As Decimal,
                                                                    ByVal tag As String) As Task(Of Dictionary(Of String, Object))
-            'logger.Debug("PlaceBOLimitOrderAsync, parameters:{0},{1},{2},{3},{4},{5}", tradeExchange, tradingSymbol, transaction, quantity, triggerPrice, tag)
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
             _cts.Token.ThrowIfCancellationRequested()
@@ -740,7 +766,240 @@ Namespace Adapter
             End If
             Return ret
         End Function
+#End Region
 
+#Region "Place NRML"
+        Public Overrides Async Function PlaceNRMLMarketMISOrderAsync(ByVal tradeExchange As String,
+                                                                     ByVal tradingSymbol As String,
+                                                                     ByVal transaction As TransactionType,
+                                                                     ByVal quantity As Integer,
+                                                                     ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As String = Nothing
+            Select Case transaction
+                Case TransactionType.Buy
+                    transactionDirection = Constants.TRANSACTION_TYPE_BUY
+                Case TransactionType.Sell
+                    transactionDirection = Constants.TRANSACTION_TYPE_SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"TradingSymbol", tradingSymbol},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", Nothing},
+                {"Product", Constants.PRODUCT_MIS},
+                {"OrderType", Constants.ORDER_TYPE_MARKET},
+                {"Validity", Constants.VALIDITY_DAY},
+                {"TriggerPrice", Nothing},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", Constants.VARIETY_REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function PlaceNRMLLimitMISOrderAsync(ByVal tradeExchange As String,
+                                                                    ByVal tradingSymbol As String,
+                                                                    ByVal transaction As TransactionType,
+                                                                    ByVal quantity As Integer,
+                                                                    ByVal price As Decimal,
+                                                                    ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As String = Nothing
+            Select Case transaction
+                Case TransactionType.Buy
+                    transactionDirection = Constants.TRANSACTION_TYPE_BUY
+                Case TransactionType.Sell
+                    transactionDirection = Constants.TRANSACTION_TYPE_SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"TradingSymbol", tradingSymbol},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", price},
+                {"Product", Constants.PRODUCT_MIS},
+                {"OrderType", Constants.ORDER_TYPE_LIMIT},
+                {"Validity", Constants.VALIDITY_DAY},
+                {"TriggerPrice", Nothing},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", Constants.VARIETY_REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function PlaceNRMLSLMMISOrderAsync(ByVal tradeExchange As String,
+                                                                  ByVal tradingSymbol As String,
+                                                                  ByVal transaction As TransactionType,
+                                                                  ByVal quantity As Integer,
+                                                                  ByVal triggerPrice As Decimal,
+                                                                  ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As String = Nothing
+            Select Case transaction
+                Case TransactionType.Buy
+                    transactionDirection = Constants.TRANSACTION_TYPE_BUY
+                Case TransactionType.Sell
+                    transactionDirection = Constants.TRANSACTION_TYPE_SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"TradingSymbol", tradingSymbol},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", Nothing},
+                {"Product", Constants.PRODUCT_MIS},
+                {"OrderType", Constants.ORDER_TYPE_SLM},
+                {"Validity", Constants.VALIDITY_DAY},
+                {"TriggerPrice", triggerPrice},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", Constants.VARIETY_REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New ZerodhaBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New ZerodhaBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch pex As PermissionException
+                Throw New ZerodhaBusinessException(pex.Message, pex, AdapterBusinessException.TypeOfException.PermissionException)
+            Catch oex As OrderException
+                Throw New ZerodhaBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch iex As InputException
+                Throw New ZerodhaBusinessException(iex.Message, iex, AdapterBusinessException.TypeOfException.InputException)
+            Catch dex As DataException
+                Throw New ZerodhaBusinessException(dex.Message, dex, AdapterBusinessException.TypeOfException.DataException)
+            Catch nex As NetworkException
+                Throw New ZerodhaBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Zerodha command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
 
 #Region "Zerodha Commands"
         Private Async Function ExecuteCommandAsync(ByVal command As ExecutionCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))

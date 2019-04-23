@@ -15,6 +15,7 @@
         ReadOnly Property Tag As String
         ReadOnly Property ParentOrderIdentifier As String
         ReadOnly Property TimeStamp As Date
+        ReadOnly Property OrderTyoe As String
         ReadOnly Property Broker As APISource
     End Interface
 End Namespace

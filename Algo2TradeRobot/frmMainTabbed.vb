@@ -729,7 +729,11 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "AmiSignal"
-    Private _AmidashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _AmiSignalUserInputs As AmiSignalUserInputs = Nothing
+    Private _AmiSignalDashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _AmiSignalTradableInstruments As IEnumerable(Of AmiSignalStrategyInstrument) = Nothing
+    Private _AmiSignalStrategyToExecute As AmiSignalStrategy = Nothing
+
     Private Sub sfdgvAmiSignalMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvAmiSignalMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(AmiSignalStrategy))
     End Sub
@@ -746,16 +750,25 @@ Public Class frmMainTabbed
         _cts.Token.ThrowIfCancellationRequested()
 
         Try
-            OnHeartbeat("Validating Settings & instrument details")
-            Dim amiSignalSettings As New AmiSignalUserInputs
-            'amiSignalSettings.SignalTimeFrame = 1
-            amiSignalSettings.FillSettingsDetails(IO.Path.Combine(My.Application.Info.DirectoryPath, "AmiIntegrationInputFilev1.0.csv"), _cts)
-
             EnableDisableUIEx(UIMode.Active, GetType(AmiSignalStrategy))
             EnableDisableUIEx(UIMode.BlockOther, GetType(AmiSignalStrategy))
 
+            OnHeartbeat("Validating Strategy user settings")
+            If File.Exists("AmiSignalSettings.Strategy.a2t") Then
+                Dim fs As Stream = New FileStream("AmiSignalSettings.Strategy.a2t", FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _AmiSignalUserInputs = CType(bf.Deserialize(fs), AmiSignalUserInputs)
+                fs.Close()
+                _AmiSignalUserInputs.InstrumentsData = Nothing
+                _AmiSignalUserInputs.FillInstrumentDetails(_AmiSignalUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
+            End If
+            logger.Debug(Utilities.Strings.JsonSerialize(_AmiSignalUserInputs))
+
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
+            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
@@ -850,20 +863,35 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(AmiSignalStrategy))
 
-            Dim AmiSignalStrategyToExecute As New AmiSignalStrategy(_commonController, 2, amiSignalSettings, 0, _cts)
-            OnHeartbeatEx(String.Format("Running strategy:{0}", AmiSignalStrategyToExecute.ToString), New List(Of Object) From {AmiSignalStrategyToExecute})
+            _AmiSignalStrategyToExecute = New AmiSignalStrategy(_commonController, 2, _AmiSignalUserInputs, 0, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", _AmiSignalStrategyToExecute.ToString), New List(Of Object) From {_AmiSignalStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(AmiSignalStrategyToExecute).ConfigureAwait(False)
+            Await _commonController.SubscribeStrategyAsync(_AmiSignalStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _AmidashboadList = New BindingList(Of ActivityDashboard)(AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
-                                                                                                                                                 Return x.SignalGeneratedTime
-                                                                                                                                             End Function).ToList)
-            SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmidashboadList)
+            _AmiSignalTradableInstruments = _AmiSignalStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblAmiSignalTradableInstrument, String.Format("Tradable Instruments: {0}", _AmiSignalTradableInstruments.Count))
+            SetObjectEnableDisable_ThreadSafe(linklblAmiSignalTradableInstrument, True)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _AmiSignalDashboadList = New BindingList(Of ActivityDashboard)(_AmiSignalStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                                        Return x.SignalGeneratedTime
+                                                                                                                                                    End Function).ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmiSignalDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
 
-            Await AmiSignalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+            Await _AmiSignalStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            _lastException = fex
         Catch cx As OperationCanceledException
             logger.Error(cx)
             MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
@@ -875,27 +903,52 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(AmiSignalStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         End Try
-        If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-            If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-            If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-            If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-            _commonController = Nothing
-            _connection = Nothing
-            _cts = Nothing
-        End If
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
     End Function
     Private Async Sub btnAmiSignalStart_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStart.Click
         PreviousDayCleanup()
         Await Task.Run(AddressOf AmiSignalStartWorkerAsync).ConfigureAwait(False)
+
+        If _lastException IsNot Nothing Then
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnAmiSignalStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                Debug.WriteLine("Restart for daily refresh")
+                logger.Debug("Restarting the application again for daily refresh")
+                btnAmiSignalStart_Click(sender, e)
+            End If
+        End If
     End Sub
     Private Sub tmrAmiSignalTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrAmiSignalTickerStatus.Tick
         FlashTickerBulbEx(GetType(AmiSignalStrategy))
     End Sub
     Private Async Sub btnAmiSignalStop_Click(sender As Object, e As EventArgs) Handles btnAmiSignalStop.Click
+        SetObjectEnableDisable_ThreadSafe(linklblAmiSignalTradableInstrument, False)
         If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
         If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
         If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _cts.Cancel()
+    End Sub
+    Private Sub btnAmiSignalSettings_Click(sender As Object, e As EventArgs) Handles btnAmiSignalSettings.Click
+        Dim newForm As New frmAmiSignalSettings(_AmiSignalUserInputs)
+        newForm.ShowDialog()
+    End Sub
+    Private Sub linklblAmiSignalTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblAmiSignalTradableInstrument.LinkClicked
+        Dim newForm As New frmAmiSignalTradableInstrumentList(_AmiSignalTradableInstruments)
+        newForm.ShowDialog()
     End Sub
 #End Region
 
@@ -1035,7 +1088,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(EMA_SupertrendStrategy))
 
-            _EMASupertrendStrategyToExecute = New EMA_SupertrendStrategy(_commonController, 4, _EMA_SupertrendUserInputs, 5, _cts)
+            _EMASupertrendStrategyToExecute = New EMA_SupertrendStrategy(_commonController, 3, _EMA_SupertrendUserInputs, 5, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _EMASupertrendStrategyToExecute.ToString), New List(Of Object) From {_EMASupertrendStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -1282,7 +1335,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NearFarHedgingStrategy))
 
-            _NearFarHedgingStrategyToExecute = New NearFarHedgingStrategy(_commonController, 5, _NearFarHedgingUserInputs, 5, _cts)
+            _NearFarHedgingStrategyToExecute = New NearFarHedgingStrategy(_commonController, 4, _NearFarHedgingUserInputs, 5, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _NearFarHedgingStrategyToExecute.ToString), New List(Of Object) From {_NearFarHedgingStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -1456,6 +1509,7 @@ Public Class frmMainTabbed
             Select Case mode
                 Case UIMode.Active
                     SetObjectEnableDisable_ThreadSafe(btnAmiSignalStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnAmiSignalSettings, False)
                     SetObjectEnableDisable_ThreadSafe(btnAmiSignalStop, True)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnOHLStart) = "Start" Then
@@ -1477,6 +1531,7 @@ Public Class frmMainTabbed
                     End If
                 Case UIMode.Idle
                     SetObjectEnableDisable_ThreadSafe(btnAmiSignalStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnAmiSignalSettings, True)
                     SetObjectEnableDisable_ThreadSafe(btnAmiSignalStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, Nothing)
             End Select
@@ -1755,11 +1810,11 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(AmiSignalStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(EMA_SupertrendStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(NearFarHedgingStrategy))
-        'tabMain.TabPages.Remove(tabOHL)
-        'tabMain.TabPages.Remove(tabMomentumReversal)
+        tabMain.TabPages.Remove(tabOHL)
+        tabMain.TabPages.Remove(tabMomentumReversal)
         'tabMain.TabPages.Remove(tabAmiSignal)
-        'tabMain.TabPages.Remove(tabEMA_Supertrend)
-        'tabMain.TabPages.Remove(tabNearFarHedging)
+        tabMain.TabPages.Remove(tabEMA_Supertrend)
+        tabMain.TabPages.Remove(tabNearFarHedging)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(OHLStrategy), Color.Pink)
@@ -1849,7 +1904,7 @@ Public Class frmMainTabbed
                 Case GetType(OHLStrategy)
                     BindingListAdd_ThreadSafe(_OHLdashboadList, item)
                 Case GetType(AmiSignalStrategy)
-                    BindingListAdd_ThreadSafe(_AmidashboadList, item)
+                    BindingListAdd_ThreadSafe(_AmiSignalDashboadList, item)
                 Case GetType(EMA_SupertrendStrategy)
                     BindingListAdd_ThreadSafe(_EMA_SupertrendDashboadList, item)
                 Case GetType(NearFarHedgingStrategy)
@@ -1875,9 +1930,9 @@ Public Class frmMainTabbed
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvOHLMainDashboard)
             Case GetType(AmiSignalStrategy)
                 SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, Nothing)
-                _AmidashboadList = Nothing
-                _AmidashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmidashboadList)
+                _AmiSignalDashboadList = Nothing
+                _AmiSignalDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvAmiSignalMainDashboard, _AmiSignalDashboadList)
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvAmiSignalMainDashboard)
             Case GetType(EMA_SupertrendStrategy)
                 SetSFGridDataBind_ThreadSafe(sfdgvEMA_SupertrendMainDashboard, Nothing)

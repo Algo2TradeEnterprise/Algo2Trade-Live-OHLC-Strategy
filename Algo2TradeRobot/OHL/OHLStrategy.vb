@@ -137,7 +137,6 @@ Public Class OHLStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
-            'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception

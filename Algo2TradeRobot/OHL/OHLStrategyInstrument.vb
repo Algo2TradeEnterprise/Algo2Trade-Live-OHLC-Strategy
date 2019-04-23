@@ -135,27 +135,25 @@ Public Class OHLStrategyInstrument
                     dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {
                         .SnapshotDateTime = TradableInstrument.LastTick.Timestamp
                     }
-                    parameters = New PlaceOrderParameters With
+                    parameters = New PlaceOrderParameters(dummyPayload) With
                                 {.EntryDirection = APIAdapter.TransactionType.Sell,
                                 .Quantity = quantity,
                                 .Price = entryPrice,
                                 .TriggerPrice = Nothing,
                                 .SquareOffValue = target,
-                                .StoplossValue = stoploss,
-                                .SignalCandle = dummyPayload}
+                                .StoplossValue = stoploss}
                 ElseIf TradableInstrument.LastTick.Open = TradableInstrument.LastTick.Low Then
                     entryPrice = OHLTradePrice + buffer
                     dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {
                         .SnapshotDateTime = TradableInstrument.LastTick.Timestamp
                     }
-                    parameters = New PlaceOrderParameters With
+                    parameters = New PlaceOrderParameters(dummyPayload) With
                                 {.EntryDirection = APIAdapter.TransactionType.Buy,
                                 .Quantity = quantity,
                                 .Price = entryPrice,
                                 .TriggerPrice = Nothing,
                                 .SquareOffValue = target,
-                                .StoplossValue = stoploss,
-                                .SignalCandle = dummyPayload}
+                                .StoplossValue = stoploss}
                 End If
             End If
         End If

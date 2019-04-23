@@ -51,6 +51,9 @@ Namespace Adapter
         Public MustOverride Async Function PlaceBOLimitMISOrderAsync(ByVal tradeExchange As String, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
         Public MustOverride Async Function PlaceBOSLMISOrderAsync(ByVal tradeExchange As String, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal triggerPrice As Decimal, ByVal squareOffValue As Decimal, ByVal stopLossValue As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
         Public MustOverride Async Function PlaceCOMarketMISOrderAsync(ByVal tradeExchange As String, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal triggerPrice As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+        Public MustOverride Async Function PlaceNRMLMarketMISOrderAsync(ByVal tradeExchange As String, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+        Public MustOverride Async Function PlaceNRMLLimitMISOrderAsync(ByVal tradeExchange As String, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal price As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+        Public MustOverride Async Function PlaceNRMLSLMMISOrderAsync(ByVal tradeExchange As String, ByVal tradingSymbol As String, ByVal transaction As TransactionType, ByVal quantity As Integer, ByVal triggerPrice As Decimal, ByVal tag As String) As Task(Of Dictionary(Of String, Object))
         Public Enum ExecutionCommands
             GetPositions = 1
             GetQuotes
@@ -72,15 +75,6 @@ Namespace Adapter
         Public Enum TransactionType
             Buy = 1
             Sell
-            None
-        End Enum
-        Public Enum Exchange
-            NSE = 1
-            BSE
-            NFO
-            BFO
-            MCX
-            CDS
             None
         End Enum
     End Class

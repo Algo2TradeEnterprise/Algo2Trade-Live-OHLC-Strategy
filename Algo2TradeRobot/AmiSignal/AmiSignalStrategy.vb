@@ -19,22 +19,12 @@ Public Class AmiSignalStrategy
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
         MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        Me.ExitAllTrades = False
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
     End Sub
-    'Public Sub New(ByVal associatedParentController As APIStrategyController,
-    '               ByVal strategyIdentifier As String,
-    '               ByVal maxNumberOfDaysForHistoricalFetch As Integer,
-    '               ByVal canceller As CancellationTokenSource)
-    '    MyBase.New(associatedParentController, strategyIdentifier, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
-    'End Sub
-    ''' <summary>
-    ''' This function will fill the instruments based on the stratgey used and also create the workers
-    ''' </summary>
-    ''' <param name="allInstruments"></param>
-    ''' <returns></returns>
     Public Overrides Async Function CreateTradableStrategyInstrumentsAsync(ByVal allInstruments As IEnumerable(Of IInstrument)) As Task(Of Boolean)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             logger.Debug("CreateTradableStrategyInstrumentsAsync, allInstruments.Count:{0}", allInstruments.Count)
@@ -47,21 +37,6 @@ Public Class AmiSignalStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            ''Get all the futures instruments
-            'Dim futureAllInstruments = allInstruments.Where(Function(x)
-            '                                                    Return x.InstrumentType = "FUT" AndAlso x.Exchange = "MCX" 'AndAlso x.InstrumentIdentifier = "54177543"
-            '                                                End Function)
-            '_cts.Token.ThrowIfCancellationRequested()
-            'If futureAllInstruments IsNot Nothing AndAlso futureAllInstruments.Count > 0 Then
-            '    For Each runningFutureAllInstrument In futureAllInstruments.Take(1)
-            '        _cts.Token.ThrowIfCancellationRequested()
-            '        ret = True
-            '        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '        retTradableInstrumentsAsPerStrategy.Add(runningFutureAllInstrument)
-            '    Next
-            '    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            'End If
-
             'Get AmiSignal Strategy Instruments
             Dim amiUserInputs As AmiSignalUserInputs = CType(UserSettings, AmiSignalUserInputs)
             If amiUserInputs.InstrumentsData IsNot Nothing AndAlso amiUserInputs.InstrumentsData.Count > 0 Then
@@ -80,7 +55,6 @@ Public Class AmiSignalStrategy
             End If
         End If
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
-            'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
             'Now create the strategy tradable instruments
             Dim retTradableStrategyInstruments As List(Of AmiSignalStrategyInstrument) = Nothing
             logger.Debug("Creating strategy tradable instruments, _tradableInstruments.count:{0}", retTradableInstrumentsAsPerStrategy.Count)
@@ -127,7 +101,6 @@ Public Class AmiSignalStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
-            'Task to run order update periodically
             tasks.Add(Task.Run(AddressOf MonitorAmiBrokerAsync, _cts.Token))
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
@@ -142,8 +115,9 @@ Public Class AmiSignalStrategy
             Throw lastException
         End If
     End Function
+
     Public Async Function MonitorAmiBrokerAsync() As Task
-        logger.Debug("MonitorAmiBrokerAsync, parameters:Nothing")
+        'logger.Debug("MonitorAmiBrokerAsync, parameters:Nothing")
         Try
             If Me.ParentController.OrphanException IsNot Nothing Then
                 Throw Me.ParentController.OrphanException
@@ -155,23 +129,16 @@ Public Class AmiSignalStrategy
             Dim client As Net.Sockets.TcpClient = Nothing
             Dim clientData As IO.StreamReader = Nothing
             server.Start()
-            'Dim flag As Boolean = False
             While True
                 Try
                     If Me.ParentController.OrphanException IsNot Nothing Then
                         Throw Me.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
-                    'If flag Then
-                    '    Throw New ApplicationException("Test exception")
-                    '    flag = False
-                    'End If
                     If server.Pending Then
                         client = server.AcceptTcpClient
                         clientData = New IO.StreamReader(client.GetStream)
-                        'Console.WriteLine(clientData.ReadLine())
                         PopulateExternalSignalAsync(clientData.ReadLine())
-                        'flag = True
                     End If
                 Catch cex As OperationCanceledException
                     logger.Error(cex)
@@ -183,7 +150,6 @@ Public Class AmiSignalStrategy
                     server = Nothing
                     server = New Net.Sockets.TcpListener(serverIP, serverPort)
                     server.Start()
-                    'flag = False
                 End Try
                 Await Task.Delay(100, _cts.Token).ConfigureAwait(False)
             End While
@@ -194,23 +160,35 @@ Public Class AmiSignalStrategy
             Throw ex
         End Try
     End Function
+
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function
+
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim currentTime As Date = Now
-        If currentTime.Hour = 15 AndAlso currentTime.Minute = 15 AndAlso currentTime.Second >= 0 Then
-            ret = New Tuple(Of Boolean, String)(True, "EOD EXIT")
+        If currentTime >= Me.UserSettings.EODExitTime Then
+            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
         End If
         Return ret
     End Function
+
     Private Async Function PopulateExternalSignalAsync(ByVal signal As String) As Task
         logger.Debug("PopulateExternalSignalAsync, parameters:{0}", signal)
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
             Dim signalarr() As String = signal.Trim.Split(" ")
-            If signalarr.Count > 2 Then
+
+            'Signal format
+            'Entry ADANIPORTS-I Buy MKT 0 200
+            'StopLoss ADANIPORTS-I Sell SL-M 390 200
+            'Target ADANIPORTS-I Sell LIMIT 392 200
+            'Entry ADANIPORTS-I Short MKT 0 200
+            'StopLoss ADANIPORTS-I Cover SL-M 393 200
+            'Target ADANIPORTS-I Cover LIMIT 391 200
+
+            If signalarr.Count > 6 Then
                 logger.Error(New ApplicationException(String.Format("Invalid Signal Details. {0}", signal)))
                 Exit Function
             End If

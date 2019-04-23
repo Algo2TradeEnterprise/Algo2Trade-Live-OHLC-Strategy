@@ -1,5 +1,5 @@
 ﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
-Partial Class frmNearFarHedgingTradableInstrumentList
+Partial Class frmAmiSignalTradableInstrumentList
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
@@ -26,7 +26,7 @@ Partial Class frmNearFarHedgingTradableInstrumentList
         Dim DataGridViewCellStyle2 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Dim DataGridViewCellStyle3 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Dim DataGridViewCellStyle4 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmNearFarHedgingTradableInstrumentList))
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmAmiSignalTradableInstrumentList))
         Me.dgvTradableInstruments = New System.Windows.Forms.DataGridView()
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -71,9 +71,9 @@ Partial Class frmNearFarHedgingTradableInstrumentList
         Me.dgvTradableInstruments.RowTemplate.Height = 24
         Me.dgvTradableInstruments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect
         Me.dgvTradableInstruments.Size = New System.Drawing.Size(806, 312)
-        Me.dgvTradableInstruments.TabIndex = 2
+        Me.dgvTradableInstruments.TabIndex = 3
         '
-        'frmNearFarHedgingTradableInstrumentList
+        'frmAmiSignalTradableInstrumentList
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
@@ -82,9 +82,9 @@ Partial Class frmNearFarHedgingTradableInstrumentList
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
-        Me.Name = "frmNearFarHedgingTradableInstrumentList"
+        Me.Name = "frmAmiSignalTradableInstrumentList"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Near Far Hedging Strategy Tradable Instruments"
+        Me.Text = "Ami Signal Strategy Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 

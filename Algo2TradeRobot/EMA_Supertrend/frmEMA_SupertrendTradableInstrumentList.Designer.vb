@@ -80,6 +80,8 @@ Partial Class frmEMA_SupertrendTradableInstrumentList
         Me.ClientSize = New System.Drawing.Size(806, 312)
         Me.Controls.Add(Me.dgvTradableInstruments)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
+        Me.MaximizeBox = False
+        Me.MinimizeBox = False
         Me.Name = "frmEMA_SupertrendTradableInstrumentList"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "EMA & Supertrend Strategy Tradable Instruments"

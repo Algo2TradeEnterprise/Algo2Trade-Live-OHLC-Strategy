@@ -174,31 +174,126 @@ Namespace ChartHandler.ChartStyle
                                                             historicalCandle(4),
                                                             historicalCandle(5),
                                                             previousCandlePayload)
-                                'With _parentInstrument.RawPayloads(runningSnapshotTime)
-                                '    .SnapshotDateTime = runningSnapshotTime
-                                '    .TradingSymbol = _parentInstrument.TradingSymbol
-                                '    .OpenPrice.Value = historicalCandle(1)
-                                '    .HighPrice.Value = historicalCandle(2)
-                                '    .LowPrice.Value = historicalCandle(3)
-                                '    .ClosePrice.Value = historicalCandle(4)
-                                '    .Volume.Value = historicalCandle(5)
-                                '    If previousCandlePayload IsNot Nothing AndAlso
-                                '        .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
-                                '        .DailyVolume = .Volume.Value + previousCandlePayload.DailyVolume
-                                '    Else
-                                '        .DailyVolume = .Volume.Value
-                                '    End If
-                                '    .PreviousPayload = previousCandlePayload
-                                'End With
-                                ''''previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)
 
-                                '_parentInstrument.RawPayloads(runningSnapshotTime) = runningPayload
+                                'Since this candle is updated or added fresh, we need to mark this candle dirty
+                                'Marking dirty would mean chart consumer and subsequently indicator consumers should fire
+
+                                _parentInstrument.RawPayloads(runningSnapshotTime).IsDirtyCandle = True
+
+                                'Candlestickchart is a one-to-one mapping with instrument
+                                'One instrument can have several startegyinstruments
+                                'Now since the historical data is received for the instrument, so all the stratgy instruments need
+                                'to have their charts created and corresponding indicators fired via the below lines
+
+                                Dim consumersToBeCalculated As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = Nothing
                                 If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
                                     For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
-                                        Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, _parentInstrument.RawPayloads(runningSnapshotTime)).ConfigureAwait(False)
+                                        'If the runningstrategyinstrument is from a pair trading
+                                        'and is the far contract, then we need to find the near contract candle changes, ie.
+                                        'find the dirty candles of the near contract. This is required as the indicators
+                                        'associated to a pair startgey will depend on changes of the far and near contract
+                                        'While the changes of the far contract can bet detected normally and the indicators fired,
+                                        'but the changes of the near contract should also be detected the corresponding far contracts
+                                        'indicator should be fired as there is a change in the near contract
+
+                                        'Check first if we are in far contract
+                                        Dim consumerToCalculateFrom As Date = Date.MaxValue
+                                        If runningSubscribedStrategyInstrument.IsPairInstrument AndAlso
+                                            runningSubscribedStrategyInstrument.DependendStratrgyInstruments IsNot Nothing AndAlso
+                                            runningSubscribedStrategyInstrument.DependendStratrgyInstruments.Count > 0 AndAlso
+                                            Not runningSubscribedStrategyInstrument.TradableInstrument.IsCurrentContract Then
+
+                                            'Get the dirty flag payloads from the near contract or any other dependent strategy instruements of the far contract
+                                            For Each runningDependendStrategyInstrument In runningSubscribedStrategyInstrument.DependendStratrgyInstruments
+                                                If runningDependendStrategyInstrument.RawPayloadDependentConsumers IsNot Nothing AndAlso
+                                                    runningDependendStrategyInstrument.RawPayloadDependentConsumers.Count > 0 Then
+                                                    For Each runningRawPayloadConsumer In runningDependendStrategyInstrument.RawPayloadDependentConsumers
+                                                        If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart Then
+                                                            'Get all the dates which are dirty from the dependent stragey instrument/s charts
+                                                            consumersToBeCalculated = runningDependendStrategyInstrument.TradableInstrument.RawPayloads.Where(Function(x)
+                                                                                                                                                                  Return x.Value.IsDirtyCandle = True
+                                                                                                                                                              End Function)
+                                                            If consumersToBeCalculated IsNot Nothing AndAlso consumersToBeCalculated.Count > 0 Then
+                                                                'Select the minimum date as the consumer updates of the far contract needs to start right from the minimum
+                                                                consumerToCalculateFrom = consumersToBeCalculated.Min(Function(y)
+                                                                                                                          Return y.Key
+                                                                                                                      End Function)
+                                                                ''Now find the corresponding far contract date from which the consumer updates should start
+                                                                ''(Ideally this should be equal to the dependent contract date found above,
+                                                                ''but in case the same timestamp of dependent contract does not exist in the far contract, 
+                                                                ''then the far contract needs to be positioned to the previous available timestamp
+                                                                'Dim consumersToBeCalculatedPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = Nothing
+                                                                'consumersToBeCalculatedPayloads = runningRawPayloadConsumer.ConsumerPayloads.Where(Function(x)
+                                                                '                                                                                       Return x.Key <= consumerToCalculateFrom
+                                                                '                                                                                   End Function)
+                                                                'Dim consumersToBeCalculatedPayload As KeyValuePair(Of Date, IPayload) = Nothing
+                                                                'If consumersToBeCalculatedPayloads IsNot Nothing AndAlso consumersToBeCalculatedPayloads.Count > 0 Then
+                                                                '    consumersToBeCalculatedPayload = consumersToBeCalculatedPayloads.OrderBy(Function(x)
+                                                                '                                                                                 Return x.Key
+                                                                '                                                                             End Function).LastOrDefault
+
+                                                                '    'Now fire the far contract's consumer from this point
+                                                                '    Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, CType(consumersToBeCalculatedPayload.Value, OHLCPayload)).ConfigureAwait(False)
+
+                                                                '    'Since the dependent contract is not going to change its flag, it is the responsibiluty of the
+                                                                '    'far contract to change it.
+                                                                '    consumersToBeCalculated.All(Function(z)
+                                                                '                                    z.Value.IsDirtyCandle = False
+                                                                '                                    Return True
+                                                                '                                End Function)
+                                                                'End If
+                                                            End If
+                                                        End If
+                                                    Next
+                                                End If
+                                            Next
+                                        End If
+                                        consumerToCalculateFrom = New Date(Math.Min(consumerToCalculateFrom.Ticks, runningSnapshotTime.Ticks))
+                                        Dim consumersToBeCalculatedPayloads As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = Nothing
+                                        consumersToBeCalculatedPayloads = _parentInstrument.RawPayloads.Where(Function(x)
+                                                                                                                  Return x.Key <= consumerToCalculateFrom
+                                                                                                              End Function)
+                                        Dim consumersToBeCalculatedPayload As KeyValuePair(Of Date, OHLCPayload) = Nothing
+                                        If consumersToBeCalculatedPayloads IsNot Nothing AndAlso consumersToBeCalculatedPayloads.Count > 0 Then
+                                            consumersToBeCalculatedPayload = consumersToBeCalculatedPayloads.OrderBy(Function(x)
+                                                                                                                         Return x.Key
+                                                                                                                     End Function).LastOrDefault
+
+                                            Await runningSubscribedStrategyInstrument.PopulateChartAndIndicatorsAsync(Me, consumersToBeCalculatedPayload.Value).ConfigureAwait(False)
+                                        End If
+                                        consumersToBeCalculated = Utilities.Collections.ConcatSingle(consumersToBeCalculated, New KeyValuePair(Of Date, OHLCPayload)(runningSnapshotTime, _parentInstrument.RawPayloads(runningSnapshotTime)))
                                     Next
                                 End If
 
+                                'After the consumers have run, we need to reset the flag to false under two conditions
+                                '1) if the stratgey instrument is not a pair instrument
+                                '2) if its a pair stratgey and is the far contract (for the other dependent contracts, the far contract takes
+                                'the responsibility of changing the dirt flag as done above
+                                If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 Then
+                                    For Each runningSubscribedStrategyInstrument In _subscribedStrategyInstruments
+                                        If (Not runningSubscribedStrategyInstrument.IsPairInstrument) OrElse
+                                            (runningSubscribedStrategyInstrument.IsPairInstrument AndAlso
+                                            Not runningSubscribedStrategyInstrument.TradableInstrument.IsCurrentContract) Then
+                                            consumersToBeCalculated.All(Function(z)
+                                                                            z.Value.IsDirtyCandle = False
+                                                                            Return True
+                                                                        End Function)
+                                        End If
+                                        'If runningSubscribedStrategyInstrument.IsPairInstrument AndAlso
+                                        '    Not runningSubscribedStrategyInstrument.TradableInstrument.IsCurrentContract Then
+                                        '    consumersToBeCalculated.All(Function(z)
+                                        '                                    z.Value.IsDirtyCandle = False
+                                        '                                    Return True
+                                        '                                End Function)
+                                        'ElseIf Not runningSubscribedStrategyInstrument.IsPairInstrument Then
+                                        '    '_parentInstrument.RawPayloads(runningSnapshotTime).IsDirtyCandle = False
+                                        '    consumersToBeCalculated.All(Function(z)
+                                        '                                    z.Value.IsDirtyCandle = False
+                                        '                                    Return True
+                                        '                                End Function)
+                                        'End If
+                                    Next
+                                End If
                             End If
                             'End If
                             previousCandlePayload = _parentInstrument.RawPayloads(runningSnapshotTime)

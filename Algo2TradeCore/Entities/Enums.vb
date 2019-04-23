@@ -7,6 +7,9 @@
         End Enum
         Enum TypeOfExchage
             NSE = 1
+            BSE
+            NFO
+            BFO
             MCX
             CDS
             None

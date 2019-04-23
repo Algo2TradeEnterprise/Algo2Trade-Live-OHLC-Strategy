@@ -96,6 +96,8 @@ Partial Class frmMainTabbed
         Me.Panel3 = New System.Windows.Forms.Panel()
         Me.blbAmiSignalTickerStatus = New Bulb.LedBulb()
         Me.lblAmiSignalTickerStatus = New System.Windows.Forms.Label()
+        Me.btnAmiSignalSettings = New System.Windows.Forms.Button()
+        Me.linklblAmiSignalTradableInstrument = New System.Windows.Forms.LinkLabel()
         Me.pnlAmiSignalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.pnlAmiSignalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstAmiSignalLog = New System.Windows.Forms.ListBox()
@@ -1060,14 +1062,16 @@ Partial Class frmMainTabbed
         Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 17.34317!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.5904059!))
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.254613!))
         Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
         Me.pnlAmiSignalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.btnAmiSignalStop, 0, 0)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.btnAmiSignalStart, 0, 0)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.Panel3, 14, 0)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.btnAmiSignalSettings, 9, 0)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.Controls.Add(Me.linklblAmiSignalTradableInstrument, 10, 0)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -1080,10 +1084,10 @@ Partial Class frmMainTabbed
         'btnAmiSignalStop
         '
         Me.btnAmiSignalStop.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnAmiSignalStop.Location = New System.Drawing.Point(93, 4)
+        Me.btnAmiSignalStop.Location = New System.Drawing.Point(94, 4)
         Me.btnAmiSignalStop.Margin = New System.Windows.Forms.Padding(4)
         Me.btnAmiSignalStop.Name = "btnAmiSignalStop"
-        Me.btnAmiSignalStop.Size = New System.Drawing.Size(81, 32)
+        Me.btnAmiSignalStop.Size = New System.Drawing.Size(82, 32)
         Me.btnAmiSignalStop.TabIndex = 10
         Me.btnAmiSignalStop.Text = "Stop"
         Me.btnAmiSignalStop.UseVisualStyleBackColor = True
@@ -1094,7 +1098,7 @@ Partial Class frmMainTabbed
         Me.btnAmiSignalStart.Location = New System.Drawing.Point(4, 4)
         Me.btnAmiSignalStart.Margin = New System.Windows.Forms.Padding(4)
         Me.btnAmiSignalStart.Name = "btnAmiSignalStart"
-        Me.btnAmiSignalStart.Size = New System.Drawing.Size(81, 32)
+        Me.btnAmiSignalStart.Size = New System.Drawing.Size(82, 32)
         Me.btnAmiSignalStart.TabIndex = 2
         Me.btnAmiSignalStart.Text = "Start"
         Me.btnAmiSignalStart.UseVisualStyleBackColor = True
@@ -1103,7 +1107,7 @@ Partial Class frmMainTabbed
         '
         Me.Panel3.Controls.Add(Me.blbAmiSignalTickerStatus)
         Me.Panel3.Controls.Add(Me.lblAmiSignalTickerStatus)
-        Me.Panel3.Location = New System.Drawing.Point(1197, 4)
+        Me.Panel3.Location = New System.Drawing.Point(1201, 4)
         Me.Panel3.Margin = New System.Windows.Forms.Padding(4)
         Me.Panel3.Name = "Panel3"
         Me.Panel3.Size = New System.Drawing.Size(147, 32)
@@ -1130,6 +1134,30 @@ Partial Class frmMainTabbed
         Me.lblAmiSignalTickerStatus.Size = New System.Drawing.Size(91, 17)
         Me.lblAmiSignalTickerStatus.TabIndex = 9
         Me.lblAmiSignalTickerStatus.Text = "Ticker Status"
+        '
+        'btnAmiSignalSettings
+        '
+        Me.btnAmiSignalSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnAmiSignalSettings.Location = New System.Drawing.Point(814, 4)
+        Me.btnAmiSignalSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnAmiSignalSettings.Name = "btnAmiSignalSettings"
+        Me.btnAmiSignalSettings.Size = New System.Drawing.Size(82, 32)
+        Me.btnAmiSignalSettings.TabIndex = 12
+        Me.btnAmiSignalSettings.Text = "Settings"
+        Me.btnAmiSignalSettings.UseVisualStyleBackColor = True
+        '
+        'linklblAmiSignalTradableInstrument
+        '
+        Me.linklblAmiSignalTradableInstrument.AutoSize = True
+        Me.linklblAmiSignalTradableInstrument.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblAmiSignalTradableInstrument.Enabled = False
+        Me.linklblAmiSignalTradableInstrument.Location = New System.Drawing.Point(903, 0)
+        Me.linklblAmiSignalTradableInstrument.Name = "linklblAmiSignalTradableInstrument"
+        Me.linklblAmiSignalTradableInstrument.Size = New System.Drawing.Size(229, 40)
+        Me.linklblAmiSignalTradableInstrument.TabIndex = 13
+        Me.linklblAmiSignalTradableInstrument.TabStop = True
+        Me.linklblAmiSignalTradableInstrument.Text = "Tradable Instruments: 0"
+        Me.linklblAmiSignalTradableInstrument.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
         'pnlAmiSignalBodyVerticalSplitter
         '
@@ -1280,6 +1308,7 @@ Partial Class frmMainTabbed
         Me.tabAmiSignal.ResumeLayout(False)
         Me.pnlAmiSignalMainPanelHorizontalSplitter.ResumeLayout(False)
         Me.pnlAmiSignalTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlAmiSignalTopHeaderVerticalSplitter.PerformLayout()
         Me.Panel3.ResumeLayout(False)
         Me.Panel3.PerformLayout()
         Me.pnlAmiSignalBodyVerticalSplitter.ResumeLayout(False)
@@ -1373,4 +1402,6 @@ Partial Class frmMainTabbed
     Friend WithEvents lstNearFarHedgingLog As ListBox
     Friend WithEvents sfdgvNearFarHedgingMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrNearFarHedgingTickerStatus As Timer
+    Friend WithEvents btnAmiSignalSettings As Button
+    Friend WithEvents linklblAmiSignalTradableInstrument As LinkLabel
 End Class

@@ -346,6 +346,8 @@ Partial Class frmEMA_SupertrendSettings
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveEMA_SupertrendSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
+        Me.MaximizeBox = False
+        Me.MinimizeBox = False
         Me.Name = "frmEMA_SupertrendSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "EMA & Supertrend Strategy - Settings"

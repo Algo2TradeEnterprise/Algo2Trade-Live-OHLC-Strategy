@@ -302,6 +302,8 @@ Partial Class frmNearFarHedgingSettings
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveNearFarHedgingSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
+        Me.MaximizeBox = False
+        Me.MinimizeBox = False
         Me.Name = "frmNearFarHedgingSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Near Far Hedging Strategy - Settings"

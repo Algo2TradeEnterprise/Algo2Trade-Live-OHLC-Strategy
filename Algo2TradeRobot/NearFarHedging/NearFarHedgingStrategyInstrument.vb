@@ -111,14 +111,17 @@ Public Class NearFarHedgingStrategyInstrument
     End Function
 
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException()
     End Function
 
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException()
     End Function
 
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException()
     End Function
 
@@ -137,6 +140,7 @@ Public Class NearFarHedgingStrategyInstrument
 
 
     Private Async Function GenerateTelegramMessageAsync(ByVal message As String) As Task
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         'Using tSender As New Utilities.Notification.Telegram(_apiKey, _chaitId, _cts)
         '    Await tSender.SendMessageGetAsync(Utilities.Strings.EncodeString(message)).ConfigureAwait(False)
         'End Using

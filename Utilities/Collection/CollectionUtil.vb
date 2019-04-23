@@ -5,7 +5,11 @@ Namespace Collections
         <Extension()>
         Public Function ConcatSingle(Of T)(ByVal e As IEnumerable(Of T), ByVal elem As T) As IEnumerable(Of T)
             Dim arr As T() = New T() {elem}
-            Return e.Concat(arr)
+            If e IsNot Nothing Then
+                Return e.Concat(arr)
+            Else
+                Return Enumerable.Repeat(elem, 1)
+            End If
         End Function
 
     End Module

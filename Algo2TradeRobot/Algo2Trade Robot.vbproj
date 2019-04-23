@@ -111,6 +111,18 @@
     <Compile Include="AmiSignal\AmiSignalStrategy.vb" />
     <Compile Include="AmiSignal\AmiSignalStrategyInstrument.vb" />
     <Compile Include="AmiSignal\AmiSignalUserInputs.vb" />
+    <Compile Include="AmiSignal\frmAmiSignalSettings.Designer.vb">
+      <DependentUpon>frmAmiSignalSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="AmiSignal\frmAmiSignalSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AmiSignal\frmAmiSignalTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmAmiSignalTradableInstrumentList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="AmiSignal\frmAmiSignalTradableInstrumentList.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Common.vb" />
     <Compile Include="EMA_Supertrend\EMA_SupertrendStrategy.vb" />
     <Compile Include="EMA_Supertrend\EMA_SupertrendStrategyInstrument.vb" />
@@ -213,6 +225,12 @@
     <Compile Include="OHL\OHLUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="AmiSignal\frmAmiSignalSettings.resx">
+      <DependentUpon>frmAmiSignalSettings.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AmiSignal\frmAmiSignalTradableInstrumentList.resx">
+      <DependentUpon>frmAmiSignalTradableInstrumentList.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="EMA_Supertrend\frmEMA_SupertrendSettings.resx">
       <DependentUpon>frmEMA_SupertrendSettings.vb</DependentUpon>
     </EmbeddedResource>

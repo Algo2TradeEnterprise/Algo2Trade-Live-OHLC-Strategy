@@ -22,6 +22,7 @@ Namespace Entities
         Public Property SnapshotDateTime As Date 'Implements IPayload.SnapshotDateTime
         Public Property PreviousPayload As OHLCPayload 'Implements IPayload.PreviousPayload
         Public Property NumberOfTicks As Integer 'Implements IPayload.NumberOfTicks
+        Public Property IsDirtyCandle As Boolean
 
         Private _PayloadGeneratedBy As PayloadSource
         Public Property PayloadGeneratedBy As PayloadSource 'Implements IPayload.PayloadGeneratedBy
