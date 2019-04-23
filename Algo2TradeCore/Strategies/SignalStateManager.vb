@@ -265,7 +265,7 @@ Namespace Strategies
                     If runningStrategyInstrumentActivities IsNot Nothing AndAlso runningStrategyInstrumentActivities.Count > 0 Then
                         Dim currentSignalActivities As IEnumerable(Of KeyValuePair(Of String, ActivityDashboard)) =
                         runningStrategyInstrumentActivities.Where(Function(y)
-                                                                      Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Value.SignalGeneratedTime, signalCandleTime)
+                                                                      Return Utilities.Time.IsTimeEqualTillSeconds(y.Value.SignalGeneratedTime, signalCandleTime)
                                                                   End Function)
 
                         If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then

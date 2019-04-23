@@ -227,11 +227,12 @@ Public Class AmiSignalStrategyInstrument
             Dim signalarr() As String = signal.Trim.Split(" ")
             Dim returnedSignal As AmiSignal = Nothing
 
-            Dim dummyPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now}
+            Dim dummyPayload As OHLCPayload = Nothing
 
             Select Case signalarr(2).ToUpper()
                 Case "BUY"
                     currentSignal = New AmiSignal
+                    dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now}
                     With currentSignal
                         .InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
                         .Direction = APIAdapter.TransactionType.Buy
@@ -248,6 +249,7 @@ Public Class AmiSignalStrategyInstrument
                     Select Case signalarr(3).ToUpper()
                         Case "LIMIT"
                             currentSignal = New AmiSignal
+                            dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now.AddSeconds(3)}
                             With currentSignal
                                 .InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
                                 .Direction = APIAdapter.TransactionType.Sell
@@ -262,6 +264,7 @@ Public Class AmiSignalStrategyInstrument
                             End If
                         Case "SL-M", "SLM"
                             currentSignal = New AmiSignal
+                            dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now.AddSeconds(6)}
                             With currentSignal
                                 .InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
                                 .Direction = APIAdapter.TransactionType.Sell
@@ -279,6 +282,7 @@ Public Class AmiSignalStrategyInstrument
                     End Select
                 Case "SHORT"
                     currentSignal = New AmiSignal
+                    dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now}
                     With currentSignal
                         .InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
                         .Direction = APIAdapter.TransactionType.Sell
@@ -295,6 +299,7 @@ Public Class AmiSignalStrategyInstrument
                     Select Case signalarr(3).ToUpper()
                         Case "LIMIT"
                             currentSignal = New AmiSignal
+                            dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now.AddSeconds(3)}
                             With currentSignal
                                 .InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
                                 .Direction = APIAdapter.TransactionType.Buy
@@ -309,6 +314,7 @@ Public Class AmiSignalStrategyInstrument
                             End If
                         Case "SL-M", "SLM"
                             currentSignal = New AmiSignal
+                            dummyPayload = New OHLCPayload(OHLCPayload.PayloadSource.None) With {.SnapshotDateTime = Now.AddSeconds(6)}
                             With currentSignal
                                 .InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
                                 .Direction = APIAdapter.TransactionType.Buy
