@@ -6,6 +6,7 @@ Imports Utilities.DAL
 <Serializable>
 Public Class AmiSignalUserInputs
     Inherits StrategyUserInputs
+    Public Property MaxNumberOfOpenPositions As Integer
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
@@ -73,7 +74,7 @@ Public Class AmiSignalUserInputs
                                 Me.InstrumentsData.Add(instrumentData.AmiSymbol, instrumentData)
                             End If
                         Next
-                        If Me.InstrumentsData.Count > 50 Then
+                        If Me.InstrumentsData.Count > 100 Then
                             Throw New ApplicationException("More than 50 instrument is not allowed")
                         End If
                     Else

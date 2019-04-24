@@ -102,11 +102,23 @@ Namespace Strategies
         End Sub
 
 #Region "Public Functions"
-        Public Function GetNumberActiveInstruments() As Integer
+        Public Function GetNumberOfActiveInstruments() As Integer
             Dim instrumentCount As Integer = 0
             If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                 For Each runningStrategyInstrument In TradableStrategyInstruments
                     If runningStrategyInstrument.IsActiveInstrument() Then
+                        instrumentCount += 1
+                    End If
+                Next
+            End If
+            Return instrumentCount
+        End Function
+
+        Public Function GetNumberOfLogicalActiveInstruments() As Integer
+            Dim instrumentCount As Integer = 0
+            If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
+                For Each runningStrategyInstrument In TradableStrategyInstruments
+                    If runningStrategyInstrument.IsLogicalActiveInstrument() Then
                         instrumentCount += 1
                     End If
                 Next

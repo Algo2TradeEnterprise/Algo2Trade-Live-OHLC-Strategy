@@ -27,6 +27,8 @@ Partial Class frmAmiSignalSettings
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMaxOpenPositions = New System.Windows.Forms.TextBox()
+        Me.lblMaxOpenPositions = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -51,6 +53,8 @@ Partial Class frmAmiSignalSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtMaxOpenPositions)
+        Me.GroupBox1.Controls.Add(Me.lblMaxOpenPositions)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
@@ -64,14 +68,32 @@ Partial Class frmAmiSignalSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 165)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 194)
         Me.GroupBox1.TabIndex = 18
         Me.GroupBox1.TabStop = False
+        '
+        'txtMaxOpenPositions
+        '
+        Me.txtMaxOpenPositions.Location = New System.Drawing.Point(176, 19)
+        Me.txtMaxOpenPositions.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxOpenPositions.Name = "txtMaxOpenPositions"
+        Me.txtMaxOpenPositions.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxOpenPositions.TabIndex = 0
+        '
+        'lblMaxOpenPositions
+        '
+        Me.lblMaxOpenPositions.AutoSize = True
+        Me.lblMaxOpenPositions.Location = New System.Drawing.Point(10, 23)
+        Me.lblMaxOpenPositions.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxOpenPositions.Name = "lblMaxOpenPositions"
+        Me.lblMaxOpenPositions.Size = New System.Drawing.Size(133, 17)
+        Me.lblMaxOpenPositions.TabIndex = 25
+        Me.lblMaxOpenPositions.Text = "Max Open Positions"
         '
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(175, 91)
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(175, 125)
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(255, 22)
@@ -81,7 +103,7 @@ Partial Class frmAmiSignalSettings
         'dtpckrLastTradeEntryTime
         '
         Me.dtpckrLastTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(176, 56)
+        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(176, 90)
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(255, 22)
@@ -91,7 +113,7 @@ Partial Class frmAmiSignalSettings
         'dtpckrTradeStartTime
         '
         Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(175, 19)
+        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(175, 53)
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(255, 22)
@@ -101,7 +123,7 @@ Partial Class frmAmiSignalSettings
         'lblEODExitTime
         '
         Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 92)
+        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 126)
         Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEODExitTime.Name = "lblEODExitTime"
         Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
@@ -111,7 +133,7 @@ Partial Class frmAmiSignalSettings
         'lblLastTradeEntryTime
         '
         Me.lblLastTradeEntryTime.AutoSize = True
-        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 57)
+        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 91)
         Me.lblLastTradeEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblLastTradeEntryTime.Name = "lblLastTradeEntryTime"
         Me.lblLastTradeEntryTime.Size = New System.Drawing.Size(149, 17)
@@ -121,7 +143,7 @@ Partial Class frmAmiSignalSettings
         'lblTradeStartTime
         '
         Me.lblTradeStartTime.AutoSize = True
-        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 21)
+        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 55)
         Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblTradeStartTime.Name = "lblTradeStartTime"
         Me.lblTradeStartTime.Size = New System.Drawing.Size(115, 17)
@@ -131,7 +153,7 @@ Partial Class frmAmiSignalSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 125)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 159)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
@@ -141,7 +163,7 @@ Partial Class frmAmiSignalSettings
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 126)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 160)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -151,7 +173,7 @@ Partial Class frmAmiSignalSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 129)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 163)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -176,7 +198,7 @@ Partial Class frmAmiSignalSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(585, 177)
+        Me.ClientSize = New System.Drawing.Size(585, 209)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveAmiSignalSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -204,4 +226,6 @@ Partial Class frmAmiSignalSettings
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
     Friend WithEvents btnSaveAmiSignalSettings As Button
+    Friend WithEvents txtMaxOpenPositions As TextBox
+    Friend WithEvents lblMaxOpenPositions As Label
 End Class

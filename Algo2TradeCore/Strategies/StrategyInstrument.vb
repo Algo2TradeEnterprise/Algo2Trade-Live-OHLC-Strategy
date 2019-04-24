@@ -479,6 +479,17 @@ Namespace Strategies
             ret = allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0
             Return ret
         End Function
+        ''' <summary>
+        ''' Logical active instrument is for Regular order i.e. entry(market), target(limit), stoploss(slm). 
+        ''' If limit and slm both are active then it is logically active  
+        ''' </summary>
+        ''' <returns></returns>
+        Public Function IsLogicalActiveInstrument() As Boolean
+            Dim ret As Boolean = False
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
+            ret = allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 AndAlso (allActiveOrders.Count Mod 2) = 0
+            Return ret
+        End Function
         Public Function GetTotalExecutedOrders() As Integer
             Dim tradeCount As Integer = 0
             If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then

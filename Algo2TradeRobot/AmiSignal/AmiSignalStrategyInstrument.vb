@@ -106,47 +106,76 @@ Public Class AmiSignalStrategyInstrument
         Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
 
         Dim parameters As PlaceOrderParameters = Nothing
-        If Now >= amiUserSettings.TradeStartTime AndAlso Now <= amiUserSettings.LastTradeEntryTime Then
+        If Now >= amiUserSettings.TradeStartTime AndAlso Now <= amiUserSettings.LastTradeEntryTime AndAlso Not IsLogicalActiveInstrument() Then
             Dim dummyPayload As OHLCPayload = Nothing
-            If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 Then
+            If EntrySignals IsNot Nothing AndAlso EntrySignals.Count = 1 Then
                 Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
-                If currentEntrySignal.OrderType = TypeOfOrder.Market AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
-                    dummyPayload = currentEntrySignal.SignalCandle
-                    parameters = New PlaceOrderParameters(dummyPayload) With
+                If Me.ParentStrategy.GetNumberOfLogicalActiveInstruments >= amiUserSettings.MaxNumberOfOpenPositions Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.TradingSymbol, Me.ParentStrategy.GetNumberOfActiveInstruments, If(currentEntrySignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
+                    EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentEntrySignal)
+                Else
+                    If currentEntrySignal.OrderType = TypeOfOrder.Market AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
+                        dummyPayload = currentEntrySignal.SignalCandle
+                        parameters = New PlaceOrderParameters(dummyPayload) With
                                  {
                                     .EntryDirection = currentEntrySignal.Direction,
                                     .Quantity = currentEntrySignal.Quantity
                                  }
+                    End If
                 End If
-            ElseIf TargetSignals IsNot Nothing AndAlso TargetSignals.Count > 0 Then
+            ElseIf TargetSignals IsNot Nothing AndAlso TargetSignals.Count = 1 Then
                 Dim currentTargetSignal As AmiSignal = TargetSignals.FirstOrDefault.Value
-                If currentTargetSignal.OrderType = TypeOfOrder.Limit AndAlso currentTargetSignal.OrderTimestamp = Date.MinValue Then
-                    dummyPayload = currentTargetSignal.SignalCandle
-                    dummyPayload.SnapshotDateTime = currentTargetSignal.SignalCandle.SnapshotDateTime.AddSeconds(3)
-                    parameters = New PlaceOrderParameters(dummyPayload) With
+                If Me.ParentStrategy.GetNumberOfLogicalActiveInstruments >= amiUserSettings.MaxNumberOfOpenPositions Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.TradingSymbol, Me.ParentStrategy.GetNumberOfActiveInstruments, If(currentTargetSignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
+                    TargetSignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentTargetSignal)
+                Else
+                    If currentTargetSignal.OrderType = TypeOfOrder.Limit AndAlso currentTargetSignal.OrderTimestamp = Date.MinValue Then
+                        dummyPayload = currentTargetSignal.SignalCandle
+                        dummyPayload.SnapshotDateTime = currentTargetSignal.SignalCandle.SnapshotDateTime.AddSeconds(3)
+                        parameters = New PlaceOrderParameters(dummyPayload) With
                                  {
                                     .EntryDirection = currentTargetSignal.Direction,
                                     .Quantity = currentTargetSignal.Quantity,
                                     .Price = currentTargetSignal.Price
                                  }
+                    End If
                 End If
-            ElseIf StoplossSignals IsNot Nothing AndAlso StoplossSignals.Count > 0 Then
+            ElseIf StoplossSignals IsNot Nothing AndAlso StoplossSignals.Count = 1 Then
                 Dim currentStoplossSignal As AmiSignal = StoplossSignals.FirstOrDefault.Value
-                If currentStoplossSignal.OrderType = TypeOfOrder.SLM AndAlso currentStoplossSignal.OrderTimestamp = Date.MinValue Then
-                    dummyPayload = currentStoplossSignal.SignalCandle
-                    dummyPayload.SnapshotDateTime = currentStoplossSignal.SignalCandle.SnapshotDateTime.AddSeconds(6)
-                    parameters = New PlaceOrderParameters(dummyPayload) With
-                                 {
-                                    .EntryDirection = currentStoplossSignal.Direction,
-                                    .Quantity = currentStoplossSignal.Quantity,
-                                    .TriggerPrice = currentStoplossSignal.Price
-                                 }
+                If Me.ParentStrategy.GetNumberOfLogicalActiveInstruments >= amiUserSettings.MaxNumberOfOpenPositions Then
+                    logger.Error(String.Format("{0} - {1} Number of trade is running. So this signal cannot execute. {2}", Me.TradableInstrument.TradingSymbol, Me.ParentStrategy.GetNumberOfActiveInstruments, If(currentStoplossSignal.Direction = APIAdapter.TransactionType.Buy, "BUY", "SHORT")))
+                    StoplossSignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentStoplossSignal)
+                Else
+                    If currentStoplossSignal.OrderType = TypeOfOrder.SLM AndAlso currentStoplossSignal.OrderTimestamp = Date.MinValue Then
+                        dummyPayload = currentStoplossSignal.SignalCandle
+                        dummyPayload.SnapshotDateTime = currentStoplossSignal.SignalCandle.SnapshotDateTime.AddSeconds(6)
+                        parameters = New PlaceOrderParameters(dummyPayload) With
+                                     {
+                                        .EntryDirection = currentStoplossSignal.Direction,
+                                        .Quantity = currentStoplossSignal.Quantity,
+                                        .TriggerPrice = currentStoplossSignal.Price
+                                     }
+                    End If
                 End If
+            End If
+        ElseIf IsLogicalActiveInstrument Then
+            Dim currentSignal As AmiSignal = Nothing
+            If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 Then
+                logger.Error(String.Format("{0} - Trade is running. So another entry signal cannot execute.", Me.TradableInstrument.TradingSymbol))
+                EntrySignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentSignal)
+            End If
+            If TargetSignals IsNot Nothing AndAlso TargetSignals.Count > 0 Then
+                logger.Error(String.Format("{0} - Trade is running. So another target signal cannot execute.", Me.TradableInstrument.TradingSymbol))
+                TargetSignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentSignal)
+            End If
+            If StoplossSignals IsNot Nothing AndAlso StoplossSignals.Count > 0 Then
+                logger.Error(String.Format("{0} - Trade is running. So another stoploss signal cannot execute.", Me.TradableInstrument.TradingSymbol))
+                StoplossSignals.TryRemove(Me.TradableInstrument.InstrumentIdentifier, currentSignal)
             End If
         End If
 
-        'Below portion have to be done in every place order trigger
-        If parameters IsNot Nothing Then
+            'Below portion have to be done in every place order trigger
+            If parameters IsNot Nothing Then
             Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(parameters.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
             If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
                 If currentSignalActivities.FirstOrDefault.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso

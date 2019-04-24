@@ -32,6 +32,7 @@ Public Class frmAmiSignalSettings
     Private Sub LoadSettings()
         If File.Exists(_AmiSignalSettingsFilename) Then
             _AmiSignalSettings = Utilities.Strings.DeserializeToCollection(Of AmiSignalUserInputs)(_AmiSignalSettingsFilename)
+            txtMaxOpenPositions.Text = _AmiSignalSettings.MaxNumberOfOpenPositions
             dtpckrTradeStartTime.Value = _AmiSignalSettings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _AmiSignalSettings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _AmiSignalSettings.EODExitTime
@@ -40,6 +41,7 @@ Public Class frmAmiSignalSettings
     End Sub
 
     Private Sub SaveSettings()
+        _AmiSignalSettings.MaxNumberOfOpenPositions = txtMaxOpenPositions.Text
         _AmiSignalSettings.TradeStartTime = dtpckrTradeStartTime.Value
         _AmiSignalSettings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _AmiSignalSettings.EODExitTime = dtpckrEODExitTime.Value
@@ -64,6 +66,7 @@ Public Class frmAmiSignalSettings
     End Sub
 
     Private Sub ValidateInputs()
+        ValidateNumbers(1, Integer.MaxValue, txtMaxOpenPositions)
         ValidateFile()
     End Sub
 
