@@ -81,9 +81,14 @@ Public Class AmiSignalStrategyInstrument
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
+                Dim modifyTargetOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(False).ConfigureAwait(False)
+                If modifyTargetOrdersTrigger IsNot Nothing AndAlso modifyTargetOrdersTrigger.Count > 0 Then
+                    Await ExecuteCommandAsync(ExecuteCommands.ModifyTargetOrder, Nothing).ConfigureAwait(False)
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
                 Dim exitOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrdersTrigger IsNot Nothing AndAlso exitOrdersTrigger.Count > 0 Then
-                    Dim exitOrderResponse As Object = Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
+                    Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
@@ -102,10 +107,12 @@ Public Class AmiSignalStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If Now >= amiUserSettings.TradeStartTime AndAlso Now <= amiUserSettings.LastTradeEntryTime Then
+            Dim dummyPayload As OHLCPayload = Nothing
             If EntrySignals IsNot Nothing AndAlso EntrySignals.Count > 0 Then
                 Dim currentEntrySignal As AmiSignal = EntrySignals.FirstOrDefault.Value
                 If currentEntrySignal.OrderType = TypeOfOrder.Market AndAlso currentEntrySignal.OrderTimestamp = Date.MinValue Then
-                    parameters = New PlaceOrderParameters(currentEntrySignal.SignalCandle) With
+                    dummyPayload = currentEntrySignal.SignalCandle
+                    parameters = New PlaceOrderParameters(dummyPayload) With
                                  {
                                     .EntryDirection = currentEntrySignal.Direction,
                                     .Quantity = currentEntrySignal.Quantity
@@ -114,7 +121,9 @@ Public Class AmiSignalStrategyInstrument
             ElseIf TargetSignals IsNot Nothing AndAlso TargetSignals.Count > 0 Then
                 Dim currentTargetSignal As AmiSignal = TargetSignals.FirstOrDefault.Value
                 If currentTargetSignal.OrderType = TypeOfOrder.Limit AndAlso currentTargetSignal.OrderTimestamp = Date.MinValue Then
-                    parameters = New PlaceOrderParameters(currentTargetSignal.SignalCandle) With
+                    dummyPayload = currentTargetSignal.SignalCandle
+                    dummyPayload.SnapshotDateTime = currentTargetSignal.SignalCandle.SnapshotDateTime.AddSeconds(3)
+                    parameters = New PlaceOrderParameters(dummyPayload) With
                                  {
                                     .EntryDirection = currentTargetSignal.Direction,
                                     .Quantity = currentTargetSignal.Quantity,
@@ -124,7 +133,9 @@ Public Class AmiSignalStrategyInstrument
             ElseIf StoplossSignals IsNot Nothing AndAlso StoplossSignals.Count > 0 Then
                 Dim currentStoplossSignal As AmiSignal = StoplossSignals.FirstOrDefault.Value
                 If currentStoplossSignal.OrderType = TypeOfOrder.SLM AndAlso currentStoplossSignal.OrderTimestamp = Date.MinValue Then
-                    parameters = New PlaceOrderParameters(currentStoplossSignal.SignalCandle) With
+                    dummyPayload = currentStoplossSignal.SignalCandle
+                    dummyPayload.SnapshotDateTime = currentStoplossSignal.SignalCandle.SnapshotDateTime.AddSeconds(6)
+                    parameters = New PlaceOrderParameters(dummyPayload) With
                                  {
                                     .EntryDirection = currentStoplossSignal.Direction,
                                     .Quantity = currentStoplossSignal.Quantity,
@@ -158,15 +169,49 @@ Public Class AmiSignalStrategyInstrument
         Return ret
     End Function
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
-        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException
+    End Function
+    Protected Overrides Async Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
+
+        If Now >= amiUserSettings.EODExitTime Then
+            Dim allCancelableOrders As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = GetAllCancelableOrders(APIAdapter.TransactionType.None)
+            If allCancelableOrders IsNot Nothing AndAlso allCancelableOrders.Count > 0 Then
+                For Each cancelableOrder In allCancelableOrders
+                    If cancelableOrder.Item2.OrderType.ToUpper = "LIMIT" AndAlso Not cancelableOrder.Item2.Status.ToUpper = "COMPLETE" Then
+                        Dim price As Decimal = Decimal.MinValue
+                        If cancelableOrder.Item2.TransactionType.ToUpper = "BUY" Then
+                            price = Me.TradableInstrument.LastTick.LastPrice + Utilities.Numbers.ConvertFloorCeling((Me.TradableInstrument.LastTick.LastPrice * 0.3 / 100), Me.TradableInstrument.TickSize, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
+                        ElseIf cancelableOrder.Item2.TransactionType.ToUpper = "SELL" Then
+                            price = Me.TradableInstrument.LastTick.LastPrice - Utilities.Numbers.ConvertFloorCeling((Me.TradableInstrument.LastTick.LastPrice * 0.3 / 100), Me.TradableInstrument.TickSize, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
+                        End If
+                        'Below portion have to be done in every modify stoploss order trigger
+                        Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(cancelableOrder.Item2.Tag)
+                        If currentSignalActivities IsNot Nothing Then
+                            If currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                            currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                            currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                Continue For
+                            End If
+                        End If
+
+                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, cancelableOrder.Item2, price, "EOD Square Off"))
+                    End If
+                Next
+            End If
+        End If
         Return ret
     End Function
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 AndAlso (OrderDetails.Count Mod 3) = 0 Then
+        Dim amiUserSettings As AmiSignalUserInputs = Me.ParentStrategy.UserSettings
+
+        If Now < amiUserSettings.EODExitTime AndAlso OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 AndAlso (OrderDetails.Count Mod 3) = 0 Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(APIAdapter.TransactionType.None)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count = 1 Then
                 Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
@@ -185,9 +230,9 @@ Public Class AmiSignalStrategyInstrument
                         End If
 
                         Dim exitReason As String = "Opposite order executed"
-                        If parentOrder.OrderType = "LIMIT" Then
+                        If parentOrder.OrderType.ToUpper = "LIMIT" Then
                             exitReason = "Stoploss Reached"
-                        ElseIf parentOrder.OrderType = "SL-M" Then
+                        ElseIf parentOrder.OrderType.ToUpper = "SL-M" Then
                             exitReason = "Target Reached"
                         End If
 
@@ -200,7 +245,7 @@ Public Class AmiSignalStrategyInstrument
         Return ret
     End Function
     Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
-        If order IsNot Nothing AndAlso Not order.Status = "COMPLETE" Then
+        If order IsNot Nothing AndAlso Not order.Status.ToUpper = "COMPLETE" AndAlso Not order.OrderType.ToUpper = "LIMIT" Then
             Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
             {
                 New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)

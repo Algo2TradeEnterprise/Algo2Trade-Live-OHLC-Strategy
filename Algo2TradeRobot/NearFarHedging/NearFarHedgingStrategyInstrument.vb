@@ -120,6 +120,11 @@ Public Class NearFarHedgingStrategyInstrument
         Throw New NotImplementedException()
     End Function
 
+    Protected Overrides Async Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        Throw New NotImplementedException()
+    End Function
+
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Throw New NotImplementedException()

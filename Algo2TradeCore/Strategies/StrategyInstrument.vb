@@ -97,6 +97,7 @@ Namespace Strategies
             PlaceRegularLimitMISOrder
             PlaceRegularSLMMISOrder
             ModifyStoplossOrder
+            ModifyTargetOrder
             CancelBOOrder
             CancelCOOrder
             CancelRegularOrder
@@ -574,14 +575,14 @@ Namespace Strategies
                 Dim runningOrder As Boolean = False
                 If orderData.SLOrder IsNot Nothing AndAlso orderData.SLOrder.Count > 0 Then
                     For Each slOrder In orderData.SLOrder
-                        If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                        If Not slOrder.Status.ToUpper = "COMPLETE" AndAlso Not slOrder.Status.ToUpper = "CANCELLED" Then
                             runningOrder = True
                             Exit For
                         End If
                     Next
                 ElseIf orderData.AllOrder IsNot Nothing AndAlso orderData.AllOrder.Count > 0 Then
                     For Each allOrder In orderData.AllOrder
-                        If Not allOrder.Status = "COMPLETE" AndAlso Not allOrder.Status = "CANCELLED" Then
+                        If Not allOrder.Status.ToUpper = "COMPLETE" AndAlso Not allOrder.Status.ToUpper = "CANCELLED" Then
                             runningOrder = True
                             Exit For
                         End If
@@ -605,7 +606,7 @@ Namespace Strategies
                     Dim currentCancelActivity As ActivityDashboard.Activity = Me.ParentStrategy.SignalManager.ActivityDetails(orderData.ParentOrder.Tag).CancelActivity
                     If orderData.SLOrder IsNot Nothing AndAlso orderData.SLOrder.Count > 0 Then
                         For Each slOrder In orderData.SLOrder
-                            If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                            If Not slOrder.Status.ToUpper = "COMPLETE" AndAlso Not slOrder.Status.ToUpper = "CANCELLED" Then
                                 orderCancelled = False
                                 statusMessage = slOrder.StatusMessage
                                 Exit For
@@ -615,7 +616,7 @@ Namespace Strategies
                         Next
                     ElseIf orderData.AllOrder IsNot Nothing AndAlso orderData.AllOrder.Count > 0 Then
                         For Each allOrder In orderData.AllOrder
-                            If Not allOrder.Status = "COMPLETE" AndAlso Not allOrder.Status = "CANCELLED" Then
+                            If Not allOrder.Status.ToUpper = "COMPLETE" AndAlso Not allOrder.Status.ToUpper = "CANCELLED" Then
                                 orderCancelled = False
                                 statusMessage = allOrder.StatusMessage
                                 Exit For
@@ -624,7 +625,7 @@ Namespace Strategies
                             End If
                         Next
                     ElseIf orderData.ParentOrder IsNot Nothing Then
-                        If Not orderData.ParentOrder.Status = "COMPLETE" AndAlso Not orderData.ParentOrder.Status = "CANCELLED" Then
+                        If Not orderData.ParentOrder.Status.ToUpper = "COMPLETE" AndAlso Not orderData.ParentOrder.Status.ToUpper = "CANCELLED" Then
                             orderCancelled = False
                             statusMessage = orderData.ParentOrder.StatusMessage
                         Else
@@ -648,7 +649,7 @@ Namespace Strategies
                     Dim currentModifyActivity As ActivityDashboard.Activity = Me.ParentStrategy.SignalManager.ActivityDetails(orderData.ParentOrder.Tag).StoplossModifyActivity
                     If orderData.SLOrder IsNot Nothing AndAlso orderData.SLOrder.Count > 0 Then
                         For Each slOrder In orderData.SLOrder
-                            If Not slOrder.Status = "COMPLETE" AndAlso Not slOrder.Status = "CANCELLED" Then
+                            If Not slOrder.Status.ToUpper = "COMPLETE" AndAlso Not slOrder.Status.ToUpper = "CANCELLED" Then
                                 If slOrder.TriggerPrice <> Val(currentModifyActivity.Supporting) Then
                                     orderModified = False
                                 End If
@@ -657,7 +658,7 @@ Namespace Strategies
                         Next
                     ElseIf orderData.AllOrder IsNot Nothing AndAlso orderData.AllOrder.Count > 0 Then
                         For Each allOrder In orderData.AllOrder
-                            If Not allOrder.Status = "COMPLETE" AndAlso Not allOrder.Status = "CANCELLED" Then
+                            If Not allOrder.Status.ToUpper = "COMPLETE" AndAlso Not allOrder.Status.ToUpper = "CANCELLED" Then
                                 If allOrder.TriggerPrice <> 0 AndAlso allOrder.TriggerPrice <> Val(currentModifyActivity.Supporting) Then
                                     orderModified = False
                                 End If
@@ -670,6 +671,40 @@ Namespace Strategies
                     Else
                         If DateDiff(DateInterval.Second, currentModifyActivity.ReceivedTime, Now) > Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay Then
                             Await Me.ParentStrategy.SignalManager.RejectStoplossModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
+                        End If
+                    End If
+                End If
+
+                '-------Modify target Activity-------'
+                If Me.ParentStrategy.SignalManager.ActivityDetails(orderData.ParentOrder.Tag).TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                    Me.ParentStrategy.SignalManager.ActivityDetails(orderData.ParentOrder.Tag).TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated Then
+                    Dim orderModified As Boolean = True
+                    Dim statusMessage As String = Nothing
+                    Dim currentModifyActivity As ActivityDashboard.Activity = Me.ParentStrategy.SignalManager.ActivityDetails(orderData.ParentOrder.Tag).TargetModifyActivity
+                    If orderData.SLOrder IsNot Nothing AndAlso orderData.SLOrder.Count > 0 Then
+                        For Each targetOrder In orderData.TargetOrder
+                            If Not targetOrder.Status.ToUpper = "COMPLETE" AndAlso Not targetOrder.Status.ToUpper = "CANCELLED" Then
+                                If targetOrder.Price <> Val(currentModifyActivity.Supporting) Then
+                                    orderModified = False
+                                End If
+                                statusMessage = targetOrder.StatusMessage
+                            End If
+                        Next
+                    ElseIf orderData.AllOrder IsNot Nothing AndAlso orderData.AllOrder.Count > 0 Then
+                        For Each allOrder In orderData.AllOrder
+                            If Not allOrder.Status.ToUpper = "COMPLETE" AndAlso Not allOrder.Status.ToUpper = "CANCELLED" Then
+                                If allOrder.Price <> 0 AndAlso allOrder.Price <> Val(currentModifyActivity.Supporting) Then
+                                    orderModified = False
+                                End If
+                                statusMessage = allOrder.StatusMessage
+                            End If
+                        Next
+                    End If
+                    If orderModified Then
+                        Await Me.ParentStrategy.SignalManager.CompleteTargetModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
+                    Else
+                        If DateDiff(DateInterval.Second, currentModifyActivity.ReceivedTime, Now) > Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay Then
+                            Await Me.ParentStrategy.SignalManager.RejectTargetModifyActivity(orderData.ParentOrder.Tag, Me, orderData.ParentOrderIdentifier).ConfigureAwait(False)
                         End If
                     End If
                 End If
@@ -765,6 +800,7 @@ Namespace Strategies
         Public MustOverride Async Function MonitorAsync() As Task
         Protected MustOverride Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
         Protected MustOverride Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Protected MustOverride Async Function IsTriggerReceivedForModifyTargetOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Protected MustOverride Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Protected MustOverride Async Function ForceExitSpecificTradeAsync(ByVal order As IOrder, ByVal reason As String) As Task
 #End Region
@@ -854,8 +890,9 @@ Namespace Strategies
                                                                                            If x.Item1 = ExecuteCommandAction.Take Then
                                                                                                Await Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
                                                                                                Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                               modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=x.Item2.OrderIdentifier,
-                                                                                                                                                                        triggerPrice:=x.Item3).ConfigureAwait(False)
+
+                                                                                               modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=x.Item2.OrderIdentifier, triggerPrice:=x.Item3).ConfigureAwait(False)
+
                                                                                                If modifyStoplossOrderResponse IsNot Nothing Then
                                                                                                    logger.Debug("Modify stoploss order is completed, modifyStoplossOrderResponse:{0}", Strings.JsonSerialize(modifyStoplossOrderResponse))
                                                                                                    Await Me.ParentStrategy.SignalManager.ActivateStoplossModifyActivity(x.Item2.Tag, Me, Nothing, Now).ConfigureAwait(False)
@@ -874,6 +911,43 @@ Namespace Strategies
                                                                                        End Try
                                                                                        Return True
                                                                                    End Function)
+                                    Await Task.WhenAll(tasks).ConfigureAwait(False)
+                                Else
+                                    lastException = Nothing
+                                    allOKWithoutException = True
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    Exit For
+                                End If
+                            Case ExecuteCommands.ModifyTargetOrder
+                                Dim modifyTargetOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(True).ConfigureAwait(False)
+                                If modifyTargetOrderTriggers IsNot Nothing AndAlso modifyTargetOrderTriggers.Count > 0 Then
+                                    Dim tasks = modifyTargetOrderTriggers.Select(Async Function(x)
+                                                                                     Try
+                                                                                         _cts.Token.ThrowIfCancellationRequested()
+                                                                                         If x.Item1 = ExecuteCommandAction.Take Then
+                                                                                             Await Me.ParentStrategy.SignalManager.HandleTargetModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
+                                                                                             Dim modifyTargetOrderResponse As Dictionary(Of String, Object) = Nothing
+
+                                                                                             modifyTargetOrderResponse = Await _APIAdapter.ModifyTargetOrderAsync(orderId:=x.Item2.OrderIdentifier, price:=x.Item3).ConfigureAwait(False)
+
+                                                                                             If modifyTargetOrderResponse IsNot Nothing Then
+                                                                                                 logger.Debug("Modify target order is completed, modifyTargetOrderResponse:{0}", Strings.JsonSerialize(modifyTargetOrderResponse))
+                                                                                                 Await Me.ParentStrategy.SignalManager.ActivateTargetModifyActivity(x.Item2.Tag, Me, Nothing, Now).ConfigureAwait(False)
+                                                                                                 lastException = Nothing
+                                                                                                 allOKWithoutException = True
+                                                                                                 _cts.Token.ThrowIfCancellationRequested()
+                                                                                                 ret = modifyTargetOrderResponse
+                                                                                                 _cts.Token.ThrowIfCancellationRequested()
+                                                                                             Else
+                                                                                                 Throw New ApplicationException(String.Format("Modify target order did not succeed"))
+                                                                                             End If
+                                                                                         End If
+                                                                                     Catch ex As Exception
+                                                                                         logger.Error(ex)
+                                                                                         Throw ex
+                                                                                     End Try
+                                                                                     Return True
+                                                                                 End Function)
                                     Await Task.WhenAll(tasks).ConfigureAwait(False)
                                 Else
                                     lastException = Nothing
